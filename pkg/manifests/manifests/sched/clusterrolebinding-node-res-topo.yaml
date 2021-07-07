@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: noderesourcetoplogy
+  namespace: kube-system
+subjects:
+- kind: User
+  name: system:kube-scheduler
+  namespace: kube-system
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: noderesourcetoplogy-handler
+  apiGroup: rbac.authorization.k8s.io
