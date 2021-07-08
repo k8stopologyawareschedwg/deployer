@@ -22,6 +22,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/fromanirh/deployer/pkg/manifests"
@@ -53,49 +54,17 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	}
 	objs = append(objs, crd)
 
-	ns, err := manifests.LoadNamespace(manifests.ComponentResourceTopologyExporter)
+	rteObjs, err := loadRTEManifests()
 	if err != nil {
 		return err
 	}
-	objs = append(objs, ns)
+	objs = append(objs, rteObjs...)
 
-	sa, err := manifests.LoadServiceAccount(manifests.ComponentResourceTopologyExporter)
+	schedObjs, err := loadSchedPluginManifests()
 	if err != nil {
 		return err
 	}
-	objs = append(objs, sa)
-
-	cr, err := manifests.LoadClusterRole(manifests.ComponentResourceTopologyExporter)
-	if err != nil {
-		return err
-	}
-	objs = append(objs, cr)
-
-	crb, err := manifests.LoadResourceTopologyExporterClusterRoleBinding()
-	if err != nil {
-		return err
-	}
-	objs = append(objs, crb)
-
-	ds, err := manifests.LoadResourceTopologyExporterDaemonSet()
-	if err != nil {
-		return err
-	}
-	objs = append(objs, manifests.UpdateResourceTopologyExporterDaemonSet(ds))
-
-	// LOTS missing here
-
-	cm, err := manifests.LoadSchedulerPluginConfigMap()
-	if err != nil {
-		return err
-	}
-	objs = append(objs, cm)
-
-	dp, err := manifests.LoadSchedulerPluginDeployment()
-	if err != nil {
-		return err
-	}
-	objs = append(objs, manifests.UpdateSchedulerPluginDeployment(dp))
+	objs = append(objs, schedObjs...)
 
 	for _, obj := range objs {
 		fmt.Printf("---\n")
@@ -105,4 +74,97 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	}
 
 	return nil
+}
+
+func loadRTEManifests() ([]runtime.Object, error) {
+	var objs []runtime.Object
+
+	ns, err := manifests.LoadNamespace(manifests.ComponentResourceTopologyExporter)
+	if err != nil {
+		return nil, err
+	}
+	objs = append(objs, ns)
+
+	sa, err := manifests.LoadServiceAccount(manifests.ComponentResourceTopologyExporter)
+	if err != nil {
+		return nil, err
+	}
+	objs = append(objs, sa)
+
+	cr, err := manifests.LoadClusterRole(manifests.ComponentResourceTopologyExporter)
+	if err != nil {
+		return nil, err
+	}
+	objs = append(objs, cr)
+
+	crb, err := manifests.LoadResourceTopologyExporterClusterRoleBinding()
+	if err != nil {
+		return nil, err
+	}
+	objs = append(objs, crb)
+
+	ds, err := manifests.LoadResourceTopologyExporterDaemonSet()
+	if err != nil {
+		return nil, err
+	}
+	objs = append(objs, manifests.UpdateResourceTopologyExporterDaemonSet(ds))
+
+	return objs, nil
+}
+
+type loadSchedCRBFunc func() (*rbacv1.ClusterRoleBinding, error)
+
+func loadSchedPluginManifests() ([]runtime.Object, error) {
+	var objs []runtime.Object
+
+	ns, err := manifests.LoadNamespace(manifests.ComponentSchedulerPlugin)
+	if err != nil {
+		return nil, err
+	}
+	objs = append(objs, ns)
+
+	sa, err := manifests.LoadServiceAccount(manifests.ComponentSchedulerPlugin)
+	if err != nil {
+		return nil, err
+	}
+	objs = append(objs, sa)
+
+	cr, err := manifests.LoadClusterRole(manifests.ComponentSchedulerPlugin)
+	if err != nil {
+		return nil, err
+	}
+	objs = append(objs, cr)
+
+	for _, loader := range []loadSchedCRBFunc{
+		manifests.LoadSchedulerPluginClusterRoleBindingKubeScheduler,
+		manifests.LoadSchedulerPluginClusterRoleBindingNodeResourceTopology,
+		manifests.LoadSchedulerPluginClusterRoleBindingVolumeScheduler,
+	} {
+		crb, err := loader()
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, crb)
+
+	}
+
+	rb, err := manifests.LoadSchedulerPluginRoleBindingKubeScheduler()
+	if err != nil {
+		return nil, err
+	}
+	objs = append(objs, rb)
+
+	cm, err := manifests.LoadSchedulerPluginConfigMap()
+	if err != nil {
+		return nil, err
+	}
+	objs = append(objs, cm)
+
+	dp, err := manifests.LoadSchedulerPluginDeployment()
+	if err != nil {
+		return nil, err
+	}
+	objs = append(objs, manifests.UpdateSchedulerPluginDeployment(dp))
+
+	return objs, nil
 }

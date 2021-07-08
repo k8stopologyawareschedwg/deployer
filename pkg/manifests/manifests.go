@@ -34,7 +34,7 @@ import (
 
 const (
 	ComponentAPI                      = "api"
-	ComponentSchedulerPlugins         = "sched"
+	ComponentSchedulerPlugin          = "sched"
 	ComponentResourceTopologyExporter = "rte"
 )
 
@@ -135,8 +135,18 @@ func LoadSchedulerPluginDeployment() (*appsv1.Deployment, error) {
 	return dp, nil
 }
 
-func LoadResourceTopologyExporterClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	obj, err := LoadObject("manifests/rte/clusterrolebinding.yaml")
+// TODO: load scheduler plugin clusterrolebindings
+
+func loadClusterRoleBinding(component, detail string) (*rbacv1.ClusterRoleBinding, error) {
+	if err := validateComponent(component); err != nil {
+		return nil, err
+	}
+
+	crbName := "clusterrolebinding.yaml"
+	if detail != "" {
+		crbName = fmt.Sprintf("clusterrolebinding-%s.yaml", detail)
+	}
+	obj, err := LoadObject(filepath.Join("manifests", component, crbName))
 	if err != nil {
 		return nil, err
 	}
@@ -146,6 +156,35 @@ func LoadResourceTopologyExporterClusterRoleBinding() (*rbacv1.ClusterRoleBindin
 		return nil, fmt.Errorf("unexpected type, got %t", obj)
 	}
 	return crb, nil
+}
+
+func LoadSchedulerPluginClusterRoleBindingKubeScheduler() (*rbacv1.ClusterRoleBinding, error) {
+	return loadClusterRoleBinding(ComponentSchedulerPlugin, "kube-sched")
+}
+
+func LoadSchedulerPluginClusterRoleBindingNodeResourceTopology() (*rbacv1.ClusterRoleBinding, error) {
+	return loadClusterRoleBinding(ComponentSchedulerPlugin, "node-res-topo")
+}
+
+func LoadSchedulerPluginClusterRoleBindingVolumeScheduler() (*rbacv1.ClusterRoleBinding, error) {
+	return loadClusterRoleBinding(ComponentSchedulerPlugin, "vol-sched")
+}
+
+func LoadSchedulerPluginRoleBindingKubeScheduler() (*rbacv1.RoleBinding, error) {
+	obj, err := LoadObject("manifests/sched/rolebinding-kube-sched.yaml")
+	if err != nil {
+		return nil, err
+	}
+
+	crb, ok := obj.(*rbacv1.RoleBinding)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type, got %t", obj)
+	}
+	return crb, nil
+}
+
+func LoadResourceTopologyExporterClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
+	return loadClusterRoleBinding(ComponentResourceTopologyExporter, "")
 }
 
 func LoadResourceTopologyExporterDaemonSet() (*appsv1.DaemonSet, error) {

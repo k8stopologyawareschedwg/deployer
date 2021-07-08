@@ -9,7 +9,7 @@ import (
 )
 
 func UpdateSchedulerPluginDeployment(dp *appsv1.Deployment) *appsv1.Deployment {
-	dp.Spec.Template.Spec.Containers[0].Image = images.SchedulerPluginsImage
+	dp.Spec.Template.Spec.Containers[0].Image = images.SchedulerPluginImage
 	return dp
 }
 
