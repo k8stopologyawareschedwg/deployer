@@ -64,6 +64,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 
 	root.AddCommand(
 		NewRenderCommand(commonOpts),
+		NewValidateCommand(commonOpts),
 	)
 	for _, extraCmd := range extraCmds {
 		root.AddCommand(extraCmd(commonOpts))
