@@ -43,7 +43,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 
 	root := &cobra.Command{
 		Use:   "deployer",
-		Short: "WRITE ME",
+		Short: "deployer helps setting up all the topology-aware-scheduling components ona kubernetes cluster",
 
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			if commonOpts.Debug {
@@ -65,6 +65,9 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	root.AddCommand(
 		NewRenderCommand(commonOpts),
 		NewValidateCommand(commonOpts),
+		NewDeployCommand(commonOpts),
+		NewRemoveCommand(commonOpts),
+		NewSetupCommand(commonOpts),
 	)
 	for _, extraCmd := range extraCmds {
 		root.AddCommand(extraCmd(commonOpts))
