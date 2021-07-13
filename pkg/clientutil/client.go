@@ -56,13 +56,13 @@ func NewK8s() (*kubernetes.Clientset, error) {
 	return clientset, nil
 }
 
-func NewK8sExt() (*apiextensionv1.ClientSet, error) {
+func NewK8sExt() (*apiextension.Clientset, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	clientset, err := apiextension.NewForConfig(config)
+	clientset, err := apiextension.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
