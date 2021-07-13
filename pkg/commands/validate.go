@@ -17,7 +17,9 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -25,7 +27,9 @@ import (
 	"github.com/fromanirh/deployer/pkg/validator"
 )
 
-type validateOptions struct{}
+type validateOptions struct {
+	jsonOutput bool
+}
 
 func NewValidateCommand(commonOpts *CommonOptions) *cobra.Command {
 	opts := &validateOptions{}
@@ -37,7 +41,13 @@ func NewValidateCommand(commonOpts *CommonOptions) *cobra.Command {
 		},
 		Args: cobra.NoArgs,
 	}
+	validate.Flags().BoolVarP(&opts.jsonOutput, "json", "J", false, "output JSON, not text.")
 	return validate
+}
+
+type validationOutput struct {
+	Success bool                         `json:"success"`
+	Errors  []validator.ValidationResult `json:"errors,omitempty"`
 }
 
 func validateCluster(cmd *cobra.Command, commonOpts *CommonOptions, opts *validateOptions, args []string) error {
@@ -54,12 +64,29 @@ func validateCluster(cmd *cobra.Command, commonOpts *CommonOptions, opts *valida
 		return err
 	}
 
+	printValidationResults(items, opts.jsonOutput)
+	return nil
+}
+
+func printValidationResults(items []validator.ValidationResult, jsonOutput bool) {
 	if len(items) == 0 {
-		fmt.Printf("PASSED>>: the cluster configuration looks ok!\n")
+		if jsonOutput {
+			json.NewEncoder(os.Stdout).Encode(validationOutput{
+				Success: true,
+			})
+		} else {
+			fmt.Printf("PASSED>>: the cluster configuration looks ok!\n")
+		}
 	} else {
-		for idx, item := range items {
-			fmt.Printf("ERROR#%03d: %s\n", idx, item.String())
+		if jsonOutput {
+			json.NewEncoder(os.Stdout).Encode(validationOutput{
+				Success: false,
+				Errors:  items,
+			})
+		} else {
+			for idx, item := range items {
+				fmt.Printf("ERROR#%03d: %s\n", idx, item.String())
+			}
 		}
 	}
-	return nil
 }

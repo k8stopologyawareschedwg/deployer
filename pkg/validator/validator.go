@@ -26,12 +26,12 @@ type Validator struct {
 }
 
 type ValidationResult struct {
-	Node      string
-	Area      string
-	Component string
-	Setting   string
-	Expected  string
-	Detected  string
+	Node      string `json:"node"`
+	Area      string `json:"area"`
+	Component string `json:"component"`
+	Setting   string `json:"setting"`
+	Expected  string `json:"expected"`
+	Detected  string `json:"detected"`
 }
 
 func (vr ValidationResult) String() string {
