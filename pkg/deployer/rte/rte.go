@@ -40,11 +40,11 @@ type Manifests struct {
 
 func (mf Manifests) EnforceNamespace() Manifests {
 	ret := Manifests{
-		Namespace: mf.Namespace.DeepCopy(),
-		ServiceAccount: mf.ServiceAccount.DeepCopy(),
-		ClusterRole: mf.ClusterRole.DeepCopy(),
+		Namespace:          mf.Namespace.DeepCopy(),
+		ServiceAccount:     mf.ServiceAccount.DeepCopy(),
+		ClusterRole:        mf.ClusterRole.DeepCopy(),
 		ClusterRoleBinding: mf.ClusterRoleBinding.DeepCopy(),
-		DaemonSet: mf.DaemonSet.DeepCopy(),
+		DaemonSet:          mf.DaemonSet.DeepCopy(),
 	}
 	ret.ServiceAccount.Namespace = ret.Namespace.Name
 	ret.ClusterRole.Namespace = ret.Namespace.Name
@@ -122,7 +122,7 @@ func Deploy(logger *log.Logger, opts Options) error {
 		return err
 	}
 
-	// TODO: wait for the DS to go running
+	// TODO: (optional) wait for the DS to go running
 
 	return nil
 }
@@ -142,20 +142,18 @@ func Remove(logger *log.Logger, opts Options) error {
 	mf = mf.EnforceNamespace()
 	logger.Printf("manifests loaded")
 
-	// no need to update in the remove path
-	if err := hp.DeleteObject(mf.DaemonSet); err != nil {
+	// since we created everything in the namespace, we can just do
+	if err := hp.DeleteObject(mf.Namespace); err != nil {
 		return err
 	}
+
+	// TODO: (optional) wait for the namespace to be gone
+
+	// but now let's take care of cluster-scoped resources
 	if err := hp.DeleteObject(mf.ClusterRoleBinding); err != nil {
 		return err
 	}
 	if err := hp.DeleteObject(mf.ClusterRole); err != nil {
-		return err
-	}
-	if err := hp.DeleteObject(mf.ServiceAccount); err != nil {
-		return err
-	}
-	if err := hp.DeleteObject(mf.Namespace); err != nil {
 		return err
 	}
 
