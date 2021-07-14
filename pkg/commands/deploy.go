@@ -18,7 +18,7 @@ package commands
 
 import (
 	"context"
-	"fmt"
+	"github.com/fromanirh/deployer/pkg/deployer/sched"
 
 	"github.com/fromanirh/deployer/pkg/clientutil"
 	"github.com/fromanirh/deployer/pkg/deployer/rte"
@@ -84,8 +84,7 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 		Use:   "scheduler-plugin",
 		Short: "deploy the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("deploy sched\n")
-			return nil
+			return sched.Deploy(commonOpts.Log, sched.Options{})
 		},
 		Args: cobra.NoArgs,
 	}
@@ -124,8 +123,7 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 		Use:   "scheduler-plugin",
 		Short: "remove the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("remove sched\n")
-			return nil
+			return sched.Remove(commonOpts.Log, sched.Options{})
 		},
 		Args: cobra.NoArgs,
 	}
