@@ -47,8 +47,6 @@ func (mf Manifests) EnforceNamespace() Manifests {
 		DaemonSet:          mf.DaemonSet.DeepCopy(),
 	}
 	ret.ServiceAccount.Namespace = ret.Namespace.Name
-	ret.ClusterRole.Namespace = ret.Namespace.Name
-	ret.ClusterRoleBinding.Namespace = ret.Namespace.Name
 	ret.DaemonSet.Namespace = ret.Namespace.Name
 	return ret
 }

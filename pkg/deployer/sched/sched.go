@@ -17,10 +17,14 @@
 package sched
 
 import (
+	"github.com/fromanirh/deployer/pkg/deployer"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"log"
 
 	"github.com/fromanirh/deployer/pkg/manifests"
 )
@@ -51,6 +55,25 @@ func (mf Manifests) ToObjects() []runtime.Object {
 		mf.ConfigMap,
 		mf.Deployment,
 	}
+}
+
+func (mf Manifests) EnforceNamespace() Manifests {
+	sched := Manifests{
+		Namespace : mf.Namespace.DeepCopy(),
+		ServiceAccount: mf.ServiceAccount.DeepCopy(),
+		ClusterRole: mf.ClusterRole.DeepCopy(),
+		CRBKubernetesScheduler: mf.CRBKubernetesScheduler.DeepCopy(),
+		CRBNodeResourceTopology: mf.CRBNodeResourceTopology.DeepCopy(),
+		CRBVolumeScheduler: mf.CRBVolumeScheduler.DeepCopy(),
+		RoleBinding: mf.RoleBinding.DeepCopy(),
+		ConfigMap: mf.ConfigMap.DeepCopy(),
+		Deployment: mf.Deployment.DeepCopy(),
+	}
+	sched.ServiceAccount.Namespace = mf.Namespace.Name
+	sched.ConfigMap.Namespace = mf.Namespace.Name
+	sched.Deployment.Namespace = mf.Namespace.Name
+
+	return sched
 }
 
 func GetManifests() (Manifests, error) {
@@ -95,10 +118,96 @@ func GetManifests() (Manifests, error) {
 	return mf, nil
 }
 
-func Deploy(opts Options) error {
+func Deploy(logger *log.Logger, opts Options) error {
+	var err error
+
+	mf, err := GetManifests()
+	if err != nil {
+		return err
+	}
+
+	mf = mf.EnforceNamespace()
+	logger.Printf("manifests loaded")
+
+	hp, err := deployer.NewHelper("RTE")
+	if err != nil {
+		return err
+	}
+
+	if err = hp.CreateObject(mf.Namespace); err != nil {
+		return err
+	}
+	if err = hp.CreateObject(mf.ServiceAccount); err != nil {
+		return err
+	}
+	if err = hp.CreateObject(mf.ClusterRole); err != nil {
+		return err
+	}
+	if err = hp.CreateObject(mf.CRBKubernetesScheduler); err != nil {
+		return err
+	}
+	if err = hp.CreateObject(mf.CRBNodeResourceTopology); err != nil {
+		return err
+	}
+	if err = hp.CreateObject(mf.CRBVolumeScheduler); err != nil {
+		return err
+	}
+	if err = hp.CreateObject(mf.RoleBinding); err != nil {
+		return err
+	}
+	if err = hp.CreateObject(mf.ConfigMap); err != nil {
+		return err
+	}
+	if err = hp.CreateObject(mf.Deployment); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func Remove(opts Options) error {
+func Remove(logger *log.Logger, opts Options) error {
+	var err error
+
+	mf, err := GetManifests()
+	if err != nil {
+		return err
+	}
+
+	mf = mf.EnforceNamespace()
+	logger.Printf("manifests loaded")
+
+	hp, err := deployer.NewHelper("RTE")
+	if err != nil {
+		return err
+	}
+
+	if err = hp.DeleteObject(mf.Namespace); err != nil {
+		return err
+	}
+
+	nsKey := types.NamespacedName{
+		Name: mf.Namespace.Name,
+		Namespace: metav1.NamespaceNone,
+	}
+
+	err = hp.WaitForObjectToBeDeleted(nsKey, &corev1.Namespace{})
+	if err != nil {
+		return err
+	}
+	if err = hp.DeleteObject(mf.RoleBinding); err != nil {
+		return err
+	}
+	if err = hp.DeleteObject(mf.CRBKubernetesScheduler); err != nil {
+		return err
+	}
+	if err = hp.DeleteObject(mf.CRBNodeResourceTopology); err != nil {
+		return err
+	}
+	if err = hp.DeleteObject(mf.CRBVolumeScheduler); err != nil {
+		return err
+	}
+	if err = hp.DeleteObject(mf.ClusterRole); err != nil {
+		return err
+	}
 	return nil
 }
