@@ -135,8 +135,6 @@ func SchedulerPluginDeployment() (*appsv1.Deployment, error) {
 	return dp, nil
 }
 
-// TODO: load scheduler plugin clusterrolebindings
-
 func loadClusterRoleBinding(component, detail string) (*rbacv1.ClusterRoleBinding, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
