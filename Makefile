@@ -26,7 +26,22 @@ outdir:
 test-unit:
 	go test ./pkg/...
 
+.PHONY: test-e2e-positive
+test-e2e-positive: build-e2e
+	_out/e2e.test -ginkgo.focus='\[PositiveFlow\]'
+
+.PHONY: test-e2e-negative
+test-e2e-negative: build-e2e
+	_out/e2e.test -ginkgo.focus='\[NegativeFlow\]'
+
 .PHONY: gofmt
 gofmt:
 	@echo "Running gofmt"
 	gofmt -s -w `find . -path ./vendor -prune -o -type f -name '*.go' -print`
+
+.PHONY: build-e2e
+build-e2e: _out/rte-e2e.test
+
+_out/rte-e2e.test: outdir test/e2e/*.go
+	go test -v -c -o _out/e2e.test ./test/e2e/
+
