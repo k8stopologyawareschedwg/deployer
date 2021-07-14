@@ -17,14 +17,14 @@
 package rte
 
 import (
-	"context"
+	"log"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/fromanirh/deployer/pkg/clientutil"
+	"github.com/fromanirh/deployer/pkg/deployer"
 	"github.com/fromanirh/deployer/pkg/manifests"
 )
 
@@ -74,10 +74,10 @@ func GetManifests() (Manifests, error) {
 	return mf, nil
 }
 
-func Deploy(opts Options) error {
+func Deploy(logger *log.Logger, opts Options) error {
 	var err error
 
-	cli, err := clientutil.New()
+	cr, err := deployer.NewCreator("RTE")
 	if err != nil {
 		return err
 	}
@@ -86,25 +86,22 @@ func Deploy(opts Options) error {
 	if err != nil {
 		return err
 	}
+	logger.Printf("manifests loaded")
 
-	if err := cli.Create(context.TODO(), mf.Namespace); err != nil {
+	if err := cr.CreateObject(mf.Namespace); err != nil {
 		return err
 	}
-
-	if err := cli.Create(context.TODO(), mf.ServiceAccount); err != nil {
+	if err := cr.CreateObject(mf.ServiceAccount); err != nil {
 		return err
 	}
-
-	if err := cli.Create(context.TODO(), mf.ClusterRole); err != nil {
+	if err := cr.CreateObject(mf.ClusterRole); err != nil {
 		return err
 	}
-
-	if err := cli.Create(context.TODO(), mf.ClusterRoleBinding); err != nil {
+	if err := cr.CreateObject(mf.ClusterRoleBinding); err != nil {
 		return err
 	}
-
 	ds := manifests.UpdateResourceTopologyExporterDaemonSet(mf.DaemonSet)
-	if err := cli.Create(context.TODO(), ds); err != nil {
+	if err := cr.CreateObject(ds); err != nil {
 		return err
 	}
 

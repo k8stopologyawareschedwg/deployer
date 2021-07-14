@@ -15,3 +15,36 @@
  */
 
 package deployer
+
+import (
+	"context"
+	"fmt"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/fromanirh/deployer/pkg/clientutil"
+)
+
+type Creator struct {
+	tag string
+	cli client.Client
+}
+
+func NewCreator(tag string) (*Creator, error) {
+	cli, err := clientutil.New()
+	if err != nil {
+		return nil, err
+	}
+	return &Creator{
+		tag: tag,
+		cli: cli,
+	}, nil
+}
+
+func (cr *Creator) CreateObject(obj client.Object) error {
+	if err := cr.cli.Create(context.TODO(), obj); err != nil {
+		return err
+	}
+	fmt.Printf("+%s> created %s %q\n", cr.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
+	return nil
+}
