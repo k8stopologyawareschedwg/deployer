@@ -17,15 +17,44 @@
 package deployer
 
 import (
-	"k8s.io/client-go/rest"
+	"context"
+	"fmt"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/fromanirh/deployer/pkg/clientutil"
 )
 
-// TODO logging interface
-func Deploy(config *rest.Config) error {
+type Helper struct {
+	tag string
+	cli client.Client
+}
+
+func NewHelper(tag string) (*Helper, error) {
+	cli, err := clientutil.New()
+	if err != nil {
+		return nil, err
+	}
+	return &Helper{
+		tag: tag,
+		cli: cli,
+	}, nil
+}
+
+func (hp *Helper) CreateObject(obj client.Object) error {
+	if err := hp.cli.Create(context.TODO(), obj); err != nil {
+		fmt.Printf("+%s> error creating %s %q: %v\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName(), err)
+		return err
+	}
+	fmt.Printf("+%5s> created %s %q\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
 	return nil
 }
 
-// TODO logging interface
-func Undeploy(config *rest.Config) error {
+func (hp *Helper) DeleteObject(obj client.Object) error {
+	if err := hp.cli.Delete(context.TODO(), obj); err != nil {
+		fmt.Printf("+%s> error deleting %s %q: %v\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName(), err)
+		return err
+	}
+	fmt.Printf("+%5s> deleted %s %q\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
 	return nil
 }

@@ -22,15 +22,14 @@ import (
 
 	"github.com/spf13/cobra"
 
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/fromanirh/deployer/pkg/deployer/rte"
+	"github.com/fromanirh/deployer/pkg/deployer/sched"
 	"github.com/fromanirh/deployer/pkg/manifests"
 )
 
-type renderOptions struct {
-	pidIdent string
-}
+type renderOptions struct{}
 
 func NewRenderCommand(commonOpts *CommonOptions) *cobra.Command {
 	opts := &renderOptions{}
@@ -54,17 +53,17 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	}
 	objs = append(objs, crd)
 
-	rteObjs, err := loadRTEManifests()
+	rteManifests, err := rte.GetManifests()
 	if err != nil {
 		return err
 	}
-	objs = append(objs, rteObjs...)
+	objs = append(objs, rteManifests.ToObjects()...)
 
-	schedObjs, err := loadSchedPluginManifests()
+	schedManifests, err := sched.GetManifests()
 	if err != nil {
 		return err
 	}
-	objs = append(objs, schedObjs...)
+	objs = append(objs, schedManifests.ToObjects()...)
 
 	for _, obj := range objs {
 		fmt.Printf("---\n")
@@ -74,97 +73,4 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	}
 
 	return nil
-}
-
-func loadRTEManifests() ([]runtime.Object, error) {
-	var objs []runtime.Object
-
-	ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
-	if err != nil {
-		return nil, err
-	}
-	objs = append(objs, ns)
-
-	sa, err := manifests.ServiceAccount(manifests.ComponentResourceTopologyExporter)
-	if err != nil {
-		return nil, err
-	}
-	objs = append(objs, sa)
-
-	cr, err := manifests.ClusterRole(manifests.ComponentResourceTopologyExporter)
-	if err != nil {
-		return nil, err
-	}
-	objs = append(objs, cr)
-
-	crb, err := manifests.ResourceTopologyExporterClusterRoleBinding()
-	if err != nil {
-		return nil, err
-	}
-	objs = append(objs, crb)
-
-	ds, err := manifests.ResourceTopologyExporterDaemonSet()
-	if err != nil {
-		return nil, err
-	}
-	objs = append(objs, manifests.UpdateResourceTopologyExporterDaemonSet(ds))
-
-	return objs, nil
-}
-
-type loadSchedCRBFunc func() (*rbacv1.ClusterRoleBinding, error)
-
-func loadSchedPluginManifests() ([]runtime.Object, error) {
-	var objs []runtime.Object
-
-	ns, err := manifests.Namespace(manifests.ComponentSchedulerPlugin)
-	if err != nil {
-		return nil, err
-	}
-	objs = append(objs, ns)
-
-	sa, err := manifests.ServiceAccount(manifests.ComponentSchedulerPlugin)
-	if err != nil {
-		return nil, err
-	}
-	objs = append(objs, sa)
-
-	cr, err := manifests.ClusterRole(manifests.ComponentSchedulerPlugin)
-	if err != nil {
-		return nil, err
-	}
-	objs = append(objs, cr)
-
-	for _, loader := range []loadSchedCRBFunc{
-		manifests.SchedulerPluginClusterRoleBindingKubeScheduler,
-		manifests.SchedulerPluginClusterRoleBindingNodeResourceTopology,
-		manifests.SchedulerPluginClusterRoleBindingVolumeScheduler,
-	} {
-		crb, err := loader()
-		if err != nil {
-			return nil, err
-		}
-		objs = append(objs, crb)
-
-	}
-
-	rb, err := manifests.SchedulerPluginRoleBindingKubeScheduler()
-	if err != nil {
-		return nil, err
-	}
-	objs = append(objs, rb)
-
-	cm, err := manifests.SchedulerPluginConfigMap()
-	if err != nil {
-		return nil, err
-	}
-	objs = append(objs, cm)
-
-	dp, err := manifests.SchedulerPluginDeployment()
-	if err != nil {
-		return nil, err
-	}
-	objs = append(objs, manifests.UpdateSchedulerPluginDeployment(dp))
-
-	return objs, nil
 }

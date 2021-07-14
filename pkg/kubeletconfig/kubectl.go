@@ -50,7 +50,7 @@ func NewKubectl(logger *log.Logger, kubectlPath, kubeConfig string) *Kubectl {
 func NewKubectlFromEnv(logger *log.Logger) *Kubectl {
 	kubeConfig, ok := os.LookupEnv("KUBECONFIG")
 	if !ok {
-		kubeConfig = filepath.Join(os.Getenv("HOME"), ".kube", ".config")
+		kubeConfig = filepath.Join(os.Getenv("HOME"), ".kube", "config")
 		logger.Printf("using default kubeconfig path: %q", kubeConfig)
 	}
 	kubectlPath, ok := os.LookupEnv("KUBECTL")

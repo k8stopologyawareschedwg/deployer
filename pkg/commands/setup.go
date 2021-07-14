@@ -21,12 +21,16 @@ import (
 )
 
 func NewSetupCommand(commonOpts *CommonOptions) *cobra.Command {
+	depOpts := &deployOptions{}
+	valOpts := &validateOptions{}
 	setup := &cobra.Command{
 		Use:   "setup",
 		Short: "setup and validate a cluster to be used for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// TODO: deploy here
-			return validateCluster(cmd, commonOpts, nil, args)
+			if err := deployOnCluster(commonOpts, depOpts); err != nil {
+				return err
+			}
+			return validateCluster(cmd, commonOpts, valOpts, args)
 		},
 		Args: cobra.NoArgs,
 	}
