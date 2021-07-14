@@ -25,26 +25,34 @@ import (
 	"github.com/fromanirh/deployer/pkg/clientutil"
 )
 
-type Creator struct {
+type Helper struct {
 	tag string
 	cli client.Client
 }
 
-func NewCreator(tag string) (*Creator, error) {
+func NewHelper(tag string) (*Helper, error) {
 	cli, err := clientutil.New()
 	if err != nil {
 		return nil, err
 	}
-	return &Creator{
+	return &Helper{
 		tag: tag,
 		cli: cli,
 	}, nil
 }
 
-func (cr *Creator) CreateObject(obj client.Object) error {
-	if err := cr.cli.Create(context.TODO(), obj); err != nil {
+func (hp *Helper) CreateObject(obj client.Object) error {
+	if err := hp.cli.Create(context.TODO(), obj); err != nil {
 		return err
 	}
-	fmt.Printf("+%s> created %s %q\n", cr.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
+	fmt.Printf("+%s> created %s %q\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
+	return nil
+}
+
+func (hp *Helper) DeleteObject(obj client.Object) error {
+	if err := hp.cli.Delete(context.TODO(), obj); err != nil {
+		return err
+	}
+	fmt.Printf("+%s> deleted %s %q\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
 	return nil
 }

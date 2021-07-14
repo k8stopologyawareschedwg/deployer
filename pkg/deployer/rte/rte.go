@@ -77,7 +77,7 @@ func GetManifests() (Manifests, error) {
 func Deploy(logger *log.Logger, opts Options) error {
 	var err error
 
-	cr, err := deployer.NewCreator("RTE")
+	hp, err := deployer.NewHelper("RTE")
 	if err != nil {
 		return err
 	}
@@ -88,20 +88,20 @@ func Deploy(logger *log.Logger, opts Options) error {
 	}
 	logger.Printf("manifests loaded")
 
-	if err := cr.CreateObject(mf.Namespace); err != nil {
+	if err := hp.CreateObject(mf.Namespace); err != nil {
 		return err
 	}
-	if err := cr.CreateObject(mf.ServiceAccount); err != nil {
+	if err := hp.CreateObject(mf.ServiceAccount); err != nil {
 		return err
 	}
-	if err := cr.CreateObject(mf.ClusterRole); err != nil {
+	if err := hp.CreateObject(mf.ClusterRole); err != nil {
 		return err
 	}
-	if err := cr.CreateObject(mf.ClusterRoleBinding); err != nil {
+	if err := hp.CreateObject(mf.ClusterRoleBinding); err != nil {
 		return err
 	}
 	ds := manifests.UpdateResourceTopologyExporterDaemonSet(mf.DaemonSet)
-	if err := cr.CreateObject(ds); err != nil {
+	if err := hp.CreateObject(ds); err != nil {
 		return err
 	}
 
@@ -110,6 +110,36 @@ func Deploy(logger *log.Logger, opts Options) error {
 	return nil
 }
 
-func Remove(opts Options) error {
+func Remove(logger *log.Logger, opts Options) error {
+	var err error
+
+	hp, err := deployer.NewHelper("RTE")
+	if err != nil {
+		return err
+	}
+
+	mf, err := GetManifests()
+	if err != nil {
+		return err
+	}
+	logger.Printf("manifests loaded")
+
+	// no need to update in the remove path
+	if err := hp.DeleteObject(mf.DaemonSet); err != nil {
+		return err
+	}
+	if err := hp.DeleteObject(mf.ClusterRoleBinding); err != nil {
+		return err
+	}
+	if err := hp.DeleteObject(mf.ClusterRole); err != nil {
+		return err
+	}
+	if err := hp.DeleteObject(mf.ServiceAccount); err != nil {
+		return err
+	}
+	if err := hp.DeleteObject(mf.Namespace); err != nil {
+		return err
+	}
+
 	return nil
 }
