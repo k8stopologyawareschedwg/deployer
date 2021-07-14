@@ -15,17 +15,3 @@
  */
 
 package deployer
-
-import (
-	"k8s.io/client-go/rest"
-)
-
-// TODO logging interface
-func Deploy(config *rest.Config) error {
-	return nil
-}
-
-// TODO logging interface
-func Undeploy(config *rest.Config) error {
-	return nil
-}
