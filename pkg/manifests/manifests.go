@@ -45,12 +45,12 @@ func init() {
 	apiextensionv1.AddToScheme(scheme.Scheme)
 }
 
-func LoadNamespace(component string) (*corev1.Namespace, error) {
+func Namespace(component string) (*corev1.Namespace, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
 
-	obj, err := LoadObject(filepath.Join("manifests", component, "namespace.yaml"))
+	obj, err := loadObject(filepath.Join("manifests", component, "namespace.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -62,12 +62,12 @@ func LoadNamespace(component string) (*corev1.Namespace, error) {
 	return ns, nil
 }
 
-func LoadServiceAccount(component string) (*corev1.ServiceAccount, error) {
+func ServiceAccount(component string) (*corev1.ServiceAccount, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
 
-	obj, err := LoadObject(filepath.Join("manifests", component, "serviceaccount.yaml"))
+	obj, err := loadObject(filepath.Join("manifests", component, "serviceaccount.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -79,12 +79,12 @@ func LoadServiceAccount(component string) (*corev1.ServiceAccount, error) {
 	return sa, nil
 }
 
-func LoadClusterRole(component string) (*rbacv1.ClusterRole, error) {
+func ClusterRole(component string) (*rbacv1.ClusterRole, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
 
-	obj, err := LoadObject(filepath.Join("manifests", component, "clusterrole.yaml"))
+	obj, err := loadObject(filepath.Join("manifests", component, "clusterrole.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -96,8 +96,8 @@ func LoadClusterRole(component string) (*rbacv1.ClusterRole, error) {
 	return cr, nil
 }
 
-func LoadAPICRD() (*apiextensionv1.CustomResourceDefinition, error) {
-	obj, err := LoadObject("manifests/api/crd.yaml")
+func APICRD() (*apiextensionv1.CustomResourceDefinition, error) {
+	obj, err := loadObject("manifests/api/crd.yaml")
 	if err != nil {
 		return nil, err
 	}
@@ -109,8 +109,8 @@ func LoadAPICRD() (*apiextensionv1.CustomResourceDefinition, error) {
 	return crd, nil
 }
 
-func LoadSchedulerPluginConfigMap() (*corev1.ConfigMap, error) {
-	obj, err := LoadObject("manifests/sched/configmap.yaml")
+func SchedulerPluginConfigMap() (*corev1.ConfigMap, error) {
+	obj, err := loadObject("manifests/sched/configmap.yaml")
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +122,8 @@ func LoadSchedulerPluginConfigMap() (*corev1.ConfigMap, error) {
 	return crd, nil
 }
 
-func LoadSchedulerPluginDeployment() (*appsv1.Deployment, error) {
-	obj, err := LoadObject("manifests/sched/deployment.yaml")
+func SchedulerPluginDeployment() (*appsv1.Deployment, error) {
+	obj, err := loadObject("manifests/sched/deployment.yaml")
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func loadClusterRoleBinding(component, detail string) (*rbacv1.ClusterRoleBindin
 	if detail != "" {
 		crbName = fmt.Sprintf("clusterrolebinding-%s.yaml", detail)
 	}
-	obj, err := LoadObject(filepath.Join("manifests", component, crbName))
+	obj, err := loadObject(filepath.Join("manifests", component, crbName))
 	if err != nil {
 		return nil, err
 	}
@@ -158,20 +158,20 @@ func loadClusterRoleBinding(component, detail string) (*rbacv1.ClusterRoleBindin
 	return crb, nil
 }
 
-func LoadSchedulerPluginClusterRoleBindingKubeScheduler() (*rbacv1.ClusterRoleBinding, error) {
+func SchedulerPluginClusterRoleBindingKubeScheduler() (*rbacv1.ClusterRoleBinding, error) {
 	return loadClusterRoleBinding(ComponentSchedulerPlugin, "kube-sched")
 }
 
-func LoadSchedulerPluginClusterRoleBindingNodeResourceTopology() (*rbacv1.ClusterRoleBinding, error) {
+func SchedulerPluginClusterRoleBindingNodeResourceTopology() (*rbacv1.ClusterRoleBinding, error) {
 	return loadClusterRoleBinding(ComponentSchedulerPlugin, "node-res-topo")
 }
 
-func LoadSchedulerPluginClusterRoleBindingVolumeScheduler() (*rbacv1.ClusterRoleBinding, error) {
+func SchedulerPluginClusterRoleBindingVolumeScheduler() (*rbacv1.ClusterRoleBinding, error) {
 	return loadClusterRoleBinding(ComponentSchedulerPlugin, "vol-sched")
 }
 
-func LoadSchedulerPluginRoleBindingKubeScheduler() (*rbacv1.RoleBinding, error) {
-	obj, err := LoadObject("manifests/sched/rolebinding-kube-sched.yaml")
+func SchedulerPluginRoleBindingKubeScheduler() (*rbacv1.RoleBinding, error) {
+	obj, err := loadObject("manifests/sched/rolebinding-kube-sched.yaml")
 	if err != nil {
 		return nil, err
 	}
@@ -183,12 +183,12 @@ func LoadSchedulerPluginRoleBindingKubeScheduler() (*rbacv1.RoleBinding, error) 
 	return crb, nil
 }
 
-func LoadResourceTopologyExporterClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
+func ResourceTopologyExporterClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
 	return loadClusterRoleBinding(ComponentResourceTopologyExporter, "")
 }
 
-func LoadResourceTopologyExporterDaemonSet() (*appsv1.DaemonSet, error) {
-	obj, err := LoadObject("manifests/rte/daemonset.yaml")
+func ResourceTopologyExporterDaemonSet() (*appsv1.DaemonSet, error) {
+	obj, err := loadObject("manifests/rte/daemonset.yaml")
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +205,7 @@ func SerializeObject(obj runtime.Object, out io.Writer) error {
 	return srz.Encode(obj, out)
 }
 
-func LoadObject(path string) (runtime.Object, error) {
+func loadObject(path string) (runtime.Object, error) {
 	data, err := src.ReadFile(path)
 	if err != nil {
 		return nil, err

@@ -48,7 +48,7 @@ func NewRenderCommand(commonOpts *CommonOptions) *cobra.Command {
 func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *renderOptions, args []string) error {
 	var objs []runtime.Object
 
-	crd, err := manifests.LoadAPICRD()
+	crd, err := manifests.APICRD()
 	if err != nil {
 		return err
 	}
@@ -79,31 +79,31 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 func loadRTEManifests() ([]runtime.Object, error) {
 	var objs []runtime.Object
 
-	ns, err := manifests.LoadNamespace(manifests.ComponentResourceTopologyExporter)
+	ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
 	if err != nil {
 		return nil, err
 	}
 	objs = append(objs, ns)
 
-	sa, err := manifests.LoadServiceAccount(manifests.ComponentResourceTopologyExporter)
+	sa, err := manifests.ServiceAccount(manifests.ComponentResourceTopologyExporter)
 	if err != nil {
 		return nil, err
 	}
 	objs = append(objs, sa)
 
-	cr, err := manifests.LoadClusterRole(manifests.ComponentResourceTopologyExporter)
+	cr, err := manifests.ClusterRole(manifests.ComponentResourceTopologyExporter)
 	if err != nil {
 		return nil, err
 	}
 	objs = append(objs, cr)
 
-	crb, err := manifests.LoadResourceTopologyExporterClusterRoleBinding()
+	crb, err := manifests.ResourceTopologyExporterClusterRoleBinding()
 	if err != nil {
 		return nil, err
 	}
 	objs = append(objs, crb)
 
-	ds, err := manifests.LoadResourceTopologyExporterDaemonSet()
+	ds, err := manifests.ResourceTopologyExporterDaemonSet()
 	if err != nil {
 		return nil, err
 	}
@@ -117,28 +117,28 @@ type loadSchedCRBFunc func() (*rbacv1.ClusterRoleBinding, error)
 func loadSchedPluginManifests() ([]runtime.Object, error) {
 	var objs []runtime.Object
 
-	ns, err := manifests.LoadNamespace(manifests.ComponentSchedulerPlugin)
+	ns, err := manifests.Namespace(manifests.ComponentSchedulerPlugin)
 	if err != nil {
 		return nil, err
 	}
 	objs = append(objs, ns)
 
-	sa, err := manifests.LoadServiceAccount(manifests.ComponentSchedulerPlugin)
+	sa, err := manifests.ServiceAccount(manifests.ComponentSchedulerPlugin)
 	if err != nil {
 		return nil, err
 	}
 	objs = append(objs, sa)
 
-	cr, err := manifests.LoadClusterRole(manifests.ComponentSchedulerPlugin)
+	cr, err := manifests.ClusterRole(manifests.ComponentSchedulerPlugin)
 	if err != nil {
 		return nil, err
 	}
 	objs = append(objs, cr)
 
 	for _, loader := range []loadSchedCRBFunc{
-		manifests.LoadSchedulerPluginClusterRoleBindingKubeScheduler,
-		manifests.LoadSchedulerPluginClusterRoleBindingNodeResourceTopology,
-		manifests.LoadSchedulerPluginClusterRoleBindingVolumeScheduler,
+		manifests.SchedulerPluginClusterRoleBindingKubeScheduler,
+		manifests.SchedulerPluginClusterRoleBindingNodeResourceTopology,
+		manifests.SchedulerPluginClusterRoleBindingVolumeScheduler,
 	} {
 		crb, err := loader()
 		if err != nil {
@@ -148,19 +148,19 @@ func loadSchedPluginManifests() ([]runtime.Object, error) {
 
 	}
 
-	rb, err := manifests.LoadSchedulerPluginRoleBindingKubeScheduler()
+	rb, err := manifests.SchedulerPluginRoleBindingKubeScheduler()
 	if err != nil {
 		return nil, err
 	}
 	objs = append(objs, rb)
 
-	cm, err := manifests.LoadSchedulerPluginConfigMap()
+	cm, err := manifests.SchedulerPluginConfigMap()
 	if err != nil {
 		return nil, err
 	}
 	objs = append(objs, cm)
 
-	dp, err := manifests.LoadSchedulerPluginDeployment()
+	dp, err := manifests.SchedulerPluginDeployment()
 	if err != nil {
 		return nil, err
 	}
