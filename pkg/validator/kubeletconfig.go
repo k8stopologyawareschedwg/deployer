@@ -27,6 +27,7 @@ import (
 )
 
 const (
+	AreaCluster = "cluster"
 	AreaKubelet = "kubelet"
 )
 
@@ -66,8 +67,20 @@ func (vd Validator) ValidateClusterConfig(nodes []corev1.Node) ([]ValidationResu
 	}
 
 	vrs := []ValidationResult{}
-	for nodeName, kubeletConf := range kubeConfs {
-		vrs = append(vrs, vd.ValidateNodeKubeletConfig(nodeName, kubeletConf)...)
+	if len(kubeConfs) == 0 {
+		vd.Log.Printf("no worker nodes found")
+		vrs = append(vrs, ValidationResult{
+			/* no specific nodes: all are missing! */
+			Area: AreaCluster,
+			/* no specific component: there are no nodes at all! */
+			/* no specific Setting: all are missing! */
+			Expected: "worker nodes",
+			Detected: "none",
+		})
+	} else {
+		for nodeName, kubeletConf := range kubeConfs {
+			vrs = append(vrs, vd.ValidateNodeKubeletConfig(nodeName, kubeletConf)...)
+		}
 	}
 	return vrs, nil
 }
