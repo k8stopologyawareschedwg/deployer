@@ -17,15 +17,16 @@
 package sched
 
 import (
-	"github.com/fromanirh/deployer/pkg/deployer"
+	"log"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"log"
 
+	"github.com/fromanirh/deployer/pkg/deployer"
 	"github.com/fromanirh/deployer/pkg/manifests"
 )
 
@@ -59,15 +60,15 @@ func (mf Manifests) ToObjects() []runtime.Object {
 
 func (mf Manifests) EnforceNamespace() Manifests {
 	sched := Manifests{
-		Namespace : mf.Namespace.DeepCopy(),
-		ServiceAccount: mf.ServiceAccount.DeepCopy(),
-		ClusterRole: mf.ClusterRole.DeepCopy(),
-		CRBKubernetesScheduler: mf.CRBKubernetesScheduler.DeepCopy(),
+		Namespace:               mf.Namespace.DeepCopy(),
+		ServiceAccount:          mf.ServiceAccount.DeepCopy(),
+		ClusterRole:             mf.ClusterRole.DeepCopy(),
+		CRBKubernetesScheduler:  mf.CRBKubernetesScheduler.DeepCopy(),
 		CRBNodeResourceTopology: mf.CRBNodeResourceTopology.DeepCopy(),
-		CRBVolumeScheduler: mf.CRBVolumeScheduler.DeepCopy(),
-		RoleBinding: mf.RoleBinding.DeepCopy(),
-		ConfigMap: mf.ConfigMap.DeepCopy(),
-		Deployment: mf.Deployment.DeepCopy(),
+		CRBVolumeScheduler:      mf.CRBVolumeScheduler.DeepCopy(),
+		RoleBinding:             mf.RoleBinding.DeepCopy(),
+		ConfigMap:               mf.ConfigMap.DeepCopy(),
+		Deployment:              mf.Deployment.DeepCopy(),
 	}
 	sched.ServiceAccount.Namespace = mf.Namespace.Name
 	sched.ConfigMap.Namespace = mf.Namespace.Name
@@ -186,7 +187,7 @@ func Remove(logger *log.Logger, opts Options) error {
 	}
 
 	nsKey := types.NamespacedName{
-		Name: mf.Namespace.Name,
+		Name:      mf.Namespace.Name,
 		Namespace: metav1.NamespaceNone,
 	}
 

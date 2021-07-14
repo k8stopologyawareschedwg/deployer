@@ -18,10 +18,10 @@ package commands
 
 import (
 	"context"
-	"github.com/fromanirh/deployer/pkg/deployer/sched"
 
 	"github.com/fromanirh/deployer/pkg/clientutil"
 	"github.com/fromanirh/deployer/pkg/deployer/rte"
+	"github.com/fromanirh/deployer/pkg/deployer/sched"
 	"github.com/fromanirh/deployer/pkg/manifests"
 
 	"github.com/spf13/cobra"

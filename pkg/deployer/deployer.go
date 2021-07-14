@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"time"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fromanirh/deployer/pkg/clientutil"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type Helper struct {
@@ -51,7 +51,6 @@ func (hp *Helper) CreateObject(obj client.Object) error {
 	fmt.Printf("+%5s> created %s %q\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
 	return nil
 }
-
 
 func (hp *Helper) DeleteObject(obj client.Object) error {
 	if err := hp.cli.Delete(context.TODO(), obj); err != nil {
