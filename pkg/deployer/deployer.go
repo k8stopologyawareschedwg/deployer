@@ -43,16 +43,18 @@ func NewHelper(tag string) (*Helper, error) {
 
 func (hp *Helper) CreateObject(obj client.Object) error {
 	if err := hp.cli.Create(context.TODO(), obj); err != nil {
+		fmt.Printf("+%s> error creating %s %q: %v\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName(), err)
 		return err
 	}
-	fmt.Printf("+%s> created %s %q\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
+	fmt.Printf("+%5s> created %s %q\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
 	return nil
 }
 
 func (hp *Helper) DeleteObject(obj client.Object) error {
 	if err := hp.cli.Delete(context.TODO(), obj); err != nil {
+		fmt.Printf("+%s> error deleting %s %q: %v\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName(), err)
 		return err
 	}
-	fmt.Printf("+%s> deleted %s %q\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
+	fmt.Printf("+%5s> deleted %s %q\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
 	return nil
 }
