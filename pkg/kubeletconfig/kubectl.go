@@ -55,8 +55,13 @@ func NewKubectlFromEnv(logger *log.Logger) *Kubectl {
 	}
 	kubectlPath, ok := os.LookupEnv("KUBECTL")
 	if !ok {
-		kubectlPath = DefaultKubectlPath
-		logger.Printf("using default kubectl path: %q", DefaultKubectlPath)
+		var err error
+		kubectlPath, err = exec.LookPath("kubectl")
+		if err != nil {
+			logger.Printf("kubectl not found (%v), falling back to hardcoded default", err)
+			kubectlPath = DefaultKubectlPath
+		}
+		logger.Printf("using kubectl path: %q", kubectlPath)
 	}
 	return NewKubectl(logger, kubectlPath, kubeConfig)
 }
