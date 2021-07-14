@@ -38,6 +38,21 @@ type Manifests struct {
 	DaemonSet          *appsv1.DaemonSet
 }
 
+func (mf Manifests) EnforceNamespace() Manifests {
+	ret := Manifests{
+		Namespace: mf.Namespace.DeepCopy(),
+		ServiceAccount: mf.ServiceAccount.DeepCopy(),
+		ClusterRole: mf.ClusterRole.DeepCopy(),
+		ClusterRoleBinding: mf.ClusterRoleBinding.DeepCopy(),
+		DaemonSet: mf.DaemonSet.DeepCopy(),
+	}
+	ret.ServiceAccount.Namespace = ret.Namespace.Name
+	ret.ClusterRole.Namespace = ret.Namespace.Name
+	ret.ClusterRoleBinding.Namespace = ret.Namespace.Name
+	ret.DaemonSet.Namespace = ret.Namespace.Name
+	return ret
+}
+
 func (mf Manifests) ToObjects() []runtime.Object {
 	return []runtime.Object{
 		mf.Namespace,
@@ -77,20 +92,22 @@ func GetManifests() (Manifests, error) {
 func Deploy(logger *log.Logger, opts Options) error {
 	var err error
 
+	mf, err := GetManifests()
+	if err != nil {
+		return err
+	}
+	mf = mf.EnforceNamespace()
+	logger.Printf("manifests loaded")
+
 	hp, err := deployer.NewHelper("RTE")
 	if err != nil {
 		return err
 	}
 
-	mf, err := GetManifests()
-	if err != nil {
-		return err
-	}
-	logger.Printf("manifests loaded")
-
 	if err := hp.CreateObject(mf.Namespace); err != nil {
 		return err
 	}
+
 	if err := hp.CreateObject(mf.ServiceAccount); err != nil {
 		return err
 	}
@@ -122,6 +139,7 @@ func Remove(logger *log.Logger, opts Options) error {
 	if err != nil {
 		return err
 	}
+	mf = mf.EnforceNamespace()
 	logger.Printf("manifests loaded")
 
 	// no need to update in the remove path
