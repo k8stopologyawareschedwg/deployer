@@ -19,10 +19,12 @@ package deployer
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fromanirh/deployer/pkg/clientutil"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type Helper struct {
@@ -50,6 +52,7 @@ func (hp *Helper) CreateObject(obj client.Object) error {
 	return nil
 }
 
+
 func (hp *Helper) DeleteObject(obj client.Object) error {
 	if err := hp.cli.Delete(context.TODO(), obj); err != nil {
 		fmt.Printf("+%s> error deleting %s %q: %v\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName(), err)
@@ -57,4 +60,49 @@ func (hp *Helper) DeleteObject(obj client.Object) error {
 	}
 	fmt.Printf("+%5s> deleted %s %q\n", hp.tag, obj.GetObjectKind().GroupVersionKind().String(), obj.GetName())
 	return nil
+}
+
+func (hp *Helper) WaitForObjectToBeCreated(key client.ObjectKey, obj client.Object) error {
+	var err error
+	tries := 10
+	tryInterval := 2
+
+	for try := 0; try < tries; try++ {
+		err = hp.tryGetOnce(key, obj)
+
+		if k8serrors.IsNotFound(err) {
+			time.Sleep(time.Duration(tryInterval))
+		}
+
+		if err == nil {
+			return nil
+		}
+	}
+
+	return err
+}
+
+func (hp *Helper) WaitForObjectToBeDeleted(key client.ObjectKey, obj client.Object) error {
+	var err error
+	tries := 10
+	tryInterval := 2
+
+	for try := 0; try < tries; try++ {
+		err = hp.tryGetOnce(key, obj)
+
+		if err == nil {
+			time.Sleep(time.Duration(tryInterval))
+			continue
+		}
+
+		if k8serrors.IsNotFound(err) {
+			return nil
+		}
+	}
+
+	return err
+}
+
+func (hp *Helper) tryGetOnce(key client.ObjectKey, obj client.Object) error {
+	return hp.cli.Get(context.TODO(), key, obj)
 }
