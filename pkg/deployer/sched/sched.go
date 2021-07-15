@@ -159,7 +159,9 @@ func Deploy(logger *log.Logger, opts Options) error {
 	if err = hp.CreateObject(mf.ConfigMap); err != nil {
 		return err
 	}
-	if err = hp.CreateObject(mf.Deployment); err != nil {
+
+	dp := manifests.UpdateSchedulerPluginDeployment(mf.Deployment)
+	if err = hp.CreateObject(dp); err != nil {
 		return err
 	}
 
