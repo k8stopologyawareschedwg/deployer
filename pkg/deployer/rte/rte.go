@@ -43,21 +43,10 @@ func Deploy(logger *log.Logger, opts Options) error {
 		return err
 	}
 
-	if err := hp.CreateObject(mf.Namespace); err != nil {
-		return err
-	}
-	if err := hp.CreateObject(mf.ServiceAccount); err != nil {
-		return err
-	}
-	if err := hp.CreateObject(mf.ClusterRole); err != nil {
-		return err
-	}
-	if err := hp.CreateObject(mf.ClusterRoleBinding); err != nil {
-		return err
-	}
-	ds := manifests.UpdateResourceTopologyExporterDaemonSet(mf.DaemonSet)
-	if err := hp.CreateObject(ds); err != nil {
-		return err
+	for _, obj := range mf.ToObjects() {
+		if err := hp.CreateObject(obj); err != nil {
+			return err
+		}
 	}
 
 	dsKey := types.NamespacedName{

@@ -17,17 +17,19 @@
 package api
 
 import (
-	"github.com/fromanirh/deployer/pkg/manifests"
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/fromanirh/deployer/pkg/manifests"
 )
 
 type Manifests struct {
 	Crd *apiextensionv1.CustomResourceDefinition
 }
 
-func (mf Manifests) ToObjects() []runtime.Object {
-	return []runtime.Object{
+func (mf Manifests) ToObjects() []client.Object {
+	return []client.Object{
 		mf.Crd,
 	}
 }

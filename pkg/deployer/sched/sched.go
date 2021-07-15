@@ -45,34 +45,10 @@ func Deploy(logger *log.Logger, opts Options) error {
 		return err
 	}
 
-	if err = hp.CreateObject(mf.Namespace); err != nil {
-		return err
-	}
-	if err = hp.CreateObject(mf.ServiceAccount); err != nil {
-		return err
-	}
-	if err = hp.CreateObject(mf.ClusterRole); err != nil {
-		return err
-	}
-	if err = hp.CreateObject(mf.CRBKubernetesScheduler); err != nil {
-		return err
-	}
-	if err = hp.CreateObject(mf.CRBNodeResourceTopology); err != nil {
-		return err
-	}
-	if err = hp.CreateObject(mf.CRBVolumeScheduler); err != nil {
-		return err
-	}
-	if err = hp.CreateObject(mf.RoleBinding); err != nil {
-		return err
-	}
-	if err = hp.CreateObject(mf.ConfigMap); err != nil {
-		return err
-	}
-
-	dp := manifests.UpdateSchedulerPluginDeployment(mf.Deployment)
-	if err = hp.CreateObject(dp); err != nil {
-		return err
+	for _, obj := range mf.ToObjects() {
+		if err := hp.CreateObject(obj); err != nil {
+			return err
+		}
 	}
 
 	return nil

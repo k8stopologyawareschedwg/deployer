@@ -17,11 +17,13 @@
 package sched
 
 import (
-	"github.com/fromanirh/deployer/pkg/manifests"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/fromanirh/deployer/pkg/manifests"
 )
 
 type Manifests struct {
@@ -64,8 +66,8 @@ func (mf Manifests) UpdatePullspecs() Manifests {
 	return ret
 }
 
-func (mf Manifests) ToObjects() []runtime.Object {
-	return []runtime.Object{
+func (mf Manifests) ToObjects() []client.Object {
+	return []client.Object{
 		mf.Namespace,
 		mf.ServiceAccount,
 		mf.ClusterRole,

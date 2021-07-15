@@ -21,8 +21,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-
-	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fromanirh/deployer/pkg/manifests"
 	"github.com/fromanirh/deployer/pkg/manifests/api"
@@ -46,7 +45,7 @@ func NewRenderCommand(commonOpts *CommonOptions) *cobra.Command {
 }
 
 func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *renderOptions, args []string) error {
-	var objs []runtime.Object
+	var objs []client.Object
 
 	apiManifests, err := api.GetManifests()
 	if err != nil {
