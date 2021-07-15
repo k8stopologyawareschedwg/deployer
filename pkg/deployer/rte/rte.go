@@ -20,78 +20,19 @@ import (
 	"log"
 
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/fromanirh/deployer/pkg/deployer"
 	"github.com/fromanirh/deployer/pkg/manifests"
+	rtemanifests "github.com/fromanirh/deployer/pkg/manifests/rte"
 )
 
 type Options struct{}
 
-type Manifests struct {
-	Namespace          *corev1.Namespace
-	ServiceAccount     *corev1.ServiceAccount
-	ClusterRole        *rbacv1.ClusterRole
-	ClusterRoleBinding *rbacv1.ClusterRoleBinding
-	DaemonSet          *appsv1.DaemonSet
-}
-
-func (mf Manifests) UpdateNamespace() Manifests {
-	ret := Manifests{
-		Namespace:          mf.Namespace.DeepCopy(),
-		ServiceAccount:     mf.ServiceAccount.DeepCopy(),
-		ClusterRole:        mf.ClusterRole.DeepCopy(),
-		ClusterRoleBinding: mf.ClusterRoleBinding.DeepCopy(),
-		DaemonSet:          mf.DaemonSet.DeepCopy(),
-	}
-	ret.ServiceAccount.Namespace = ret.Namespace.Name
-	ret.DaemonSet.Namespace = ret.Namespace.Name
-	return ret
-}
-
-func (mf Manifests) ToObjects() []runtime.Object {
-	return []runtime.Object{
-		mf.Namespace,
-		mf.ServiceAccount,
-		mf.ClusterRole,
-		mf.ClusterRoleBinding,
-		mf.DaemonSet,
-	}
-}
-
-func GetManifests() (Manifests, error) {
-	var err error
-	mf := Manifests{}
-	mf.Namespace, err = manifests.Namespace(manifests.ComponentResourceTopologyExporter)
-	if err != nil {
-		return mf, err
-	}
-	mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentResourceTopologyExporter)
-	if err != nil {
-		return mf, err
-	}
-	mf.ClusterRole, err = manifests.ClusterRole(manifests.ComponentResourceTopologyExporter)
-	if err != nil {
-		return mf, err
-	}
-	mf.ClusterRoleBinding, err = manifests.ResourceTopologyExporterClusterRoleBinding()
-	if err != nil {
-		return mf, err
-	}
-	mf.DaemonSet, err = manifests.ResourceTopologyExporterDaemonSet()
-	if err != nil {
-		return mf, err
-	}
-	return mf, nil
-}
-
 func Deploy(logger *log.Logger, opts Options) error {
 	var err error
 
-	mf, err := GetManifests()
+	mf, err := rtemanifests.GetManifests()
 	if err != nil {
 		return err
 	}
@@ -140,7 +81,7 @@ func Remove(logger *log.Logger, opts Options) error {
 		return err
 	}
 
-	mf, err := GetManifests()
+	mf, err := rtemanifests.GetManifests()
 	if err != nil {
 		return err
 	}

@@ -14,7 +14,7 @@ update-deps:
 
 .PHONY: update-manifests
 update-manifests:
-	./pkg/manifests/manifests/update.sh
+	./pkg/manifests/yaml/update.sh
 
 deployer: outdir
 	go build -o _out/deployer ./cmd/deployer/

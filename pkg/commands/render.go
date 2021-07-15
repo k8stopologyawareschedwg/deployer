@@ -24,10 +24,10 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"github.com/fromanirh/deployer/pkg/deployer/api"
-	"github.com/fromanirh/deployer/pkg/deployer/rte"
-	"github.com/fromanirh/deployer/pkg/deployer/sched"
 	"github.com/fromanirh/deployer/pkg/manifests"
+	"github.com/fromanirh/deployer/pkg/manifests/api"
+	"github.com/fromanirh/deployer/pkg/manifests/rte"
+	"github.com/fromanirh/deployer/pkg/manifests/sched"
 )
 
 type renderOptions struct{}
