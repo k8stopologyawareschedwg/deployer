@@ -52,19 +52,19 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	if err != nil {
 		return err
 	}
-	objs = append(objs, apiManifests.UpdateNamespace().ToObjects()...)
+	objs = append(objs, apiManifests.UpdateNamespace().UpdatePullspecs().ToObjects()...)
 
 	rteManifests, err := rte.GetManifests()
 	if err != nil {
 		return err
 	}
-	objs = append(objs, rteManifests.UpdateNamespace().ToObjects()...)
+	objs = append(objs, rteManifests.UpdateNamespace().UpdatePullspecs().ToObjects()...)
 
 	schedManifests, err := sched.GetManifests()
 	if err != nil {
 		return err
 	}
-	objs = append(objs, schedManifests.UpdateNamespace().ToObjects()...)
+	objs = append(objs, schedManifests.UpdateNamespace().UpdatePullspecs().ToObjects()...)
 
 	for _, obj := range objs {
 		fmt.Printf("---\n")

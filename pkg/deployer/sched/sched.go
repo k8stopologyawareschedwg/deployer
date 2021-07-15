@@ -37,7 +37,7 @@ func Deploy(logger *log.Logger, opts Options) error {
 		return err
 	}
 
-	mf = mf.UpdateNamespace()
+	mf = mf.UpdateNamespace().UpdatePullspecs()
 	logger.Printf("SCHED manifests loaded")
 
 	hp, err := deployer.NewHelper("SCHED")

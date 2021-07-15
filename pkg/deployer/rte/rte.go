@@ -23,7 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/fromanirh/deployer/pkg/deployer"
-	"github.com/fromanirh/deployer/pkg/manifests"
 	rtemanifests "github.com/fromanirh/deployer/pkg/manifests/rte"
 )
 
@@ -36,7 +35,7 @@ func Deploy(logger *log.Logger, opts Options) error {
 	if err != nil {
 		return err
 	}
-	mf = mf.UpdateNamespace()
+	mf = mf.UpdateNamespace().UpdatePullspecs()
 	logger.Printf("  RTE manifests loaded")
 
 	hp, err := deployer.NewHelper("RTE")

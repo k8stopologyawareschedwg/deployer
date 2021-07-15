@@ -32,16 +32,26 @@ type Manifests struct {
 	DaemonSet          *appsv1.DaemonSet
 }
 
-func (mf Manifests) UpdateNamespace() Manifests {
-	ret := Manifests{
+func (mf Manifests) Clone() Manifests {
+	return Manifests{
 		Namespace:          mf.Namespace.DeepCopy(),
 		ServiceAccount:     mf.ServiceAccount.DeepCopy(),
 		ClusterRole:        mf.ClusterRole.DeepCopy(),
 		ClusterRoleBinding: mf.ClusterRoleBinding.DeepCopy(),
 		DaemonSet:          mf.DaemonSet.DeepCopy(),
 	}
+}
+
+func (mf Manifests) UpdateNamespace() Manifests {
+	ret := mf.Clone()
 	ret.ServiceAccount.Namespace = ret.Namespace.Name
 	ret.DaemonSet.Namespace = ret.Namespace.Name
+	return ret
+}
+
+func (mf Manifests) UpdatePullspecs() Manifests {
+	ret := mf.Clone()
+	ret.DaemonSet = manifests.UpdateResourceTopologyExporterDaemonSet(ret.DaemonSet)
 	return ret
 }
 

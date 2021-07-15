@@ -32,10 +32,20 @@ func (mf Manifests) ToObjects() []runtime.Object {
 	}
 }
 
-func (mf Manifests) UpdateNamespace() Manifests {
-	ret := Manifests{
+func (mf Manifests) Clone() Manifests {
+	return Manifests{
 		Crd: mf.Crd.DeepCopy(),
 	}
+}
+
+func (mf Manifests) UpdateNamespace() Manifests {
+	ret := mf.Clone()
+	// nothing to do atm
+	return ret
+}
+
+func (mf Manifests) UpdatePullspecs() Manifests {
+	ret := mf.Clone()
 	// nothing to do atm
 	return ret
 }

@@ -36,6 +36,34 @@ type Manifests struct {
 	Deployment              *appsv1.Deployment
 }
 
+func (mf Manifests) Clone() Manifests {
+	return Manifests{
+		Namespace:               mf.Namespace.DeepCopy(),
+		ServiceAccount:          mf.ServiceAccount.DeepCopy(),
+		ClusterRole:             mf.ClusterRole.DeepCopy(),
+		CRBKubernetesScheduler:  mf.CRBKubernetesScheduler.DeepCopy(),
+		CRBNodeResourceTopology: mf.CRBNodeResourceTopology.DeepCopy(),
+		CRBVolumeScheduler:      mf.CRBVolumeScheduler.DeepCopy(),
+		RoleBinding:             mf.RoleBinding.DeepCopy(),
+		ConfigMap:               mf.ConfigMap.DeepCopy(),
+		Deployment:              mf.Deployment.DeepCopy(),
+	}
+}
+
+func (mf Manifests) UpdateNamespace() Manifests {
+	ret := mf.Clone()
+	ret.ServiceAccount.Namespace = mf.Namespace.Name
+	ret.ConfigMap.Namespace = mf.Namespace.Name
+	ret.Deployment.Namespace = mf.Namespace.Name
+	return ret
+}
+
+func (mf Manifests) UpdatePullspecs() Manifests {
+	ret := mf.Clone()
+	ret.Deployment = manifests.UpdateSchedulerPluginDeployment(ret.Deployment)
+	return ret
+}
+
 func (mf Manifests) ToObjects() []runtime.Object {
 	return []runtime.Object{
 		mf.Namespace,
@@ -48,25 +76,6 @@ func (mf Manifests) ToObjects() []runtime.Object {
 		mf.ConfigMap,
 		mf.Deployment,
 	}
-}
-
-func (mf Manifests) UpdateNamespace() Manifests {
-	sched := Manifests{
-		Namespace:               mf.Namespace.DeepCopy(),
-		ServiceAccount:          mf.ServiceAccount.DeepCopy(),
-		ClusterRole:             mf.ClusterRole.DeepCopy(),
-		CRBKubernetesScheduler:  mf.CRBKubernetesScheduler.DeepCopy(),
-		CRBNodeResourceTopology: mf.CRBNodeResourceTopology.DeepCopy(),
-		CRBVolumeScheduler:      mf.CRBVolumeScheduler.DeepCopy(),
-		RoleBinding:             mf.RoleBinding.DeepCopy(),
-		ConfigMap:               mf.ConfigMap.DeepCopy(),
-		Deployment:              mf.Deployment.DeepCopy(),
-	}
-	sched.ServiceAccount.Namespace = mf.Namespace.Name
-	sched.ConfigMap.Namespace = mf.Namespace.Name
-	sched.Deployment.Namespace = mf.Namespace.Name
-
-	return sched
 }
 
 func GetManifests() (Manifests, error) {
