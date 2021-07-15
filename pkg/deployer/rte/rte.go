@@ -23,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/fromanirh/deployer/pkg/deployer"
 	"github.com/fromanirh/deployer/pkg/manifests"
@@ -120,7 +121,14 @@ func Deploy(logger *log.Logger, opts Options) error {
 		return err
 	}
 
-	// TODO: (optional) wait for the DS to go running
+	dsKey := types.NamespacedName{
+		Name: mf.DaemonSet.Name,
+		Namespace: mf.Namespace.Name,
+	}
+
+	if err = hp.WaitForObjectToBeCreated(dsKey, &appsv1.DaemonSet{}); err != nil {
+		return err
+	}
 
 	return nil
 }
