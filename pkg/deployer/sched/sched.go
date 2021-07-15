@@ -128,9 +128,9 @@ func Deploy(logger *log.Logger, opts Options) error {
 	}
 
 	mf = mf.EnforceNamespace()
-	logger.Printf("manifests loaded")
+	logger.Printf("SCHED manifests loaded")
 
-	hp, err := deployer.NewHelper("RTE")
+	hp, err := deployer.NewHelper("SCHED")
 	if err != nil {
 		return err
 	}
@@ -175,9 +175,9 @@ func Remove(logger *log.Logger, opts Options) error {
 	}
 
 	mf = mf.EnforceNamespace()
-	logger.Printf("manifests loaded")
+	logger.Printf("SCHED manifests loaded")
 
-	hp, err := deployer.NewHelper("RTE")
+	hp, err := deployer.NewHelper("SCHED")
 	if err != nil {
 		return err
 	}

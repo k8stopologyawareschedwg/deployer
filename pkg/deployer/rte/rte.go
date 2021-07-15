@@ -95,7 +95,7 @@ func Deploy(logger *log.Logger, opts Options) error {
 		return err
 	}
 	mf = mf.EnforceNamespace()
-	logger.Printf("manifests loaded")
+	logger.Printf("  RTE manifests loaded")
 
 	hp, err := deployer.NewHelper("RTE")
 	if err != nil {
@@ -138,7 +138,7 @@ func Remove(logger *log.Logger, opts Options) error {
 		return err
 	}
 	mf = mf.EnforceNamespace()
-	logger.Printf("manifests loaded")
+	logger.Printf("  RTE manifests loaded")
 
 	// since we created everything in the namespace, we can just do
 	if err := hp.DeleteObject(mf.Namespace); err != nil {
