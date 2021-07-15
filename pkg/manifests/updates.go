@@ -9,15 +9,17 @@ import (
 )
 
 func UpdateSchedulerPluginDeployment(dp *appsv1.Deployment) *appsv1.Deployment {
-	dp.Spec.Template.Spec.Containers[0].Image = images.SchedulerPluginImage
-	return dp
+	ret := dp.DeepCopy()
+	ret.Spec.Template.Spec.Containers[0].Image = images.SchedulerPluginImage
+	return ret
 }
 
 func UpdateResourceTopologyExporterDaemonSet(ds *appsv1.DaemonSet) *appsv1.DaemonSet {
+	ret := ds.DeepCopy()
 	// TODO: better match by name than assume container#0 is RTE proper (not minion)
-	ds.Spec.Template.Spec.Containers[0].Image = images.ResourceTopologyExporterImage
-	ds.Spec.Template.Spec.Containers[0].Command = UpdateResourceTopologyExporterCommand(ds.Spec.Template.Spec.Containers[0].Command)
-	return ds
+	ret.Spec.Template.Spec.Containers[0].Image = images.ResourceTopologyExporterImage
+	ret.Spec.Template.Spec.Containers[0].Command = UpdateResourceTopologyExporterCommand(ds.Spec.Template.Spec.Containers[0].Command)
+	return ret
 }
 
 func UpdateResourceTopologyExporterCommand(args []string) []string {
