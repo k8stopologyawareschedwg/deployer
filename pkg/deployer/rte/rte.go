@@ -39,7 +39,7 @@ type Manifests struct {
 	DaemonSet          *appsv1.DaemonSet
 }
 
-func (mf Manifests) EnforceNamespace() Manifests {
+func (mf Manifests) UpdateNamespace() Manifests {
 	ret := Manifests{
 		Namespace:          mf.Namespace.DeepCopy(),
 		ServiceAccount:     mf.ServiceAccount.DeepCopy(),
@@ -95,7 +95,7 @@ func Deploy(logger *log.Logger, opts Options) error {
 	if err != nil {
 		return err
 	}
-	mf = mf.EnforceNamespace()
+	mf = mf.UpdateNamespace()
 	logger.Printf("  RTE manifests loaded")
 
 	hp, err := deployer.NewHelper("RTE")
@@ -106,7 +106,6 @@ func Deploy(logger *log.Logger, opts Options) error {
 	if err := hp.CreateObject(mf.Namespace); err != nil {
 		return err
 	}
-
 	if err := hp.CreateObject(mf.ServiceAccount); err != nil {
 		return err
 	}
@@ -122,7 +121,7 @@ func Deploy(logger *log.Logger, opts Options) error {
 	}
 
 	dsKey := types.NamespacedName{
-		Name: mf.DaemonSet.Name,
+		Name:      mf.DaemonSet.Name,
 		Namespace: mf.Namespace.Name,
 	}
 
@@ -145,7 +144,7 @@ func Remove(logger *log.Logger, opts Options) error {
 	if err != nil {
 		return err
 	}
-	mf = mf.EnforceNamespace()
+	mf = mf.UpdateNamespace()
 	logger.Printf("  RTE manifests loaded")
 
 	// since we created everything in the namespace, we can just do

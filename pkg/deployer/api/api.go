@@ -17,26 +17,35 @@
 package api
 
 import (
+	"log"
+
 	"github.com/fromanirh/deployer/pkg/deployer"
 	"github.com/fromanirh/deployer/pkg/manifests"
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"log"
 )
 
-type Options struct {}
+type Options struct{}
 
 type Manifests struct {
-    Crd *apiextensionv1.CustomResourceDefinition
+	Crd *apiextensionv1.CustomResourceDefinition
 }
 
-func (mf *Manifests) ToObject() []runtime.Object {
-	return []runtime.Object {
+func (mf Manifests) ToObjects() []runtime.Object {
+	return []runtime.Object{
 		mf.Crd,
 	}
 }
 
-func GetManifest() (Manifests, error) {
+func (mf Manifests) UpdateNamespace() Manifests {
+	ret := Manifests{
+		Crd: mf.Crd.DeepCopy(),
+	}
+	// nothing to do atm
+	return ret
+}
+
+func GetManifests() (Manifests, error) {
 	var err error
 	mf := Manifests{}
 
@@ -51,7 +60,7 @@ func GetManifest() (Manifests, error) {
 func Deploy(logger *log.Logger, opts Options) error {
 	var err error
 
-	mf, err := GetManifest()
+	mf, err := GetManifests()
 	if err != nil {
 		return err
 	}
@@ -72,7 +81,7 @@ func Deploy(logger *log.Logger, opts Options) error {
 func Remove(logger *log.Logger, opts Options) error {
 	var err error
 
-	mf, err := GetManifest()
+	mf, err := GetManifests()
 	if err != nil {
 		return err
 	}

@@ -58,7 +58,7 @@ func (mf Manifests) ToObjects() []runtime.Object {
 	}
 }
 
-func (mf Manifests) EnforceNamespace() Manifests {
+func (mf Manifests) UpdateNamespace() Manifests {
 	sched := Manifests{
 		Namespace:               mf.Namespace.DeepCopy(),
 		ServiceAccount:          mf.ServiceAccount.DeepCopy(),
@@ -127,7 +127,7 @@ func Deploy(logger *log.Logger, opts Options) error {
 		return err
 	}
 
-	mf = mf.EnforceNamespace()
+	mf = mf.UpdateNamespace()
 	logger.Printf("SCHED manifests loaded")
 
 	hp, err := deployer.NewHelper("SCHED")
@@ -174,7 +174,7 @@ func Remove(logger *log.Logger, opts Options) error {
 		return err
 	}
 
-	mf = mf.EnforceNamespace()
+	mf = mf.UpdateNamespace()
 	logger.Printf("SCHED manifests loaded")
 
 	hp, err := deployer.NewHelper("SCHED")

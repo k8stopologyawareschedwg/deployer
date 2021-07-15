@@ -24,6 +24,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
+	"github.com/fromanirh/deployer/pkg/deployer/api"
 	"github.com/fromanirh/deployer/pkg/deployer/rte"
 	"github.com/fromanirh/deployer/pkg/deployer/sched"
 	"github.com/fromanirh/deployer/pkg/manifests"
@@ -47,23 +48,23 @@ func NewRenderCommand(commonOpts *CommonOptions) *cobra.Command {
 func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *renderOptions, args []string) error {
 	var objs []runtime.Object
 
-	crd, err := manifests.APICRD()
+	apiManifests, err := api.GetManifests()
 	if err != nil {
 		return err
 	}
-	objs = append(objs, crd)
+	objs = append(objs, apiManifests.UpdateNamespace().ToObjects()...)
 
 	rteManifests, err := rte.GetManifests()
 	if err != nil {
 		return err
 	}
-	objs = append(objs, rteManifests.ToObjects()...)
+	objs = append(objs, rteManifests.UpdateNamespace().ToObjects()...)
 
 	schedManifests, err := sched.GetManifests()
 	if err != nil {
 		return err
 	}
-	objs = append(objs, schedManifests.ToObjects()...)
+	objs = append(objs, schedManifests.UpdateNamespace().ToObjects()...)
 
 	for _, obj := range objs {
 		fmt.Printf("---\n")
