@@ -51,10 +51,16 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "remove",
 		Short: "remove the components and configurations needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := sched.Remove(commonOpts.Log, sched.Options{}); err != nil {
+				return err
+			}
+			if err := rte.Remove(commonOpts.Log, rte.Options{}); err != nil {
+				return err
+			}
 			if err := Remove(opts); err != nil {
 				return err
 			}
-			return rte.Remove(commonOpts.Log, rte.Options{})
+			return nil
 		},
 		Args: cobra.NoArgs,
 	}
@@ -146,7 +152,13 @@ func deployOnCluster(commonOpts *CommonOptions, opts *deployOptions) error {
 	if err := Deploy(opts); err != nil {
 		return err
 	}
-	return rte.Deploy(commonOpts.Log, rte.Options{})
+	if err := rte.Deploy(commonOpts.Log, rte.Options{}); err != nil {
+		return err
+	}
+	if err := sched.Deploy(commonOpts.Log, sched.Options{}); err != nil {
+		return err
+	}
+	return nil
 }
 
 func Deploy(opts *deployOptions) error {
