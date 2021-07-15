@@ -21,13 +21,12 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"k8s.io/apimachinery/pkg/runtime"
-
-	"github.com/fromanirh/deployer/pkg/deployer/api"
-	"github.com/fromanirh/deployer/pkg/deployer/rte"
-	"github.com/fromanirh/deployer/pkg/deployer/sched"
 	"github.com/fromanirh/deployer/pkg/manifests"
+	"github.com/fromanirh/deployer/pkg/manifests/api"
+	"github.com/fromanirh/deployer/pkg/manifests/rte"
+	"github.com/fromanirh/deployer/pkg/manifests/sched"
 )
 
 type renderOptions struct{}
@@ -46,25 +45,25 @@ func NewRenderCommand(commonOpts *CommonOptions) *cobra.Command {
 }
 
 func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *renderOptions, args []string) error {
-	var objs []runtime.Object
+	var objs []client.Object
 
 	apiManifests, err := api.GetManifests()
 	if err != nil {
 		return err
 	}
-	objs = append(objs, apiManifests.UpdateNamespace().ToObjects()...)
+	objs = append(objs, apiManifests.UpdateNamespace().UpdatePullspecs().ToObjects()...)
 
 	rteManifests, err := rte.GetManifests()
 	if err != nil {
 		return err
 	}
-	objs = append(objs, rteManifests.UpdateNamespace().ToObjects()...)
+	objs = append(objs, rteManifests.UpdateNamespace().UpdatePullspecs().ToObjects()...)
 
 	schedManifests, err := sched.GetManifests()
 	if err != nil {
 		return err
 	}
-	objs = append(objs, schedManifests.UpdateNamespace().ToObjects()...)
+	objs = append(objs, schedManifests.UpdateNamespace().UpdatePullspecs().ToObjects()...)
 
 	for _, obj := range objs {
 		fmt.Printf("---\n")

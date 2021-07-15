@@ -38,7 +38,7 @@ const (
 	ComponentResourceTopologyExporter = "rte"
 )
 
-//go:embed manifests
+//go:embed yaml
 var src embed.FS
 
 func init() {
@@ -50,7 +50,7 @@ func Namespace(component string) (*corev1.Namespace, error) {
 		return nil, err
 	}
 
-	obj, err := loadObject(filepath.Join("manifests", component, "namespace.yaml"))
+	obj, err := loadObject(filepath.Join("yaml", component, "namespace.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func ServiceAccount(component string) (*corev1.ServiceAccount, error) {
 		return nil, err
 	}
 
-	obj, err := loadObject(filepath.Join("manifests", component, "serviceaccount.yaml"))
+	obj, err := loadObject(filepath.Join("yaml", component, "serviceaccount.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func ClusterRole(component string) (*rbacv1.ClusterRole, error) {
 		return nil, err
 	}
 
-	obj, err := loadObject(filepath.Join("manifests", component, "clusterrole.yaml"))
+	obj, err := loadObject(filepath.Join("yaml", component, "clusterrole.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func ClusterRole(component string) (*rbacv1.ClusterRole, error) {
 }
 
 func APICRD() (*apiextensionv1.CustomResourceDefinition, error) {
-	obj, err := loadObject("manifests/api/crd.yaml")
+	obj, err := loadObject("yaml/api/crd.yaml")
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func APICRD() (*apiextensionv1.CustomResourceDefinition, error) {
 }
 
 func SchedulerPluginConfigMap() (*corev1.ConfigMap, error) {
-	obj, err := loadObject("manifests/sched/configmap.yaml")
+	obj, err := loadObject("yaml/sched/configmap.yaml")
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func SchedulerPluginConfigMap() (*corev1.ConfigMap, error) {
 }
 
 func SchedulerPluginDeployment() (*appsv1.Deployment, error) {
-	obj, err := loadObject("manifests/sched/deployment.yaml")
+	obj, err := loadObject("yaml/sched/deployment.yaml")
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func loadClusterRoleBinding(component, detail string) (*rbacv1.ClusterRoleBindin
 	if detail != "" {
 		crbName = fmt.Sprintf("clusterrolebinding-%s.yaml", detail)
 	}
-	obj, err := loadObject(filepath.Join("manifests", component, crbName))
+	obj, err := loadObject(filepath.Join("yaml", component, crbName))
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func SchedulerPluginClusterRoleBindingVolumeScheduler() (*rbacv1.ClusterRoleBind
 }
 
 func SchedulerPluginRoleBindingKubeScheduler() (*rbacv1.RoleBinding, error) {
-	obj, err := loadObject("manifests/sched/rolebinding-kube-sched.yaml")
+	obj, err := loadObject("yaml/sched/rolebinding-kube-sched.yaml")
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func ResourceTopologyExporterClusterRoleBinding() (*rbacv1.ClusterRoleBinding, e
 }
 
 func ResourceTopologyExporterDaemonSet() (*appsv1.DaemonSet, error) {
-	obj, err := loadObject("manifests/rte/daemonset.yaml")
+	obj, err := loadObject("yaml/rte/daemonset.yaml")
 	if err != nil {
 		return nil, err
 	}

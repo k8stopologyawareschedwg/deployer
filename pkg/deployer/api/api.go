@@ -20,47 +20,15 @@ import (
 	"log"
 
 	"github.com/fromanirh/deployer/pkg/deployer"
-	"github.com/fromanirh/deployer/pkg/manifests"
-	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	apimanifests "github.com/fromanirh/deployer/pkg/manifests/api"
 )
 
 type Options struct{}
 
-type Manifests struct {
-	Crd *apiextensionv1.CustomResourceDefinition
-}
-
-func (mf Manifests) ToObjects() []runtime.Object {
-	return []runtime.Object{
-		mf.Crd,
-	}
-}
-
-func (mf Manifests) UpdateNamespace() Manifests {
-	ret := Manifests{
-		Crd: mf.Crd.DeepCopy(),
-	}
-	// nothing to do atm
-	return ret
-}
-
-func GetManifests() (Manifests, error) {
-	var err error
-	mf := Manifests{}
-
-	mf.Crd, err = manifests.APICRD()
-	if err != nil {
-		return mf, err
-	}
-
-	return mf, nil
-}
-
 func Deploy(logger *log.Logger, opts Options) error {
 	var err error
 
-	mf, err := GetManifests()
+	mf, err := apimanifests.GetManifests()
 	if err != nil {
 		return err
 	}
@@ -81,7 +49,7 @@ func Deploy(logger *log.Logger, opts Options) error {
 func Remove(logger *log.Logger, opts Options) error {
 	var err error
 
-	mf, err := GetManifests()
+	mf, err := apimanifests.GetManifests()
 	if err != nil {
 		return err
 	}

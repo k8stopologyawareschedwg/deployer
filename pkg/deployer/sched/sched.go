@@ -19,115 +19,25 @@ package sched
 import (
 	"log"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/fromanirh/deployer/pkg/deployer"
-	"github.com/fromanirh/deployer/pkg/manifests"
+	schedmanifests "github.com/fromanirh/deployer/pkg/manifests/sched"
 )
 
 type Options struct{}
 
-type Manifests struct {
-	Namespace               *corev1.Namespace
-	ServiceAccount          *corev1.ServiceAccount
-	ClusterRole             *rbacv1.ClusterRole
-	CRBKubernetesScheduler  *rbacv1.ClusterRoleBinding
-	CRBNodeResourceTopology *rbacv1.ClusterRoleBinding
-	CRBVolumeScheduler      *rbacv1.ClusterRoleBinding
-	RoleBinding             *rbacv1.RoleBinding
-	ConfigMap               *corev1.ConfigMap
-	Deployment              *appsv1.Deployment
-}
-
-func (mf Manifests) ToObjects() []runtime.Object {
-	return []runtime.Object{
-		mf.Namespace,
-		mf.ServiceAccount,
-		mf.ClusterRole,
-		mf.CRBKubernetesScheduler,
-		mf.CRBNodeResourceTopology,
-		mf.CRBVolumeScheduler,
-		mf.RoleBinding,
-		mf.ConfigMap,
-		mf.Deployment,
-	}
-}
-
-func (mf Manifests) UpdateNamespace() Manifests {
-	sched := Manifests{
-		Namespace:               mf.Namespace.DeepCopy(),
-		ServiceAccount:          mf.ServiceAccount.DeepCopy(),
-		ClusterRole:             mf.ClusterRole.DeepCopy(),
-		CRBKubernetesScheduler:  mf.CRBKubernetesScheduler.DeepCopy(),
-		CRBNodeResourceTopology: mf.CRBNodeResourceTopology.DeepCopy(),
-		CRBVolumeScheduler:      mf.CRBVolumeScheduler.DeepCopy(),
-		RoleBinding:             mf.RoleBinding.DeepCopy(),
-		ConfigMap:               mf.ConfigMap.DeepCopy(),
-		Deployment:              mf.Deployment.DeepCopy(),
-	}
-	sched.ServiceAccount.Namespace = mf.Namespace.Name
-	sched.ConfigMap.Namespace = mf.Namespace.Name
-	sched.Deployment.Namespace = mf.Namespace.Name
-
-	return sched
-}
-
-func GetManifests() (Manifests, error) {
-	var err error
-	mf := Manifests{}
-	mf.Namespace, err = manifests.Namespace(manifests.ComponentSchedulerPlugin)
-	if err != nil {
-		return mf, err
-	}
-	mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin)
-	if err != nil {
-		return mf, err
-	}
-	mf.ClusterRole, err = manifests.ClusterRole(manifests.ComponentSchedulerPlugin)
-	if err != nil {
-		return mf, err
-	}
-	mf.CRBKubernetesScheduler, err = manifests.SchedulerPluginClusterRoleBindingKubeScheduler()
-	if err != nil {
-		return mf, err
-	}
-	mf.CRBNodeResourceTopology, err = manifests.SchedulerPluginClusterRoleBindingNodeResourceTopology()
-	if err != nil {
-		return mf, err
-	}
-	mf.CRBVolumeScheduler, err = manifests.SchedulerPluginClusterRoleBindingVolumeScheduler()
-	if err != nil {
-		return mf, err
-	}
-	mf.RoleBinding, err = manifests.SchedulerPluginRoleBindingKubeScheduler()
-	if err != nil {
-		return mf, err
-	}
-	mf.ConfigMap, err = manifests.SchedulerPluginConfigMap()
-	if err != nil {
-		return mf, err
-	}
-	mf.Deployment, err = manifests.SchedulerPluginDeployment()
-	if err != nil {
-		return mf, err
-	}
-	return mf, nil
-}
-
 func Deploy(logger *log.Logger, opts Options) error {
 	var err error
 
-	mf, err := GetManifests()
+	mf, err := schedmanifests.GetManifests()
 	if err != nil {
 		return err
 	}
 
-	mf = mf.UpdateNamespace()
+	mf = mf.UpdateNamespace().UpdatePullspecs()
 	logger.Printf("SCHED manifests loaded")
 
 	hp, err := deployer.NewHelper("SCHED")
@@ -135,34 +45,10 @@ func Deploy(logger *log.Logger, opts Options) error {
 		return err
 	}
 
-	if err = hp.CreateObject(mf.Namespace); err != nil {
-		return err
-	}
-	if err = hp.CreateObject(mf.ServiceAccount); err != nil {
-		return err
-	}
-	if err = hp.CreateObject(mf.ClusterRole); err != nil {
-		return err
-	}
-	if err = hp.CreateObject(mf.CRBKubernetesScheduler); err != nil {
-		return err
-	}
-	if err = hp.CreateObject(mf.CRBNodeResourceTopology); err != nil {
-		return err
-	}
-	if err = hp.CreateObject(mf.CRBVolumeScheduler); err != nil {
-		return err
-	}
-	if err = hp.CreateObject(mf.RoleBinding); err != nil {
-		return err
-	}
-	if err = hp.CreateObject(mf.ConfigMap); err != nil {
-		return err
-	}
-
-	dp := manifests.UpdateSchedulerPluginDeployment(mf.Deployment)
-	if err = hp.CreateObject(dp); err != nil {
-		return err
+	for _, obj := range mf.ToObjects() {
+		if err := hp.CreateObject(obj); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -171,7 +57,7 @@ func Deploy(logger *log.Logger, opts Options) error {
 func Remove(logger *log.Logger, opts Options) error {
 	var err error
 
-	mf, err := GetManifests()
+	mf, err := schedmanifests.GetManifests()
 	if err != nil {
 		return err
 	}
