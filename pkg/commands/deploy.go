@@ -17,12 +17,9 @@
 package commands
 
 import (
-	"context"
-
-	"github.com/fromanirh/deployer/pkg/clientutil"
+	"github.com/fromanirh/deployer/pkg/deployer/api"
 	"github.com/fromanirh/deployer/pkg/deployer/rte"
 	"github.com/fromanirh/deployer/pkg/deployer/sched"
-	"github.com/fromanirh/deployer/pkg/manifests"
 
 	"github.com/spf13/cobra"
 )
@@ -57,7 +54,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			if err := rte.Remove(commonOpts.Log, rte.Options{}); err != nil {
 				return err
 			}
-			if err := Remove(opts); err != nil {
+			if err := api.Remove(commonOpts.Log, api.Options{}); err != nil {
 				return err
 			}
 			return nil
@@ -75,7 +72,7 @@ func NewDeployAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.
 		Use:   "api",
 		Short: "deploy the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := Deploy(opts); err != nil {
+			if err := api.Deploy(commonOpts.Log, api.Options{}); err != nil {
 				return err
 			}
 			return nil
@@ -114,7 +111,7 @@ func NewRemoveAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.
 		Use:   "api",
 		Short: "remove the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := Remove(opts); err != nil {
+			if err := api.Remove(commonOpts.Log, api.Options{}); err != nil {
 				return err
 			}
 			return nil
@@ -149,49 +146,13 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 }
 
 func deployOnCluster(commonOpts *CommonOptions, opts *deployOptions) error {
-	if err := Deploy(opts); err != nil {
+	if err := api.Deploy(commonOpts.Log, api.Options{}); err != nil {
 		return err
 	}
 	if err := rte.Deploy(commonOpts.Log, rte.Options{}); err != nil {
 		return err
 	}
 	if err := sched.Deploy(commonOpts.Log, sched.Options{}); err != nil {
-		return err
-	}
-	return nil
-}
-
-func Deploy(opts *deployOptions) error {
-	cs, err := clientutil.New()
-	if err != nil {
-		return err
-	}
-
-	crd, err := manifests.APICRD()
-	if err != nil {
-		return err
-	}
-
-	err = cs.Create(context.TODO(), crd)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func Remove(opts *deployOptions) error {
-	cs, err := clientutil.New()
-	if err != nil {
-		return err
-	}
-
-	crd, err := manifests.APICRD()
-	if err != nil {
-		return err
-	}
-
-	err = cs.Delete(context.TODO(), crd)
-	if err != nil {
 		return err
 	}
 	return nil
