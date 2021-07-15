@@ -43,7 +43,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 
 	root := &cobra.Command{
 		Use:   "deployer",
-		Short: "deployer helps setting up all the topology-aware-scheduling components ona kubernetes cluster",
+		Short: "deployer helps setting up all the topology-aware-scheduling components on a kubernetes cluster",
 
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			if commonOpts.Debug {
