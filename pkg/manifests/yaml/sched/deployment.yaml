@@ -32,8 +32,6 @@ spec:
           - --authorization-kubeconfig=/etc/kubernetes/scheduler.conf
           - --config=/etc/kubernetes/scheduler-config/scheduler-config.yaml
           name: scheduler
-          securityContext:
-            privileged: false
           resources:
             requests:
               cpu: 100m
@@ -42,8 +40,6 @@ spec:
             name: kubeconfig
           - mountPath: /etc/kubernetes/scheduler-config
             name: topo-aware-scheduler-config-vol
-      hostNetwork: false
-      hostPID: false
       volumes:
       - hostPath:
           path: /etc/kubernetes/scheduler.conf
