@@ -17,24 +17,23 @@
 package api
 
 import (
-	"log"
-
 	"github.com/fromanirh/deployer/pkg/deployer"
 	apimanifests "github.com/fromanirh/deployer/pkg/manifests/api"
 )
 
 type Options struct{}
 
-func Deploy(logger *log.Logger, opts Options) error {
+func Deploy(log deployer.Logger, opts Options) error {
 	var err error
+	log.Printf("deploying topology-aware-scheduling API...")
 
 	mf, err := apimanifests.GetManifests()
 	if err != nil {
 		return err
 	}
-	logger.Printf("  API manifests loaded")
+	log.Debugf("API manifests loaded")
 
-	hp, err := deployer.NewHelper("API")
+	hp, err := deployer.NewHelper("API", log)
 	if err != nil {
 		return err
 	}
@@ -43,19 +42,21 @@ func Deploy(logger *log.Logger, opts Options) error {
 		return err
 	}
 
+	log.Printf("...deployed topology-aware-scheduling API!")
 	return nil
 }
 
-func Remove(logger *log.Logger, opts Options) error {
+func Remove(log deployer.Logger, opts Options) error {
 	var err error
+	log.Printf("removing topology-aware-scheduling API...")
 
 	mf, err := apimanifests.GetManifests()
 	if err != nil {
 		return err
 	}
-	logger.Printf("  API manifests loaded")
+	log.Debugf("API manifests loaded")
 
-	hp, err := deployer.NewHelper("API")
+	hp, err := deployer.NewHelper("API", log)
 	if err != nil {
 		return err
 	}
@@ -64,5 +65,6 @@ func Remove(logger *log.Logger, opts Options) error {
 		return err
 	}
 
+	log.Printf("...removed topology-aware-scheduling API!")
 	return nil
 }

@@ -17,12 +17,27 @@
 package commands
 
 import (
+	"log"
+
 	"github.com/fromanirh/deployer/pkg/deployer/api"
 	"github.com/fromanirh/deployer/pkg/deployer/rte"
 	"github.com/fromanirh/deployer/pkg/deployer/sched"
 
 	"github.com/spf13/cobra"
 )
+
+type logAdapter struct {
+	log      *log.Logger
+	debugLog *log.Logger
+}
+
+func (la logAdapter) Printf(format string, v ...interface{}) {
+	la.log.Printf(format, v...)
+}
+
+func (la logAdapter) Debugf(format string, v ...interface{}) {
+	la.debugLog.Printf(format, v...)
+}
 
 type deployOptions struct{}
 
@@ -48,13 +63,17 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "remove",
 		Short: "remove the components and configurations needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := sched.Remove(commonOpts.Log, sched.Options{}); err != nil {
+			la := logAdapter{
+				log:      commonOpts.Log,
+				debugLog: commonOpts.DebugLog,
+			}
+			if err := sched.Remove(la, sched.Options{}); err != nil {
 				return err
 			}
-			if err := rte.Remove(commonOpts.Log, rte.Options{}); err != nil {
+			if err := rte.Remove(la, rte.Options{}); err != nil {
 				return err
 			}
-			if err := api.Remove(commonOpts.Log, api.Options{}); err != nil {
+			if err := api.Remove(la, api.Options{}); err != nil {
 				return err
 			}
 			return nil
@@ -72,7 +91,11 @@ func NewDeployAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.
 		Use:   "api",
 		Short: "deploy the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := api.Deploy(commonOpts.Log, api.Options{}); err != nil {
+			la := logAdapter{
+				log:      commonOpts.Log,
+				debugLog: commonOpts.DebugLog,
+			}
+			if err := api.Deploy(la, api.Options{}); err != nil {
 				return err
 			}
 			return nil
@@ -87,7 +110,11 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 		Use:   "scheduler-plugin",
 		Short: "deploy the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return sched.Deploy(commonOpts.Log, sched.Options{})
+			la := logAdapter{
+				log:      commonOpts.Log,
+				debugLog: commonOpts.DebugLog,
+			}
+			return sched.Deploy(la, sched.Options{})
 		},
 		Args: cobra.NoArgs,
 	}
@@ -99,7 +126,11 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 		Use:   "topology-updater",
 		Short: "deploy the topology updater needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return rte.Deploy(commonOpts.Log, rte.Options{})
+			la := logAdapter{
+				log:      commonOpts.Log,
+				debugLog: commonOpts.DebugLog,
+			}
+			return rte.Deploy(la, rte.Options{})
 		},
 		Args: cobra.NoArgs,
 	}
@@ -111,7 +142,11 @@ func NewRemoveAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.
 		Use:   "api",
 		Short: "remove the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := api.Remove(commonOpts.Log, api.Options{}); err != nil {
+			la := logAdapter{
+				log:      commonOpts.Log,
+				debugLog: commonOpts.DebugLog,
+			}
+			if err := api.Remove(la, api.Options{}); err != nil {
 				return err
 			}
 			return nil
@@ -126,7 +161,11 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 		Use:   "scheduler-plugin",
 		Short: "remove the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return sched.Remove(commonOpts.Log, sched.Options{})
+			la := logAdapter{
+				log:      commonOpts.Log,
+				debugLog: commonOpts.DebugLog,
+			}
+			return sched.Remove(la, sched.Options{})
 		},
 		Args: cobra.NoArgs,
 	}
@@ -138,7 +177,11 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 		Use:   "topology-updater",
 		Short: "remove the topology updater needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return rte.Remove(commonOpts.Log, rte.Options{})
+			la := logAdapter{
+				log:      commonOpts.Log,
+				debugLog: commonOpts.DebugLog,
+			}
+			return rte.Remove(la, rte.Options{})
 		},
 		Args: cobra.NoArgs,
 	}
@@ -146,13 +189,17 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 }
 
 func deployOnCluster(commonOpts *CommonOptions, opts *deployOptions) error {
-	if err := api.Deploy(commonOpts.Log, api.Options{}); err != nil {
+	la := logAdapter{
+		log:      commonOpts.Log,
+		debugLog: commonOpts.DebugLog,
+	}
+	if err := api.Deploy(la, api.Options{}); err != nil {
 		return err
 	}
-	if err := rte.Deploy(commonOpts.Log, rte.Options{}); err != nil {
+	if err := rte.Deploy(la, rte.Options{}); err != nil {
 		return err
 	}
-	if err := sched.Deploy(commonOpts.Log, sched.Options{}); err != nil {
+	if err := sched.Deploy(la, sched.Options{}); err != nil {
 		return err
 	}
 	return nil

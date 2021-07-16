@@ -17,8 +17,6 @@
 package rte
 
 import (
-	"log"
-
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -28,17 +26,18 @@ import (
 
 type Options struct{}
 
-func Deploy(logger *log.Logger, opts Options) error {
+func Deploy(log deployer.Logger, opts Options) error {
 	var err error
+	log.Printf("deploying topology-aware-scheduling topology updater...")
 
 	mf, err := rtemanifests.GetManifests()
 	if err != nil {
 		return err
 	}
 	mf = mf.UpdateNamespace().UpdatePullspecs()
-	logger.Printf("  RTE manifests loaded")
+	log.Debugf("RTE manifests loaded")
 
-	hp, err := deployer.NewHelper("RTE")
+	hp, err := deployer.NewHelper("RTE", log)
 	if err != nil {
 		return err
 	}
@@ -58,13 +57,15 @@ func Deploy(logger *log.Logger, opts Options) error {
 		return err
 	}
 
+	log.Printf("...deployed topology-aware-scheduling topology updater!")
 	return nil
 }
 
-func Remove(logger *log.Logger, opts Options) error {
+func Remove(log deployer.Logger, opts Options) error {
 	var err error
+	log.Printf("removing topology-aware-scheduling topology updater...")
 
-	hp, err := deployer.NewHelper("RTE")
+	hp, err := deployer.NewHelper("RTE", log)
 	if err != nil {
 		return err
 	}
@@ -74,7 +75,7 @@ func Remove(logger *log.Logger, opts Options) error {
 		return err
 	}
 	mf = mf.UpdateNamespace()
-	logger.Printf("  RTE manifests loaded")
+	log.Debugf("RTE manifests loaded")
 
 	// since we created everything in the namespace, we can just do
 	if err := hp.DeleteObject(mf.Namespace); err != nil {
@@ -91,5 +92,6 @@ func Remove(logger *log.Logger, opts Options) error {
 		return err
 	}
 
+	log.Printf("...removed topology-aware-scheduling topology updater!")
 	return nil
 }

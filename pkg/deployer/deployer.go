@@ -18,7 +18,7 @@ package deployer
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"time"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,12 +27,18 @@ import (
 	"github.com/fromanirh/deployer/pkg/clientutil"
 )
 
+type Logger interface {
+	Printf(format string, v ...interface{})
+	Debugf(format string, v ...interface{})
+}
+
 type Helper struct {
 	tag string
 	cli client.Client
+	log Logger
 }
 
-func NewHelper(tag string) (*Helper, error) {
+func NewHelper(tag string, log Logger) (*Helper, error) {
 	cli, err := clientutil.New()
 	if err != nil {
 		return nil, err
@@ -40,26 +46,27 @@ func NewHelper(tag string) (*Helper, error) {
 	return &Helper{
 		tag: tag,
 		cli: cli,
+		log: log,
 	}, nil
 }
 
 func (hp *Helper) CreateObject(obj client.Object) error {
 	objKind := obj.GetObjectKind().GroupVersionKind().Kind // shortcut
 	if err := hp.cli.Create(context.TODO(), obj); err != nil {
-		fmt.Printf("-%5s> error creating %s %q: %v\n", hp.tag, objKind, obj.GetName(), err)
+		log.Printf("-%5s> error creating %s %q: %v", hp.tag, objKind, obj.GetName(), err)
 		return err
 	}
-	fmt.Printf("-%5s> created %s %q\n", hp.tag, objKind, obj.GetName())
+	log.Printf("-%5s> created %s %q", hp.tag, objKind, obj.GetName())
 	return nil
 }
 
 func (hp *Helper) DeleteObject(obj client.Object) error {
 	objKind := obj.GetObjectKind().GroupVersionKind().Kind // shortcut
 	if err := hp.cli.Delete(context.TODO(), obj); err != nil {
-		fmt.Printf("-%5s> error deleting %s %q: %v\n", hp.tag, objKind, obj.GetName(), err)
+		log.Printf("-%5s> error deleting %s %q: %v", hp.tag, objKind, obj.GetName(), err)
 		return err
 	}
-	fmt.Printf("-%5s> deleted %s %q\n", hp.tag, objKind, obj.GetName())
+	log.Printf("-%5s> deleted %s %q", hp.tag, objKind, obj.GetName())
 	return nil
 }
 

@@ -17,8 +17,6 @@
 package sched
 
 import (
-	"log"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,8 +27,9 @@ import (
 
 type Options struct{}
 
-func Deploy(logger *log.Logger, opts Options) error {
+func Deploy(log deployer.Logger, opts Options) error {
 	var err error
+	log.Printf("deploying topology-aware-scheduling scheduler plugin...")
 
 	mf, err := schedmanifests.GetManifests()
 	if err != nil {
@@ -38,9 +37,9 @@ func Deploy(logger *log.Logger, opts Options) error {
 	}
 
 	mf = mf.UpdateNamespace().UpdatePullspecs()
-	logger.Printf("SCHED manifests loaded")
+	log.Debugf("SCD manifests loaded")
 
-	hp, err := deployer.NewHelper("SCHED")
+	hp, err := deployer.NewHelper("SCD", log)
 	if err != nil {
 		return err
 	}
@@ -51,11 +50,13 @@ func Deploy(logger *log.Logger, opts Options) error {
 		}
 	}
 
+	log.Printf("...deployed topology-aware-scheduling scheduler plugin!")
 	return nil
 }
 
-func Remove(logger *log.Logger, opts Options) error {
+func Remove(log deployer.Logger, opts Options) error {
 	var err error
+	log.Printf("removing topology-aware-scheduling scheduler plugin...")
 
 	mf, err := schedmanifests.GetManifests()
 	if err != nil {
@@ -63,9 +64,9 @@ func Remove(logger *log.Logger, opts Options) error {
 	}
 
 	mf = mf.UpdateNamespace()
-	logger.Printf("SCHED manifests loaded")
+	log.Debugf("SCD manifests loaded")
 
-	hp, err := deployer.NewHelper("SCHED")
+	hp, err := deployer.NewHelper("SCD", log)
 	if err != nil {
 		return err
 	}
@@ -98,5 +99,7 @@ func Remove(logger *log.Logger, opts Options) error {
 	if err = hp.DeleteObject(mf.ClusterRole); err != nil {
 		return err
 	}
+
+	log.Printf("...removed topology-aware-scheduling scheduler plugin!")
 	return nil
 }

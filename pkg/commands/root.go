@@ -26,8 +26,9 @@ import (
 )
 
 type CommonOptions struct {
-	Debug bool
-	Log   *log.Logger
+	Debug    bool
+	Log      *log.Logger
+	DebugLog *log.Logger
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -47,10 +48,12 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			if commonOpts.Debug {
-				commonOpts.Log = log.New(os.Stderr, "deployer ", log.LstdFlags)
+				commonOpts.DebugLog = log.New(os.Stderr, "", log.LstdFlags)
 			} else {
-				commonOpts.Log = log.New(ioutil.Discard, "", 0)
+				commonOpts.DebugLog = log.New(ioutil.Discard, "", 0)
 			}
+			// we abuse the logger to have a common interface and the timestamps
+			commonOpts.Log = log.New(os.Stdout, "", log.LstdFlags)
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
