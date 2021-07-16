@@ -34,6 +34,9 @@ spec:
           name: scheduler
           securityContext:
             privileged: false
+          resources:
+            requests:
+              cpu: 100m
           volumeMounts:
           - mountPath: /etc/kubernetes/scheduler.conf
             name: kubeconfig
