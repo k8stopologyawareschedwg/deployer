@@ -27,7 +27,6 @@ import (
 )
 
 type Manifests struct {
-	Namespace               *corev1.Namespace
 	ServiceAccount          *corev1.ServiceAccount
 	ClusterRole             *rbacv1.ClusterRole
 	CRBKubernetesScheduler  *rbacv1.ClusterRoleBinding
@@ -40,7 +39,6 @@ type Manifests struct {
 
 func (mf Manifests) Clone() Manifests {
 	return Manifests{
-		Namespace:               mf.Namespace.DeepCopy(),
 		ServiceAccount:          mf.ServiceAccount.DeepCopy(),
 		ClusterRole:             mf.ClusterRole.DeepCopy(),
 		CRBKubernetesScheduler:  mf.CRBKubernetesScheduler.DeepCopy(),
@@ -54,9 +52,7 @@ func (mf Manifests) Clone() Manifests {
 
 func (mf Manifests) UpdateNamespace() Manifests {
 	ret := mf.Clone()
-	ret.ServiceAccount.Namespace = mf.Namespace.Name
-	ret.ConfigMap.Namespace = mf.Namespace.Name
-	ret.Deployment.Namespace = mf.Namespace.Name
+	// nothing to ndo here
 	return ret
 }
 
@@ -68,7 +64,6 @@ func (mf Manifests) UpdatePullspecs() Manifests {
 
 func (mf Manifests) ToObjects() []client.Object {
 	return []client.Object{
-		mf.Namespace,
 		mf.ServiceAccount,
 		mf.ClusterRole,
 		mf.CRBKubernetesScheduler,
@@ -83,10 +78,6 @@ func (mf Manifests) ToObjects() []client.Object {
 func GetManifests() (Manifests, error) {
 	var err error
 	mf := Manifests{}
-	mf.Namespace, err = manifests.Namespace(manifests.ComponentSchedulerPlugin)
-	if err != nil {
-		return mf, err
-	}
 	mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin)
 	if err != nil {
 		return mf, err
