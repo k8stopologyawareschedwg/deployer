@@ -57,7 +57,7 @@ func validateCluster(cmd *cobra.Command, commonOpts *CommonOptions, opts *valida
 	}
 
 	vd := validator.Validator{
-		Log: commonOpts.Log,
+		Log: commonOpts.DebugLog,
 	}
 	items, err := vd.ValidateClusterConfig(nodeList)
 	if err != nil {
@@ -68,6 +68,7 @@ func validateCluster(cmd *cobra.Command, commonOpts *CommonOptions, opts *valida
 	return nil
 }
 
+// we need undecorated output, so we need to use fmt.Printf here. log packages add no value.
 func printValidationResults(items []validator.ValidationResult, jsonOutput bool) {
 	if len(items) == 0 {
 		if jsonOutput {
