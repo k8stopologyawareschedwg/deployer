@@ -32,7 +32,6 @@ spec:
         effect: NoSchedule
       containers:
         - image: localhost:5000/scheduler-plugins/kube-scheduler:latest
-          imagePullPolicy: Never
           command:
           - /bin/kube-scheduler
           - --scheduler-name=topo-aware-scheduler
