@@ -48,6 +48,9 @@ func (mf Manifests) UpdateNamespace() Manifests {
 	ret := mf.Clone()
 	ret.ServiceAccount.Namespace = ret.Namespace.Name
 	ret.DaemonSet.Namespace = ret.Namespace.Name
+	for idx := 0; idx < len(ret.ClusterRoleBinding.Subjects); idx++ {
+		ret.ClusterRoleBinding.Subjects[idx].Namespace = ret.Namespace.Name
+	}
 	return ret
 }
 

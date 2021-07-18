@@ -17,10 +17,6 @@
 package sched
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-
 	"github.com/fromanirh/deployer/pkg/deployer"
 	schedmanifests "github.com/fromanirh/deployer/pkg/manifests/sched"
 )
@@ -49,6 +45,7 @@ func Deploy(log deployer.Logger, opts Options) error {
 			return err
 		}
 	}
+	// TODO: wait for the deployment to be running
 
 	log.Printf("...deployed topology-aware-scheduling scheduler plugin!")
 	return nil
@@ -71,32 +68,30 @@ func Remove(log deployer.Logger, opts Options) error {
 		return err
 	}
 
-	if err = hp.DeleteObject(mf.Namespace); err != nil {
+	if err = hp.DeleteObject(mf.Deployment); err != nil {
+		return err
+	}
+	// TODO: wait for the deployment to be gone
+	if err = hp.DeleteObject(mf.ConfigMap); err != nil {
 		return err
 	}
 
-	nsKey := types.NamespacedName{
-		Name:      mf.Namespace.Name,
-		Namespace: metav1.NamespaceNone,
-	}
-
-	err = hp.WaitForObjectToBeDeleted(nsKey, &corev1.Namespace{})
-	if err != nil {
-		return err
-	}
-	if err = hp.DeleteObject(mf.RoleBinding); err != nil {
-		return err
-	}
 	if err = hp.DeleteObject(mf.CRBKubernetesScheduler); err != nil {
-		return err
-	}
-	if err = hp.DeleteObject(mf.CRBNodeResourceTopology); err != nil {
 		return err
 	}
 	if err = hp.DeleteObject(mf.CRBVolumeScheduler); err != nil {
 		return err
 	}
+	if err = hp.DeleteObject(mf.CRBNodeResourceTopology); err != nil {
+		return err
+	}
 	if err = hp.DeleteObject(mf.ClusterRole); err != nil {
+		return err
+	}
+	if err = hp.DeleteObject(mf.RoleBinding); err != nil {
+		return err
+	}
+	if err = hp.DeleteObject(mf.ServiceAccount); err != nil {
 		return err
 	}
 
