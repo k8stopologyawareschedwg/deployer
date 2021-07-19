@@ -19,12 +19,19 @@ spec:
         tier: control-plane
         version: second
     spec:
-      nodeSelector:
-        node-role.kubernetes.io/master: ""
       serviceAccountName: topo-aware-scheduler
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: Exists
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
       containers:
         - image: localhost:5000/scheduler-plugins/kube-scheduler:latest
-          imagePullPolicy: Never
           command:
           - /bin/kube-scheduler
           - --scheduler-name=topo-aware-scheduler
@@ -32,15 +39,14 @@ spec:
           - --authorization-kubeconfig=/etc/kubernetes/scheduler.conf
           - --config=/etc/kubernetes/scheduler-config/scheduler-config.yaml
           name: scheduler
-          securityContext:
-            privileged: false
+          resources:
+            requests:
+              cpu: 100m
           volumeMounts:
           - mountPath: /etc/kubernetes/scheduler.conf
             name: kubeconfig
           - mountPath: /etc/kubernetes/scheduler-config
             name: topo-aware-scheduler-config-vol
-      hostNetwork: false
-      hostPID: false
       volumes:
       - hostPath:
           path: /etc/kubernetes/scheduler.conf
