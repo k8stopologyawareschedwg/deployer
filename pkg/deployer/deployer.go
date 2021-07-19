@@ -78,8 +78,13 @@ func (hp *Helper) WaitForObjectToBeCreated(key client.ObjectKey, obj client.Obje
 	for try := 0; try < tries; try++ {
 		err = hp.tryGetOnce(key, obj)
 
+		if err != nil {
+			time.Sleep(time.Second * time.Duration(tryInterval))
+		}
+
+		// wait some extra time if the object is not found
 		if k8serrors.IsNotFound(err) {
-			time.Sleep(time.Duration(tryInterval))
+			time.Sleep(time.Second * time.Duration(tryInterval))
 		}
 
 		if err == nil {

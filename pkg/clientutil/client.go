@@ -25,6 +25,8 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+
+	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 )
 
 func init() {
@@ -67,4 +69,17 @@ func NewK8sExt() (*apiextension.Clientset, error) {
 		return nil, err
 	}
 	return clientset, nil
+}
+
+func NewTopologyClient() (*topologyclientset.Clientset, error)  {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	topologyClient, err := topologyclientset.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return topologyClient, nil
 }
