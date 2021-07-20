@@ -53,7 +53,7 @@ func NewDeployCommand(commonOpts *CommonOptions) *cobra.Command {
 		},
 		Args: cobra.NoArgs,
 	}
-	deploy.PersistentFlags().BoolVarP(&opts.waitCompletion, "wait", "W", true, "wait for deployment to be all completed.")
+	deploy.PersistentFlags().BoolVarP(&opts.waitCompletion, "wait", "W", false, "wait for deployment to be all completed.")
 	deploy.AddCommand(NewDeployAPICommand(commonOpts, opts))
 	deploy.AddCommand(NewDeploySchedulerPluginCommand(commonOpts, opts))
 	deploy.AddCommand(NewDeployTopologyUpdaterCommand(commonOpts, opts))
@@ -90,7 +90,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 		},
 		Args: cobra.NoArgs,
 	}
-	remove.PersistentFlags().BoolVarP(&opts.waitCompletion, "wait", "W", true, "wait for removal to be all completed.")
+	remove.PersistentFlags().BoolVarP(&opts.waitCompletion, "wait", "W", false, "wait for removal to be all completed.")
 	remove.AddCommand(NewRemoveAPICommand(commonOpts, opts))
 	remove.AddCommand(NewRemoveSchedulerPluginCommand(commonOpts, opts))
 	remove.AddCommand(NewRemoveTopologyUpdaterCommand(commonOpts, opts))
