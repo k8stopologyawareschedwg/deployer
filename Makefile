@@ -16,6 +16,9 @@ update-deps:
 update-manifests:
 	./pkg/manifests/yaml/update.sh
 
+deployer-static: outdir
+	CGO_ENABLED=0 go build -o _out/deployer ./cmd/deployer
+
 deployer: outdir
 	go build -o _out/deployer ./cmd/deployer/
 
