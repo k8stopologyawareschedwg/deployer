@@ -29,6 +29,11 @@ import (
 	"github.com/fromanirh/deployer/pkg/clientutil"
 )
 
+type WaitableObject struct {
+	Obj  client.Object
+	Wait func() error
+}
+
 type Logger interface {
 	Printf(format string, v ...interface{})
 	Debugf(format string, v ...interface{})
