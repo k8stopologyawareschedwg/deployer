@@ -23,6 +23,8 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/fromanirh/deployer/pkg/deployer"
+	"github.com/fromanirh/deployer/pkg/deployer/wait"
 	"github.com/fromanirh/deployer/pkg/manifests"
 )
 
@@ -67,6 +69,32 @@ func (mf Manifests) ToObjects() []client.Object {
 		mf.ClusterRole,
 		mf.ClusterRoleBinding,
 		mf.DaemonSet,
+	}
+}
+
+func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
+	return []deployer.WaitableObject{
+		deployer.WaitableObject{Obj: mf.Namespace},
+		deployer.WaitableObject{Obj: mf.ServiceAccount},
+		deployer.WaitableObject{Obj: mf.ClusterRole},
+		deployer.WaitableObject{Obj: mf.ClusterRoleBinding},
+		deployer.WaitableObject{
+			Obj:  mf.DaemonSet,
+			Wait: func() error { return wait.PodsToBeRunningByRegex(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
+		},
+	}
+
+}
+
+func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
+	return []deployer.WaitableObject{
+		deployer.WaitableObject{
+			Obj:  mf.Namespace,
+			Wait: func() error { return wait.NamespaceToBeGone(hp, log, mf.Namespace.Name) },
+		},
+		// no need to remove objects created inside the namespace we just removed
+		deployer.WaitableObject{Obj: mf.ClusterRoleBinding},
+		deployer.WaitableObject{Obj: mf.ClusterRole},
 	}
 }
 

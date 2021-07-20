@@ -23,6 +23,8 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/fromanirh/deployer/pkg/deployer"
+	"github.com/fromanirh/deployer/pkg/deployer/wait"
 	"github.com/fromanirh/deployer/pkg/manifests"
 )
 
@@ -52,7 +54,7 @@ func (mf Manifests) Clone() Manifests {
 
 func (mf Manifests) UpdateNamespace() Manifests {
 	ret := mf.Clone()
-	// nothing to ndo here
+	// nothing to do here
 	return ret
 }
 
@@ -72,6 +74,38 @@ func (mf Manifests) ToObjects() []client.Object {
 		mf.RoleBinding,
 		mf.ConfigMap,
 		mf.Deployment,
+	}
+}
+
+func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
+	return []deployer.WaitableObject{
+		deployer.WaitableObject{Obj: mf.ServiceAccount},
+		deployer.WaitableObject{Obj: mf.ClusterRole},
+		deployer.WaitableObject{Obj: mf.CRBKubernetesScheduler},
+		deployer.WaitableObject{Obj: mf.CRBNodeResourceTopology},
+		deployer.WaitableObject{Obj: mf.CRBVolumeScheduler},
+		deployer.WaitableObject{Obj: mf.RoleBinding},
+		deployer.WaitableObject{Obj: mf.ConfigMap},
+		deployer.WaitableObject{
+			Obj:  mf.Deployment,
+			Wait: func() error { return wait.PodsToBeRunningByRegex(hp, log, mf.Deployment.Namespace, mf.Deployment.Name) },
+		},
+	}
+}
+
+func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
+	return []deployer.WaitableObject{
+		deployer.WaitableObject{
+			Obj:  mf.Deployment,
+			Wait: func() error { return wait.PodsToBeRunningByRegex(hp, log, mf.Deployment.Namespace, mf.Deployment.Name) },
+		},
+		deployer.WaitableObject{Obj: mf.ConfigMap},
+		deployer.WaitableObject{Obj: mf.RoleBinding},
+		deployer.WaitableObject{Obj: mf.CRBVolumeScheduler},
+		deployer.WaitableObject{Obj: mf.CRBNodeResourceTopology},
+		deployer.WaitableObject{Obj: mf.CRBKubernetesScheduler},
+		deployer.WaitableObject{Obj: mf.ClusterRole},
+		deployer.WaitableObject{Obj: mf.ServiceAccount},
 	}
 }
 

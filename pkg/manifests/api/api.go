@@ -21,6 +21,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/fromanirh/deployer/pkg/deployer"
 	"github.com/fromanirh/deployer/pkg/manifests"
 )
 
@@ -31,6 +32,18 @@ type Manifests struct {
 func (mf Manifests) ToObjects() []client.Object {
 	return []client.Object{
 		mf.Crd,
+	}
+}
+
+func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
+	return []deployer.WaitableObject{
+		deployer.WaitableObject{Obj: mf.Crd},
+	}
+}
+
+func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
+	return []deployer.WaitableObject{
+		deployer.WaitableObject{Obj: mf.Crd},
 	}
 }
 
