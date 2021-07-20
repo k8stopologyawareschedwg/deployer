@@ -19,9 +19,11 @@ package deployer
 import (
 	"context"
 	"log"
-	"time"
+	"regexp"
 
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fromanirh/deployer/pkg/clientutil"
@@ -33,9 +35,10 @@ type Logger interface {
 }
 
 type Helper struct {
-	tag string
-	cli client.Client
-	log Logger
+	tag    string
+	cli    client.Client
+	k8sCli *kubernetes.Clientset
+	log    Logger
 }
 
 func NewHelper(tag string, log Logger) (*Helper, error) {
@@ -43,10 +46,16 @@ func NewHelper(tag string, log Logger) (*Helper, error) {
 	if err != nil {
 		return nil, err
 	}
+	k8sCli, err := clientutil.NewK8s()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Helper{
-		tag: tag,
-		cli: cli,
-		log: log,
+		tag:    tag,
+		cli:    cli,
+		k8sCli: k8sCli,
+		log:    log,
 	}, nil
 }
 
@@ -70,52 +79,29 @@ func (hp *Helper) DeleteObject(obj client.Object) error {
 	return nil
 }
 
-func (hp *Helper) WaitForObjectToBeCreated(key client.ObjectKey, obj client.Object) error {
-	var err error
-	tries := 10
-	tryInterval := 2
-
-	for try := 0; try < tries; try++ {
-		err = hp.tryGetOnce(key, obj)
-
-		if err != nil {
-			time.Sleep(time.Second * time.Duration(tryInterval))
-		}
-
-		// wait some extra time if the object is not found
-		if k8serrors.IsNotFound(err) {
-			time.Sleep(time.Second * time.Duration(tryInterval))
-		}
-
-		if err == nil {
-			return nil
-		}
-	}
-
-	return err
-}
-
-func (hp *Helper) WaitForObjectToBeDeleted(key client.ObjectKey, obj client.Object) error {
-	var err error
-	tries := 10
-	tryInterval := 2
-
-	for try := 0; try < tries; try++ {
-		err = hp.tryGetOnce(key, obj)
-
-		if err == nil {
-			time.Sleep(time.Duration(tryInterval))
-			continue
-		}
-
-		if k8serrors.IsNotFound(err) {
-			return nil
-		}
-	}
-
-	return err
-}
-
-func (hp *Helper) tryGetOnce(key client.ObjectKey, obj client.Object) error {
+func (hp *Helper) GetObject(key client.ObjectKey, obj client.Object) error {
 	return hp.cli.Get(context.TODO(), key, obj)
+}
+
+func (hp *Helper) GetPodsByPattern(namespace, pattern string) ([]*corev1.Pod, error) {
+	podNameRgx, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: refine further
+	podList, err := hp.k8sCli.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	hp.log.Debugf("found %d pods in namespace %q matching pattern %q", len(podList.Items), namespace, pattern)
+
+	ret := []*corev1.Pod{}
+	for _, pod := range podList.Items {
+		if match := podNameRgx.FindString(pod.Name); len(match) != 0 {
+			hp.log.Debugf("pod %q matches", pod.Name)
+			ret = append(ret, &pod)
+		}
+	}
+	return ret, nil
 }
