@@ -53,3 +53,7 @@ type validationOutput struct {
 	Success bool                         `json:"success"`
 	Errors  []validator.ValidationResult `json:"errors,omitempty"`
 }
+
+func waitForReasource(body interface{}) {
+	gomega.Eventually(body, )
+}
