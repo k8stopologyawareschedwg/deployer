@@ -185,6 +185,7 @@ func getPodsByRegex(reg string) ([]*corev1.Pod, error) {
 func deploy() error {
 	cmdline := []string{
 		filepath.Join(binariesPath, "deployer"),
+		"--debug",
 		"deploy",
 	}
 	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
@@ -202,6 +203,7 @@ func deploy() error {
 func remove() error {
 	cmdline := []string{
 		filepath.Join(binariesPath, "deployer"),
+		"--debug",
 		"remove",
 	}
 	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)

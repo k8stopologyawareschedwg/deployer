@@ -39,7 +39,9 @@ func (la logAdapter) Debugf(format string, v ...interface{}) {
 	la.debugLog.Printf(format, v...)
 }
 
-type deployOptions struct{}
+type deployOptions struct {
+	waitCompletion bool
+}
 
 func NewDeployCommand(commonOpts *CommonOptions) *cobra.Command {
 	opts := &deployOptions{}
@@ -51,6 +53,7 @@ func NewDeployCommand(commonOpts *CommonOptions) *cobra.Command {
 		},
 		Args: cobra.NoArgs,
 	}
+	deploy.PersistentFlags().BoolVarP(&opts.waitCompletion, "wait", "W", true, "wait for deployment to be all completed.")
 	deploy.AddCommand(NewDeployAPICommand(commonOpts, opts))
 	deploy.AddCommand(NewDeploySchedulerPluginCommand(commonOpts, opts))
 	deploy.AddCommand(NewDeployTopologyUpdaterCommand(commonOpts, opts))
@@ -67,19 +70,27 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 				log:      commonOpts.Log,
 				debugLog: commonOpts.DebugLog,
 			}
-			if err := sched.Remove(la, sched.Options{}); err != nil {
-				return err
+			var err error
+			err = sched.Remove(la, sched.Options{WaitCompletion: opts.waitCompletion})
+			if err != nil {
+				// intentionally keep going to remove as much as possible
+				log.Printf("error removing: %v", err)
 			}
-			if err := rte.Remove(la, rte.Options{}); err != nil {
-				return err
+			err = rte.Remove(la, rte.Options{WaitCompletion: opts.waitCompletion})
+			if err != nil {
+				// intentionally keep going to remove as much as possible
+				log.Printf("error removing: %v", err)
 			}
-			if err := api.Remove(la, api.Options{}); err != nil {
-				return err
+			err = api.Remove(la, api.Options{})
+			if err != nil {
+				// intentionally keep going to remove as much as possible
+				log.Printf("error removing: %v", err)
 			}
 			return nil
 		},
 		Args: cobra.NoArgs,
 	}
+	remove.PersistentFlags().BoolVarP(&opts.waitCompletion, "wait", "W", true, "wait for removal to be all completed.")
 	remove.AddCommand(NewRemoveAPICommand(commonOpts, opts))
 	remove.AddCommand(NewRemoveSchedulerPluginCommand(commonOpts, opts))
 	remove.AddCommand(NewRemoveTopologyUpdaterCommand(commonOpts, opts))
@@ -114,7 +125,7 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 				log:      commonOpts.Log,
 				debugLog: commonOpts.DebugLog,
 			}
-			return sched.Deploy(la, sched.Options{})
+			return sched.Deploy(la, sched.Options{WaitCompletion: opts.waitCompletion})
 		},
 		Args: cobra.NoArgs,
 	}
@@ -130,7 +141,7 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 				log:      commonOpts.Log,
 				debugLog: commonOpts.DebugLog,
 			}
-			return rte.Deploy(la, rte.Options{})
+			return rte.Deploy(la, rte.Options{WaitCompletion: opts.waitCompletion})
 		},
 		Args: cobra.NoArgs,
 	}
@@ -165,7 +176,7 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 				log:      commonOpts.Log,
 				debugLog: commonOpts.DebugLog,
 			}
-			return sched.Remove(la, sched.Options{})
+			return sched.Remove(la, sched.Options{WaitCompletion: opts.waitCompletion})
 		},
 		Args: cobra.NoArgs,
 	}
@@ -181,7 +192,7 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 				log:      commonOpts.Log,
 				debugLog: commonOpts.DebugLog,
 			}
-			return rte.Remove(la, rte.Options{})
+			return rte.Remove(la, rte.Options{WaitCompletion: opts.waitCompletion})
 		},
 		Args: cobra.NoArgs,
 	}
@@ -196,10 +207,10 @@ func deployOnCluster(commonOpts *CommonOptions, opts *deployOptions) error {
 	if err := api.Deploy(la, api.Options{}); err != nil {
 		return err
 	}
-	if err := rte.Deploy(la, rte.Options{}); err != nil {
+	if err := rte.Deploy(la, rte.Options{WaitCompletion: opts.waitCompletion}); err != nil {
 		return err
 	}
-	if err := sched.Deploy(la, sched.Options{}); err != nil {
+	if err := sched.Deploy(la, sched.Options{WaitCompletion: opts.waitCompletion}); err != nil {
 		return err
 	}
 	return nil
