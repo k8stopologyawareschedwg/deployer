@@ -16,7 +16,18 @@
 
 package images
 
-const (
-	SchedulerPluginDefaultImage          = "k8s.gcr.io/scheduler-plugins/kube-scheduler:v0.19.9"
-	ResourceTopologyExporterDefaultImage = "quay.io/openshift-kni/resource-topology-exporter:4.9-snapshot"
+import "os"
+
+func init() {
+	if schedImage, ok := os.LookupEnv("TAS_SCHEDULER_PLUGIN_IMAGE"); ok {
+		SchedulerPluginImage = schedImage
+	}
+	if rteImage, ok := os.LookupEnv("TAS_RESOURCE_EXPORTER_IMAGE"); ok {
+		ResourceTopologyExporterImage = rteImage
+	}
+}
+
+var (
+	SchedulerPluginImage          = SchedulerPluginDefaultImage
+	ResourceTopologyExporterImage = ResourceTopologyExporterDefaultImage
 )
