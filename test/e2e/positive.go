@@ -23,6 +23,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -44,6 +45,33 @@ const (
 	// TODO: this should be autodetected
 	exportedNs = "default"
 )
+
+var _ = ginkgo.Describe("[PositiveFlow] Deployer render", func() {
+	ginkgo.Context("with cluster image overrides", func() {
+		ginkgo.It("it should reflect the overrides in the output", func() {
+			cmdline := []string{
+				filepath.Join(binariesPath, "deployer"),
+				"render",
+			}
+			fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
+
+			testSchedPlugImage := "quay.io/sched/sched:test000"
+			testResTopoExImage := "quay.io/rte/rte:test000"
+
+			cmd := exec.Command(cmdline[0], cmdline[1:]...)
+			cmd.Stderr = ginkgo.GinkgoWriter
+			cmd.Env = append(cmd.Env, fmt.Sprintf("TAS_SCHEDULER_PLUGIN_IMAGE=%s", testSchedPlugImage))
+			cmd.Env = append(cmd.Env, fmt.Sprintf("TAS_RESOURCE_EXPORTER_IMAGE=%s", testResTopoExImage))
+
+			out, err := cmd.Output()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			text := string(out)
+			gomega.Expect(strings.Contains(text, testSchedPlugImage)).To(gomega.BeTrue())
+			gomega.Expect(strings.Contains(text, testResTopoExImage)).To(gomega.BeTrue())
+		})
+	})
+})
 
 var _ = ginkgo.Describe("[PositiveFlow] Deployer validation", func() {
 	ginkgo.Context("with cluster with the expected settings", func() {
