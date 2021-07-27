@@ -47,19 +47,19 @@ func NewRenderCommand(commonOpts *CommonOptions) *cobra.Command {
 func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *renderOptions, args []string) error {
 	var objs []client.Object
 
-	apiManifests, err := api.GetManifests()
+	apiManifests, err := api.GetManifests(commonOpts.Platform)
 	if err != nil {
 		return err
 	}
 	objs = append(objs, apiManifests.UpdateNamespace().UpdatePullspecs().ToObjects()...)
 
-	rteManifests, err := rte.GetManifests()
+	rteManifests, err := rte.GetManifests(commonOpts.Platform)
 	if err != nil {
 		return err
 	}
 	objs = append(objs, rteManifests.UpdateNamespace().UpdatePullspecs().ToObjects()...)
 
-	schedManifests, err := sched.GetManifests()
+	schedManifests, err := sched.GetManifests(commonOpts.Platform)
 	if err != nil {
 		return err
 	}

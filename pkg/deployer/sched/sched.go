@@ -18,10 +18,12 @@ package sched
 
 import (
 	"github.com/fromanirh/deployer/pkg/deployer"
+	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	schedmanifests "github.com/fromanirh/deployer/pkg/manifests/sched"
 )
 
 type Options struct {
+	Platform       platform.Platform
 	WaitCompletion bool
 }
 
@@ -29,7 +31,7 @@ func Deploy(log deployer.Logger, opts Options) error {
 	var err error
 	log.Printf("deploying topology-aware-scheduling scheduler plugin...")
 
-	mf, err := schedmanifests.GetManifests()
+	mf, err := schedmanifests.GetManifests(opts.Platform)
 	if err != nil {
 		return err
 	}
@@ -62,7 +64,7 @@ func Remove(log deployer.Logger, opts Options) error {
 	var err error
 	log.Printf("removing topology-aware-scheduling scheduler plugin...")
 
-	mf, err := schedmanifests.GetManifests()
+	mf, err := schedmanifests.GetManifests(opts.Platform)
 	if err != nil {
 		return err
 	}

@@ -22,13 +22,16 @@ import (
 	"log"
 	"os"
 
+	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/spf13/cobra"
 )
 
 type CommonOptions struct {
 	Debug    bool
+	Platform platform.Platform
 	Log      *log.Logger
 	DebugLog *log.Logger
+	plat     string
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -54,6 +57,11 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 			}
 			// we abuse the logger to have a common interface and the timestamps
 			commonOpts.Log = log.New(os.Stdout, "", log.LstdFlags)
+			var ok bool
+			commonOpts.Platform, ok = platform.FromString(commonOpts.plat)
+			if !ok {
+				return fmt.Errorf("unknown platform: %q", commonOpts.plat)
+			}
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -64,6 +72,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	}
 
 	root.PersistentFlags().BoolVarP(&commonOpts.Debug, "debug", "D", false, "enable debug log")
+	root.PersistentFlags().StringVarP(&commonOpts.plat, "platform", "P", "kubernetes", "platform to deploy on")
 
 	root.AddCommand(
 		NewRenderCommand(commonOpts),

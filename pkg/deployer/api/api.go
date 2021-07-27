@@ -18,16 +18,19 @@ package api
 
 import (
 	"github.com/fromanirh/deployer/pkg/deployer"
+	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	apimanifests "github.com/fromanirh/deployer/pkg/manifests/api"
 )
 
-type Options struct{}
+type Options struct {
+	Platform platform.Platform
+}
 
 func Deploy(log deployer.Logger, opts Options) error {
 	var err error
 	log.Printf("deploying topology-aware-scheduling API...")
 
-	mf, err := apimanifests.GetManifests()
+	mf, err := apimanifests.GetManifests(opts.Platform)
 	if err != nil {
 		return err
 	}
@@ -50,7 +53,7 @@ func Remove(log deployer.Logger, opts Options) error {
 	var err error
 	log.Printf("removing topology-aware-scheduling API...")
 
-	mf, err := apimanifests.GetManifests()
+	mf, err := apimanifests.GetManifests(opts.Platform)
 	if err != nil {
 		return err
 	}

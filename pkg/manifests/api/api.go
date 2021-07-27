@@ -22,11 +22,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fromanirh/deployer/pkg/deployer"
+	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/fromanirh/deployer/pkg/manifests"
 )
 
 type Manifests struct {
-	Crd *apiextensionv1.CustomResourceDefinition
+	Crd  *apiextensionv1.CustomResourceDefinition
+	plat platform.Platform
 }
 
 func (mf Manifests) ToObjects() []client.Object {
@@ -65,9 +67,11 @@ func (mf Manifests) UpdatePullspecs() Manifests {
 	return ret
 }
 
-func GetManifests() (Manifests, error) {
+func GetManifests(plat platform.Platform) (Manifests, error) {
 	var err error
-	mf := Manifests{}
+	mf := Manifests{
+		plat: plat,
+	}
 
 	mf.Crd, err = manifests.APICRD()
 	if err != nil {

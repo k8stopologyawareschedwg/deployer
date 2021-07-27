@@ -71,17 +71,25 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 				debugLog: commonOpts.DebugLog,
 			}
 			var err error
-			err = sched.Remove(la, sched.Options{WaitCompletion: opts.waitCompletion})
+			err = sched.Remove(la, sched.Options{
+				Platform:       commonOpts.Platform,
+				WaitCompletion: opts.waitCompletion,
+			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
 				log.Printf("error removing: %v", err)
 			}
-			err = rte.Remove(la, rte.Options{WaitCompletion: opts.waitCompletion})
+			err = rte.Remove(la, rte.Options{
+				Platform:       commonOpts.Platform,
+				WaitCompletion: opts.waitCompletion,
+			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
 				log.Printf("error removing: %v", err)
 			}
-			err = api.Remove(la, api.Options{})
+			err = api.Remove(la, api.Options{
+				Platform: commonOpts.Platform,
+			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
 				log.Printf("error removing: %v", err)
@@ -106,7 +114,7 @@ func NewDeployAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.
 				log:      commonOpts.Log,
 				debugLog: commonOpts.DebugLog,
 			}
-			if err := api.Deploy(la, api.Options{}); err != nil {
+			if err := api.Deploy(la, api.Options{Platform: commonOpts.Platform}); err != nil {
 				return err
 			}
 			return nil
@@ -125,7 +133,10 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 				log:      commonOpts.Log,
 				debugLog: commonOpts.DebugLog,
 			}
-			return sched.Deploy(la, sched.Options{WaitCompletion: opts.waitCompletion})
+			return sched.Deploy(la, sched.Options{
+				Platform:       commonOpts.Platform,
+				WaitCompletion: opts.waitCompletion,
+			})
 		},
 		Args: cobra.NoArgs,
 	}
@@ -141,7 +152,10 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 				log:      commonOpts.Log,
 				debugLog: commonOpts.DebugLog,
 			}
-			return rte.Deploy(la, rte.Options{WaitCompletion: opts.waitCompletion})
+			return rte.Deploy(la, rte.Options{
+				Platform:       commonOpts.Platform,
+				WaitCompletion: opts.waitCompletion,
+			})
 		},
 		Args: cobra.NoArgs,
 	}
@@ -157,7 +171,7 @@ func NewRemoveAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.
 				log:      commonOpts.Log,
 				debugLog: commonOpts.DebugLog,
 			}
-			if err := api.Remove(la, api.Options{}); err != nil {
+			if err := api.Remove(la, api.Options{Platform: commonOpts.Platform}); err != nil {
 				return err
 			}
 			return nil
@@ -176,7 +190,10 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 				log:      commonOpts.Log,
 				debugLog: commonOpts.DebugLog,
 			}
-			return sched.Remove(la, sched.Options{WaitCompletion: opts.waitCompletion})
+			return sched.Remove(la, sched.Options{
+				Platform:       commonOpts.Platform,
+				WaitCompletion: opts.waitCompletion,
+			})
 		},
 		Args: cobra.NoArgs,
 	}
@@ -192,7 +209,10 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 				log:      commonOpts.Log,
 				debugLog: commonOpts.DebugLog,
 			}
-			return rte.Remove(la, rte.Options{WaitCompletion: opts.waitCompletion})
+			return rte.Remove(la, rte.Options{
+				Platform:       commonOpts.Platform,
+				WaitCompletion: opts.waitCompletion,
+			})
 		},
 		Args: cobra.NoArgs,
 	}
@@ -204,13 +224,21 @@ func deployOnCluster(commonOpts *CommonOptions, opts *deployOptions) error {
 		log:      commonOpts.Log,
 		debugLog: commonOpts.DebugLog,
 	}
-	if err := api.Deploy(la, api.Options{}); err != nil {
+	if err := api.Deploy(la, api.Options{
+		Platform: commonOpts.Platform,
+	}); err != nil {
 		return err
 	}
-	if err := rte.Deploy(la, rte.Options{WaitCompletion: opts.waitCompletion}); err != nil {
+	if err := rte.Deploy(la, rte.Options{
+		Platform:       commonOpts.Platform,
+		WaitCompletion: opts.waitCompletion,
+	}); err != nil {
 		return err
 	}
-	if err := sched.Deploy(la, sched.Options{WaitCompletion: opts.waitCompletion}); err != nil {
+	if err := sched.Deploy(la, sched.Options{
+		Platform:       commonOpts.Platform,
+		WaitCompletion: opts.waitCompletion,
+	}); err != nil {
 		return err
 	}
 	return nil
