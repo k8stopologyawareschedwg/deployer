@@ -36,7 +36,7 @@ func Deploy(log deployer.Logger, opts Options) error {
 		return err
 	}
 
-	mf = mf.UpdateNamespace().UpdatePullspecs()
+	mf = mf.Update()
 	log.Debugf("SCD manifests loaded")
 
 	hp, err := deployer.NewHelper("SCD", log)
@@ -69,7 +69,7 @@ func Remove(log deployer.Logger, opts Options) error {
 		return err
 	}
 
-	mf = mf.UpdateNamespace()
+	mf = mf.Update()
 	log.Debugf("SCD manifests loaded")
 
 	hp, err := deployer.NewHelper("SCD", log)
