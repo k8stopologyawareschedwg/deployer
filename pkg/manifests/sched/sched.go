@@ -54,13 +54,7 @@ func (mf Manifests) Clone() Manifests {
 	}
 }
 
-func (mf Manifests) UpdateNamespace() Manifests {
-	ret := mf.Clone()
-	// nothing to do here
-	return ret
-}
-
-func (mf Manifests) UpdatePullspecs() Manifests {
+func (mf Manifests) Update() Manifests {
 	ret := mf.Clone()
 	ret.Deployment = manifests.UpdateSchedulerPluginDeployment(ret.Deployment)
 	return ret

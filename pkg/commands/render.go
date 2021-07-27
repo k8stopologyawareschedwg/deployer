@@ -56,7 +56,7 @@ func NewRenderAPICommand(commonOpts *CommonOptions, opts *renderOptions) *cobra.
 			if err != nil {
 				return err
 			}
-			return renderObjects(apiManifests.UpdateNamespace().UpdatePullspecs().ToObjects())
+			return renderObjects(apiManifests.Update().ToObjects())
 		},
 		Args: cobra.NoArgs,
 	}
@@ -72,7 +72,7 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOpti
 			if err != nil {
 				return err
 			}
-			return renderObjects(schedManifests.UpdateNamespace().UpdatePullspecs().ToObjects())
+			return renderObjects(schedManifests.Update().ToObjects())
 		},
 		Args: cobra.NoArgs,
 	}
@@ -88,7 +88,7 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOpti
 			if err != nil {
 				return err
 			}
-			return renderObjects(rteManifests.UpdateNamespace().UpdatePullspecs().ToObjects())
+			return renderObjects(rteManifests.Update().ToObjects())
 		},
 		Args: cobra.NoArgs,
 	}
@@ -102,19 +102,19 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	if err != nil {
 		return err
 	}
-	objs = append(objs, apiManifests.UpdateNamespace().UpdatePullspecs().ToObjects()...)
+	objs = append(objs, apiManifests.Update().ToObjects()...)
 
 	rteManifests, err := rte.GetManifests(commonOpts.Platform)
 	if err != nil {
 		return err
 	}
-	objs = append(objs, rteManifests.UpdateNamespace().UpdatePullspecs().ToObjects()...)
+	objs = append(objs, rteManifests.Update().ToObjects()...)
 
 	schedManifests, err := sched.GetManifests(commonOpts.Platform)
 	if err != nil {
 		return err
 	}
-	objs = append(objs, schedManifests.UpdateNamespace().UpdatePullspecs().ToObjects()...)
+	objs = append(objs, schedManifests.Update().ToObjects()...)
 
 	return renderObjects(objs)
 }

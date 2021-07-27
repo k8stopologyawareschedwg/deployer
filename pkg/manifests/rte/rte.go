@@ -29,6 +29,11 @@ import (
 	"github.com/fromanirh/deployer/pkg/manifests"
 )
 
+const (
+	namespaceOCP      = "openshift-monitoring"
+	serviceAccountOCP = "node-exporter"
+)
+
 type Manifests struct {
 	Namespace          *corev1.Namespace
 	ServiceAccount     *corev1.ServiceAccount
@@ -36,48 +41,59 @@ type Manifests struct {
 	ClusterRoleBinding *rbacv1.ClusterRoleBinding
 	DaemonSet          *appsv1.DaemonSet
 	plat               platform.Platform
+	namespace          string
+	serviceAccount     string
 }
 
 func (mf Manifests) Clone() Manifests {
-	return Manifests{
-		Namespace:          mf.Namespace.DeepCopy(),
-		ServiceAccount:     mf.ServiceAccount.DeepCopy(),
+	ret := Manifests{
 		ClusterRole:        mf.ClusterRole.DeepCopy(),
 		ClusterRoleBinding: mf.ClusterRoleBinding.DeepCopy(),
 		DaemonSet:          mf.DaemonSet.DeepCopy(),
+		plat:               mf.plat,
+		namespace:          mf.namespace,
+		serviceAccount:     mf.serviceAccount,
 	}
-}
-
-func (mf Manifests) UpdateNamespace() Manifests {
-	ret := mf.Clone()
-	ret.ServiceAccount.Namespace = ret.Namespace.Name
-	ret.DaemonSet.Namespace = ret.Namespace.Name
-	for idx := 0; idx < len(ret.ClusterRoleBinding.Subjects); idx++ {
-		ret.ClusterRoleBinding.Subjects[idx].Namespace = ret.Namespace.Name
+	if mf.plat == platform.Kubernetes {
+		ret.Namespace = mf.Namespace.DeepCopy()
+		ret.ServiceAccount = mf.ServiceAccount.DeepCopy()
 	}
 	return ret
 }
 
-func (mf Manifests) UpdatePullspecs() Manifests {
+func (mf Manifests) Update() Manifests {
 	ret := mf.Clone()
-	ret.DaemonSet = manifests.UpdateResourceTopologyExporterDaemonSet(ret.DaemonSet)
+	if ret.plat == platform.Kubernetes {
+		ret.ServiceAccount.Namespace = mf.namespace
+	}
+	ret.DaemonSet.Namespace = mf.namespace
+	ret.DaemonSet.Spec.Template.Spec.ServiceAccountName = mf.serviceAccount
+	for idx := 0; idx < len(ret.ClusterRoleBinding.Subjects); idx++ {
+		ret.ClusterRoleBinding.Subjects[idx].Name = mf.serviceAccount
+		ret.ClusterRoleBinding.Subjects[idx].Namespace = mf.namespace
+	}
+	ret.DaemonSet = manifests.UpdateResourceTopologyExporterDaemonSet(ret.DaemonSet, ret.plat)
 	return ret
 }
 
 func (mf Manifests) ToObjects() []client.Object {
-	return []client.Object{
-		mf.Namespace,
-		mf.ServiceAccount,
+	objs := []client.Object{
 		mf.ClusterRole,
 		mf.ClusterRoleBinding,
 		mf.DaemonSet,
 	}
+	if mf.plat == platform.Kubernetes {
+		kubeObjs := []client.Object{
+			mf.Namespace,
+			mf.ServiceAccount,
+		}
+		return append(kubeObjs, objs...)
+	}
+	return objs
 }
 
 func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
-	return []deployer.WaitableObject{
-		deployer.WaitableObject{Obj: mf.Namespace},
-		deployer.WaitableObject{Obj: mf.ServiceAccount},
+	objs := []deployer.WaitableObject{
 		deployer.WaitableObject{Obj: mf.ClusterRole},
 		deployer.WaitableObject{Obj: mf.ClusterRoleBinding},
 		deployer.WaitableObject{
@@ -85,18 +101,36 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log deployer.Logger)
 			Wait: func() error { return wait.PodsToBeRunningByRegex(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
 		},
 	}
-
+	if mf.plat == platform.Kubernetes {
+		kubeObjs := []deployer.WaitableObject{
+			deployer.WaitableObject{Obj: mf.Namespace},
+			deployer.WaitableObject{Obj: mf.ServiceAccount},
+		}
+		return append(kubeObjs, objs...)
+	}
+	return objs
 }
 
 func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
+	if mf.plat == platform.Kubernetes {
+		return []deployer.WaitableObject{
+			deployer.WaitableObject{
+				Obj:  mf.Namespace,
+				Wait: func() error { return wait.NamespaceToBeGone(hp, log, mf.Namespace.Name) },
+			},
+			// no need to remove objects created inside the namespace we just removed
+			deployer.WaitableObject{Obj: mf.ClusterRole},
+			deployer.WaitableObject{Obj: mf.ClusterRoleBinding},
+			deployer.WaitableObject{Obj: mf.ServiceAccount},
+		}
+	}
 	return []deployer.WaitableObject{
 		deployer.WaitableObject{
-			Obj:  mf.Namespace,
-			Wait: func() error { return wait.NamespaceToBeGone(hp, log, mf.Namespace.Name) },
+			Obj:  mf.DaemonSet,
+			Wait: func() error { return wait.PodsToBeGoneByRegex(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
 		},
-		// no need to remove objects created inside the namespace we just removed
-		deployer.WaitableObject{Obj: mf.ClusterRoleBinding},
 		deployer.WaitableObject{Obj: mf.ClusterRole},
+		deployer.WaitableObject{Obj: mf.ClusterRoleBinding},
 	}
 }
 
@@ -105,13 +139,21 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 	mf := Manifests{
 		plat: plat,
 	}
-	mf.Namespace, err = manifests.Namespace(manifests.ComponentResourceTopologyExporter)
-	if err != nil {
-		return mf, err
-	}
-	mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentResourceTopologyExporter)
-	if err != nil {
-		return mf, err
+	if plat == platform.Kubernetes {
+		mf.Namespace, err = manifests.Namespace(manifests.ComponentResourceTopologyExporter)
+		if err != nil {
+			return mf, err
+		}
+		mf.namespace = mf.Namespace.Name
+
+		mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentResourceTopologyExporter)
+		if err != nil {
+			return mf, err
+		}
+		mf.serviceAccount = mf.ServiceAccount.Name
+	} else {
+		mf.namespace = namespaceOCP
+		mf.serviceAccount = serviceAccountOCP
 	}
 	mf.ClusterRole, err = manifests.ClusterRole(manifests.ComponentResourceTopologyExporter)
 	if err != nil {

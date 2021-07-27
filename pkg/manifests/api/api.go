@@ -55,13 +55,7 @@ func (mf Manifests) Clone() Manifests {
 	}
 }
 
-func (mf Manifests) UpdateNamespace() Manifests {
-	ret := mf.Clone()
-	// nothing to do atm
-	return ret
-}
-
-func (mf Manifests) UpdatePullspecs() Manifests {
+func (mf Manifests) Update() Manifests {
 	ret := mf.Clone()
 	// nothing to do atm
 	return ret
