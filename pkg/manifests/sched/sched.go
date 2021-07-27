@@ -97,7 +97,7 @@ func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log deployer.Logger)
 	return []deployer.WaitableObject{
 		deployer.WaitableObject{
 			Obj:  mf.Deployment,
-			Wait: func() error { return wait.PodsToBeRunningByRegex(hp, log, mf.Deployment.Namespace, mf.Deployment.Name) },
+			Wait: func() error { return wait.PodsToBeGoneByRegex(hp, log, mf.Deployment.Namespace, mf.Deployment.Name) },
 		},
 		deployer.WaitableObject{Obj: mf.ConfigMap},
 		deployer.WaitableObject{Obj: mf.RoleBinding},
