@@ -68,11 +68,8 @@ func (mf Manifests) Update() Manifests {
 	}
 	ret.DaemonSet.Namespace = mf.namespace
 	ret.DaemonSet.Spec.Template.Spec.ServiceAccountName = mf.serviceAccount
-	for idx := 0; idx < len(ret.ClusterRoleBinding.Subjects); idx++ {
-		ret.ClusterRoleBinding.Subjects[idx].Name = mf.serviceAccount
-		ret.ClusterRoleBinding.Subjects[idx].Namespace = mf.namespace
-	}
-	ret.DaemonSet = manifests.UpdateResourceTopologyExporterDaemonSet(ret.DaemonSet, ret.plat)
+	manifests.UpdateClusterRoleBinding(ret.ClusterRoleBinding, mf.serviceAccount, mf.namespace)
+	manifests.UpdateResourceTopologyExporterDaemonSet(ret.DaemonSet, ret.plat)
 	return ret
 }
 

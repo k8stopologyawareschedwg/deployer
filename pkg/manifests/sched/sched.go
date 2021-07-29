@@ -29,6 +29,10 @@ import (
 	"github.com/fromanirh/deployer/pkg/manifests"
 )
 
+const (
+	namespaceOCP = "openshift-kube-scheduler"
+)
+
 type Manifests struct {
 	ServiceAccount          *corev1.ServiceAccount
 	ClusterRole             *rbacv1.ClusterRole
@@ -56,7 +60,17 @@ func (mf Manifests) Clone() Manifests {
 
 func (mf Manifests) Update() Manifests {
 	ret := mf.Clone()
-	ret.Deployment = manifests.UpdateSchedulerPluginDeployment(ret.Deployment)
+	if mf.plat == platform.Kubernetes {
+		return ret
+	}
+	ret.ServiceAccount.Namespace = namespaceOCP
+	ret.ConfigMap.Namespace = namespaceOCP
+	manifests.UpdateClusterRoleBinding(ret.CRBKubernetesScheduler, "", namespaceOCP)
+	manifests.UpdateClusterRoleBinding(ret.CRBNodeResourceTopology, "", namespaceOCP)
+	manifests.UpdateClusterRoleBinding(ret.CRBVolumeScheduler, "", namespaceOCP)
+	manifests.UpdateRoleBinding(ret.RoleBinding, "", namespaceOCP)
+	manifests.UpdateSchedulerPluginDeployment(ret.Deployment)
+	ret.Deployment.Namespace = namespaceOCP
 	return ret
 }
 
