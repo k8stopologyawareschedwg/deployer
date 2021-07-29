@@ -20,7 +20,10 @@ import "os"
 
 func init() {
 	if schedImage, ok := os.LookupEnv("TAS_SCHEDULER_PLUGIN_IMAGE"); ok {
-		SchedulerPluginImage = schedImage
+		SchedulerPluginSchedulerImage = schedImage
+	}
+	if schedCtrlImage, ok := os.LookupEnv("TAS_SCHEDULER_PLUGIN_CONTROLLER_IMAGE"); ok {
+		SchedulerPluginControllerImage = schedCtrlImage
 	}
 	if rteImage, ok := os.LookupEnv("TAS_RESOURCE_EXPORTER_IMAGE"); ok {
 		ResourceTopologyExporterImage = rteImage
@@ -28,6 +31,7 @@ func init() {
 }
 
 var (
-	SchedulerPluginImage          = SchedulerPluginDefaultImage
-	ResourceTopologyExporterImage = ResourceTopologyExporterDefaultImage
+	SchedulerPluginSchedulerImage  = SchedulerPluginSchedulerDefaultImage
+	SchedulerPluginControllerImage = SchedulerPluginSchedulerDefaultImage
+	ResourceTopologyExporterImage  = ResourceTopologyExporterDefaultImage
 )

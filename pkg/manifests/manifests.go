@@ -38,6 +38,11 @@ const (
 	ComponentResourceTopologyExporter = "rte"
 )
 
+const (
+	SubComponentSchedulerPluginScheduler  = "scheduler"
+	SubComponentSchedulerPluginController = "controller"
+)
+
 //go:embed yaml
 var src embed.FS
 
@@ -62,12 +67,15 @@ func Namespace(component string) (*corev1.Namespace, error) {
 	return ns, nil
 }
 
-func ServiceAccount(component string) (*corev1.ServiceAccount, error) {
+func ServiceAccount(component, subComponent string) (*corev1.ServiceAccount, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
+	if err := validateSubComponent(component, subComponent); err != nil {
+		return nil, err
+	}
 
-	obj, err := loadObject(filepath.Join("yaml", component, "serviceaccount.yaml"))
+	obj, err := loadObject(filepath.Join("yaml", component, subComponent, "serviceaccount.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -79,12 +87,15 @@ func ServiceAccount(component string) (*corev1.ServiceAccount, error) {
 	return sa, nil
 }
 
-func ClusterRole(component string) (*rbacv1.ClusterRole, error) {
+func ClusterRole(component, subComponent string) (*rbacv1.ClusterRole, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
+	if err := validateSubComponent(component, subComponent); err != nil {
+		return nil, err
+	}
 
-	obj, err := loadObject(filepath.Join("yaml", component, "clusterrole.yaml"))
+	obj, err := loadObject(filepath.Join("yaml", component, subComponent, "clusterrole.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -94,6 +105,26 @@ func ClusterRole(component string) (*rbacv1.ClusterRole, error) {
 		return nil, fmt.Errorf("unexpected type, got %t", obj)
 	}
 	return cr, nil
+}
+
+func ClusterRoleBinding(component, subComponent string) (*rbacv1.ClusterRoleBinding, error) {
+	if err := validateComponent(component); err != nil {
+		return nil, err
+	}
+	if err := validateSubComponent(component, subComponent); err != nil {
+		return nil, err
+	}
+
+	obj, err := loadObject(filepath.Join("yaml", component, subComponent, "clusterrolebinding.yaml"))
+	if err != nil {
+		return nil, err
+	}
+
+	crb, ok := obj.(*rbacv1.ClusterRoleBinding)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type, got %t", obj)
+	}
+	return crb, nil
 }
 
 func APICRD() (*apiextensionv1.CustomResourceDefinition, error) {
@@ -109,8 +140,27 @@ func APICRD() (*apiextensionv1.CustomResourceDefinition, error) {
 	return crd, nil
 }
 
-func SchedulerPluginConfigMap() (*corev1.ConfigMap, error) {
-	obj, err := loadObject("yaml/sched/configmap.yaml")
+func SchedulerCRD() (*apiextensionv1.CustomResourceDefinition, error) {
+	obj, err := loadObject("yaml/sched/podgroup.crd.yaml")
+	if err != nil {
+		return nil, err
+	}
+
+	crd, ok := obj.(*apiextensionv1.CustomResourceDefinition)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type, got %t", obj)
+	}
+	return crd, nil
+}
+
+func ConfigMap(component, subComponent string) (*corev1.ConfigMap, error) {
+	if err := validateComponent(component); err != nil {
+		return nil, err
+	}
+	if err := validateSubComponent(component, subComponent); err != nil {
+		return nil, err
+	}
+	obj, err := loadObject(filepath.Join("yaml", component, subComponent, "configmap.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +172,14 @@ func SchedulerPluginConfigMap() (*corev1.ConfigMap, error) {
 	return crd, nil
 }
 
-func SchedulerPluginDeployment() (*appsv1.Deployment, error) {
-	obj, err := loadObject("yaml/sched/deployment.yaml")
+func Deployment(component, subComponent string) (*appsv1.Deployment, error) {
+	if err := validateComponent(component); err != nil {
+		return nil, err
+	}
+	if err := validateSubComponent(component, subComponent); err != nil {
+		return nil, err
+	}
+	obj, err := loadObject(filepath.Join("yaml", "sched", subComponent, "deployment.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -135,58 +191,11 @@ func SchedulerPluginDeployment() (*appsv1.Deployment, error) {
 	return dp, nil
 }
 
-func loadClusterRoleBinding(component, detail string) (*rbacv1.ClusterRoleBinding, error) {
+func DaemonSet(component string) (*appsv1.DaemonSet, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
-
-	crbName := "clusterrolebinding.yaml"
-	if detail != "" {
-		crbName = fmt.Sprintf("clusterrolebinding-%s.yaml", detail)
-	}
-	obj, err := loadObject(filepath.Join("yaml", component, crbName))
-	if err != nil {
-		return nil, err
-	}
-
-	crb, ok := obj.(*rbacv1.ClusterRoleBinding)
-	if !ok {
-		return nil, fmt.Errorf("unexpected type, got %t", obj)
-	}
-	return crb, nil
-}
-
-func SchedulerPluginClusterRoleBindingKubeScheduler() (*rbacv1.ClusterRoleBinding, error) {
-	return loadClusterRoleBinding(ComponentSchedulerPlugin, "kube-sched")
-}
-
-func SchedulerPluginClusterRoleBindingNodeResourceTopology() (*rbacv1.ClusterRoleBinding, error) {
-	return loadClusterRoleBinding(ComponentSchedulerPlugin, "node-res-topo")
-}
-
-func SchedulerPluginClusterRoleBindingVolumeScheduler() (*rbacv1.ClusterRoleBinding, error) {
-	return loadClusterRoleBinding(ComponentSchedulerPlugin, "vol-sched")
-}
-
-func SchedulerPluginRoleBindingKubeScheduler() (*rbacv1.RoleBinding, error) {
-	obj, err := loadObject("yaml/sched/rolebinding-kube-sched.yaml")
-	if err != nil {
-		return nil, err
-	}
-
-	crb, ok := obj.(*rbacv1.RoleBinding)
-	if !ok {
-		return nil, fmt.Errorf("unexpected type, got %t", obj)
-	}
-	return crb, nil
-}
-
-func ResourceTopologyExporterClusterRoleBinding() (*rbacv1.ClusterRoleBinding, error) {
-	return loadClusterRoleBinding(ComponentResourceTopologyExporter, "")
-}
-
-func ResourceTopologyExporterDaemonSet() (*appsv1.DaemonSet, error) {
-	obj, err := loadObject("yaml/rte/daemonset.yaml")
+	obj, err := loadObject(filepath.Join("yaml", component, "daemonset.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -221,5 +230,15 @@ func validateComponent(component string) error {
 	if component == "api" || component == "rte" || component == "sched" {
 		return nil
 	}
-	return fmt.Errorf("unknown component: %s", component)
+	return fmt.Errorf("unknown component: %q", component)
+}
+
+func validateSubComponent(component, subComponent string) error {
+	if subComponent == "" {
+		return nil
+	}
+	if component == "sched" && (subComponent == "controller" || subComponent == "scheduler") {
+		return nil
+	}
+	return fmt.Errorf("unknown subComponent %q for component: %q", subComponent, component)
 }

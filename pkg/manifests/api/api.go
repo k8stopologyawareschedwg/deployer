@@ -27,7 +27,8 @@ import (
 )
 
 type Manifests struct {
-	Crd  *apiextensionv1.CustomResourceDefinition
+	Crd *apiextensionv1.CustomResourceDefinition
+	// internal fields
 	plat platform.Platform
 }
 
@@ -51,6 +52,8 @@ func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log deployer.Logger)
 
 func (mf Manifests) Clone() Manifests {
 	return Manifests{
+		plat: mf.plat,
+		// objects
 		Crd: mf.Crd.DeepCopy(),
 	}
 }

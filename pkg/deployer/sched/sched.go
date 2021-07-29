@@ -17,13 +17,17 @@
 package sched
 
 import (
+	"fmt"
+
 	"github.com/fromanirh/deployer/pkg/deployer"
 	"github.com/fromanirh/deployer/pkg/deployer/platform"
+	rtemanifests "github.com/fromanirh/deployer/pkg/manifests/rte"
 	schedmanifests "github.com/fromanirh/deployer/pkg/manifests/sched"
 )
 
 type Options struct {
 	Platform       platform.Platform
+	Replicas       int32
 	WaitCompletion bool
 }
 
@@ -36,7 +40,15 @@ func Deploy(log deployer.Logger, opts Options) error {
 		return err
 	}
 
-	mf = mf.Update()
+	rteMf, err := rtemanifests.GetManifests(opts.Platform)
+	if err != nil {
+		return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
+	}
+
+	mf = mf.Update(schedmanifests.UpdateOptions{
+		Replicas:               opts.Replicas,
+		NodeResourcesNamespace: rteMf.Namespace.Name,
+	})
 	log.Debugf("SCD manifests loaded")
 
 	hp, err := deployer.NewHelper("SCD", log)
@@ -69,7 +81,16 @@ func Remove(log deployer.Logger, opts Options) error {
 		return err
 	}
 
-	mf = mf.Update()
+	rteMf, err := rtemanifests.GetManifests(opts.Platform)
+	if err != nil {
+		return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
+	}
+
+	rteMf = rteMf.Update()
+	mf = mf.Update(schedmanifests.UpdateOptions{
+		Replicas:               opts.Replicas,
+		NodeResourcesNamespace: rteMf.DaemonSet.Namespace,
+	})
 	log.Debugf("SCD manifests loaded")
 
 	hp, err := deployer.NewHelper("SCD", log)

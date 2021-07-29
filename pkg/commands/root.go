@@ -31,6 +31,7 @@ type CommonOptions struct {
 	Platform platform.Platform
 	Log      *log.Logger
 	DebugLog *log.Logger
+	Replicas int
 	plat     string
 }
 
@@ -62,6 +63,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 			if !ok {
 				return fmt.Errorf("unknown platform: %q", commonOpts.plat)
 			}
+			commonOpts.DebugLog.Printf("platform: %q", commonOpts.Platform)
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -73,6 +75,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 
 	root.PersistentFlags().BoolVarP(&commonOpts.Debug, "debug", "D", false, "enable debug log")
 	root.PersistentFlags().StringVarP(&commonOpts.plat, "platform", "P", "kubernetes", "platform to deploy on")
+	root.PersistentFlags().IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
 
 	root.AddCommand(
 		NewRenderCommand(commonOpts),

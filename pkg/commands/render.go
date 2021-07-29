@@ -72,7 +72,15 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOpti
 			if err != nil {
 				return err
 			}
-			return renderObjects(schedManifests.Update().ToObjects())
+			rteManifests, err := rte.GetManifests(commonOpts.Platform)
+			if err != nil {
+				return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
+			}
+			updateOpts := sched.UpdateOptions{
+				Replicas:               int32(commonOpts.Replicas),
+				NodeResourcesNamespace: rteManifests.Namespace.Name,
+			}
+			return renderObjects(schedManifests.Update(updateOpts).ToObjects())
 		},
 		Args: cobra.NoArgs,
 	}
@@ -114,7 +122,12 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	if err != nil {
 		return err
 	}
-	objs = append(objs, schedManifests.Update().ToObjects()...)
+
+	updateOpts := sched.UpdateOptions{
+		Replicas:               int32(commonOpts.Replicas),
+		NodeResourcesNamespace: rteManifests.Namespace.Name,
+	}
+	objs = append(objs, schedManifests.Update(updateOpts).ToObjects()...)
 
 	return renderObjects(objs)
 }

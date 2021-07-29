@@ -40,19 +40,21 @@ type Manifests struct {
 	ClusterRole        *rbacv1.ClusterRole
 	ClusterRoleBinding *rbacv1.ClusterRoleBinding
 	DaemonSet          *appsv1.DaemonSet
-	plat               platform.Platform
-	namespace          string
-	serviceAccount     string
+	// internal fields
+	plat           platform.Platform
+	namespace      string
+	serviceAccount string
 }
 
 func (mf Manifests) Clone() Manifests {
 	ret := Manifests{
+		plat:           mf.plat,
+		namespace:      mf.namespace,
+		serviceAccount: mf.serviceAccount,
+		// objects
 		ClusterRole:        mf.ClusterRole.DeepCopy(),
 		ClusterRoleBinding: mf.ClusterRoleBinding.DeepCopy(),
 		DaemonSet:          mf.DaemonSet.DeepCopy(),
-		plat:               mf.plat,
-		namespace:          mf.namespace,
-		serviceAccount:     mf.serviceAccount,
 	}
 	if mf.plat == platform.Kubernetes {
 		ret.Namespace = mf.Namespace.DeepCopy()
@@ -68,11 +70,8 @@ func (mf Manifests) Update() Manifests {
 	}
 	ret.DaemonSet.Namespace = mf.namespace
 	ret.DaemonSet.Spec.Template.Spec.ServiceAccountName = mf.serviceAccount
-	for idx := 0; idx < len(ret.ClusterRoleBinding.Subjects); idx++ {
-		ret.ClusterRoleBinding.Subjects[idx].Name = mf.serviceAccount
-		ret.ClusterRoleBinding.Subjects[idx].Namespace = mf.namespace
-	}
-	ret.DaemonSet = manifests.UpdateResourceTopologyExporterDaemonSet(ret.DaemonSet, ret.plat)
+	manifests.UpdateClusterRoleBinding(ret.ClusterRoleBinding, mf.serviceAccount, mf.namespace)
+	manifests.UpdateResourceTopologyExporterDaemonSet(ret.DaemonSet, ret.plat)
 	return ret
 }
 
@@ -146,7 +145,7 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 		}
 		mf.namespace = mf.Namespace.Name
 
-		mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentResourceTopologyExporter)
+		mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentResourceTopologyExporter, "")
 		if err != nil {
 			return mf, err
 		}
@@ -155,15 +154,15 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 		mf.namespace = namespaceOCP
 		mf.serviceAccount = serviceAccountOCP
 	}
-	mf.ClusterRole, err = manifests.ClusterRole(manifests.ComponentResourceTopologyExporter)
+	mf.ClusterRole, err = manifests.ClusterRole(manifests.ComponentResourceTopologyExporter, "")
 	if err != nil {
 		return mf, err
 	}
-	mf.ClusterRoleBinding, err = manifests.ResourceTopologyExporterClusterRoleBinding()
+	mf.ClusterRoleBinding, err = manifests.ClusterRoleBinding(manifests.ComponentResourceTopologyExporter, "")
 	if err != nil {
 		return mf, err
 	}
-	mf.DaemonSet, err = manifests.ResourceTopologyExporterDaemonSet()
+	mf.DaemonSet, err = manifests.DaemonSet(manifests.ComponentResourceTopologyExporter)
 	if err != nil {
 		return mf, err
 	}
