@@ -41,30 +41,85 @@ func NewRenderCommand(commonOpts *CommonOptions) *cobra.Command {
 		},
 		Args: cobra.NoArgs,
 	}
+	render.AddCommand(NewRenderAPICommand(commonOpts, opts))
+	render.AddCommand(NewRenderSchedulerPluginCommand(commonOpts, opts))
+	render.AddCommand(NewRenderTopologyUpdaterCommand(commonOpts, opts))
+	return render
+}
+
+func NewRenderAPICommand(commonOpts *CommonOptions, opts *renderOptions) *cobra.Command {
+	render := &cobra.Command{
+		Use:   "api",
+		Short: "render the APIs needed for topology-aware-scheduling",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			apiManifests, err := api.GetManifests(commonOpts.Platform)
+			if err != nil {
+				return err
+			}
+			return renderObjects(apiManifests.UpdateNamespace().UpdatePullspecs().ToObjects())
+		},
+		Args: cobra.NoArgs,
+	}
+	return render
+}
+
+func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOptions) *cobra.Command {
+	render := &cobra.Command{
+		Use:   "scheduler-plugin",
+		Short: "render the scheduler plugin needed for topology-aware-scheduling",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			schedManifests, err := sched.GetManifests(commonOpts.Platform)
+			if err != nil {
+				return err
+			}
+			return renderObjects(schedManifests.UpdateNamespace().UpdatePullspecs().ToObjects())
+		},
+		Args: cobra.NoArgs,
+	}
+	return render
+}
+
+func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOptions) *cobra.Command {
+	render := &cobra.Command{
+		Use:   "topology-updater",
+		Short: "render the topology updater needed for topology-aware-scheduling",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rteManifests, err := rte.GetManifests(commonOpts.Platform)
+			if err != nil {
+				return err
+			}
+			return renderObjects(rteManifests.UpdateNamespace().UpdatePullspecs().ToObjects())
+		},
+		Args: cobra.NoArgs,
+	}
 	return render
 }
 
 func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *renderOptions, args []string) error {
 	var objs []client.Object
 
-	apiManifests, err := api.GetManifests()
+	apiManifests, err := api.GetManifests(commonOpts.Platform)
 	if err != nil {
 		return err
 	}
 	objs = append(objs, apiManifests.UpdateNamespace().UpdatePullspecs().ToObjects()...)
 
-	rteManifests, err := rte.GetManifests()
+	rteManifests, err := rte.GetManifests(commonOpts.Platform)
 	if err != nil {
 		return err
 	}
 	objs = append(objs, rteManifests.UpdateNamespace().UpdatePullspecs().ToObjects()...)
 
-	schedManifests, err := sched.GetManifests()
+	schedManifests, err := sched.GetManifests(commonOpts.Platform)
 	if err != nil {
 		return err
 	}
 	objs = append(objs, schedManifests.UpdateNamespace().UpdatePullspecs().ToObjects()...)
 
+	return renderObjects(objs)
+}
+
+func renderObjects(objs []client.Object) error {
 	for _, obj := range objs {
 		fmt.Printf("---\n")
 		if err := manifests.SerializeObject(obj, os.Stdout); err != nil {

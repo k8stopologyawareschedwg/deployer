@@ -37,6 +37,7 @@ import (
 
 	"github.com/fromanirh/deployer/pkg/clientutil"
 	"github.com/fromanirh/deployer/pkg/clientutil/nodes"
+	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/fromanirh/deployer/pkg/manifests/rte"
 	"github.com/fromanirh/deployer/pkg/manifests/sched"
 )
@@ -113,13 +114,13 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 
 		ginkgo.It("should perform overall deployment and verify all pods are running", func() {
 			ginkgo.By("checking that resource-topology-exporter pod is running")
-			mf, err := rte.GetManifests()
+			mf, err := rte.GetManifests(platform.Kubernetes)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			mf = mf.UpdateNamespace()
 			waitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DaemonSet.Name))
 
 			ginkgo.By("checking that topo-aware-scheduler pod is running")
-			mfs, err := sched.GetManifests()
+			mfs, err := sched.GetManifests(platform.Kubernetes)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			mfs = mfs.UpdateNamespace()
 			waitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.Deployment.Name))

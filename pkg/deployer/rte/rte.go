@@ -18,10 +18,12 @@ package rte
 
 import (
 	"github.com/fromanirh/deployer/pkg/deployer"
+	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	rtemanifests "github.com/fromanirh/deployer/pkg/manifests/rte"
 )
 
 type Options struct {
+	Platform       platform.Platform
 	WaitCompletion bool
 }
 
@@ -29,7 +31,7 @@ func Deploy(log deployer.Logger, opts Options) error {
 	var err error
 	log.Printf("deploying topology-aware-scheduling topology updater...")
 
-	mf, err := rtemanifests.GetManifests()
+	mf, err := rtemanifests.GetManifests(opts.Platform)
 	if err != nil {
 		return err
 	}
@@ -66,7 +68,7 @@ func Remove(log deployer.Logger, opts Options) error {
 		return err
 	}
 
-	mf, err := rtemanifests.GetManifests()
+	mf, err := rtemanifests.GetManifests(opts.Platform)
 	if err != nil {
 		return err
 	}

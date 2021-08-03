@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fromanirh/deployer/pkg/deployer"
+	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/fromanirh/deployer/pkg/deployer/wait"
 	"github.com/fromanirh/deployer/pkg/manifests"
 )
@@ -37,6 +38,7 @@ type Manifests struct {
 	RoleBinding             *rbacv1.RoleBinding
 	ConfigMap               *corev1.ConfigMap
 	Deployment              *appsv1.Deployment
+	plat                    platform.Platform
 }
 
 func (mf Manifests) Clone() Manifests {
@@ -109,9 +111,11 @@ func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log deployer.Logger)
 	}
 }
 
-func GetManifests() (Manifests, error) {
+func GetManifests(plat platform.Platform) (Manifests, error) {
 	var err error
-	mf := Manifests{}
+	mf := Manifests{
+		plat: plat,
+	}
 	mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin)
 	if err != nil {
 		return mf, err
