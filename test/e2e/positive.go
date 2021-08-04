@@ -42,11 +42,6 @@ import (
 	"github.com/fromanirh/deployer/pkg/manifests/sched"
 )
 
-const (
-	// TODO: this should be autodetected
-	exportedNs = "default"
-)
-
 var _ = ginkgo.Describe("[PositiveFlow] Deployer render", func() {
 	ginkgo.Context("with cluster image overrides", func() {
 		ginkgo.It("it should reflect the overrides in the output", func() {
@@ -116,13 +111,13 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 			ginkgo.By("checking that resource-topology-exporter pod is running")
 			mf, err := rte.GetManifests(platform.Kubernetes)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			mf = mf.UpdateNamespace()
+			mf = mf.Update()
 			waitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DaemonSet.Name))
 
 			ginkgo.By("checking that topo-aware-scheduler pod is running")
 			mfs, err := sched.GetManifests(platform.Kubernetes)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			mfs = mfs.UpdateNamespace()
+			mfs = mfs.Update()
 			waitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.Deployment.Name))
 
 			ginkgo.By("checking that noderesourcetopolgy has some information in it")
@@ -135,7 +130,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
 
 				// the name of the nrt object is the same as the worker node's name
-				nrt := getNodeResourceTopology(tc, exportedNs, node.Name)
+				nrt := getNodeResourceTopology(tc, mf.Namespace.Name, node.Name)
 				// we check CPUs because that's the only resource we know it will always be available
 				hasCPU := false
 				for _, zone := range nrt.Zones {
@@ -155,6 +150,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 func getNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name string) *v1alpha1.NodeResourceTopology {
 	var err error
 	var nrt *v1alpha1.NodeResourceTopology
+	fmt.Fprintf(ginkgo.GinkgoWriter, "looking for noderesourcetopology %q in namespace %q\n", name, namespace)
 	gomega.EventuallyWithOffset(1, func() error {
 		nrt, err = tc.TopologyV1alpha1().NodeResourceTopologies(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {

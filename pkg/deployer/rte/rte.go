@@ -35,7 +35,7 @@ func Deploy(log deployer.Logger, opts Options) error {
 	if err != nil {
 		return err
 	}
-	mf = mf.UpdateNamespace().UpdatePullspecs()
+	mf = mf.Update()
 	log.Debugf("RTE manifests loaded")
 
 	hp, err := deployer.NewHelper("RTE", log)
@@ -72,7 +72,7 @@ func Remove(log deployer.Logger, opts Options) error {
 	if err != nil {
 		return err
 	}
-	mf = mf.UpdateNamespace()
+	mf = mf.Update()
 	log.Debugf("RTE manifests loaded")
 
 	for _, wo := range mf.ToDeletableObjects(hp, log) {
