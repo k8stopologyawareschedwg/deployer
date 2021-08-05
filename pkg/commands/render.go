@@ -96,7 +96,10 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOpti
 			if err != nil {
 				return err
 			}
-			return renderObjects(rteManifests.Update().ToObjects())
+			updateOpts := rte.UpdateOptions{
+				ConfigData: commonOpts.RTEConfigData,
+			}
+			return renderObjects(rteManifests.Update(updateOpts).ToObjects())
 		},
 		Args: cobra.NoArgs,
 	}
@@ -116,18 +119,21 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	if err != nil {
 		return err
 	}
-	objs = append(objs, rteManifests.Update().ToObjects()...)
+	rteUpdateOpts := rte.UpdateOptions{
+		ConfigData: commonOpts.RTEConfigData,
+	}
+	objs = append(objs, rteManifests.Update(rteUpdateOpts).ToObjects()...)
 
 	schedManifests, err := sched.GetManifests(commonOpts.Platform)
 	if err != nil {
 		return err
 	}
 
-	updateOpts := sched.UpdateOptions{
+	schedUpdateOpts := sched.UpdateOptions{
 		Replicas:               int32(commonOpts.Replicas),
 		NodeResourcesNamespace: rteManifests.Namespace.Name,
 	}
-	objs = append(objs, schedManifests.Update(updateOpts).ToObjects()...)
+	objs = append(objs, schedManifests.Update(schedUpdateOpts).ToObjects()...)
 
 	return renderObjects(objs)
 }

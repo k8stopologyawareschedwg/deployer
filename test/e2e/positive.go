@@ -112,7 +112,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 			ginkgo.By("checking that resource-topology-exporter pod is running")
 			mf, err := rte.GetManifests(platform.Kubernetes)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			mf = mf.Update()
+			mf = mf.Update(rte.UpdateOptions{})
 			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DaemonSet.Name))
 
 			ginkgo.By("checking that topo-aware-scheduler pod is running")
@@ -208,6 +208,7 @@ func deploy() error {
 		filepath.Join(binariesPath, "deployer"),
 		"--debug",
 		"deploy",
+		"--rte-config-file", filepath.Join(deployerBaseDir, "hack", "rte.yaml"),
 		"--wait",
 	}
 	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)

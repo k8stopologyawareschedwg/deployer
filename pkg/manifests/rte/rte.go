@@ -20,6 +20,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -39,6 +40,7 @@ type Manifests struct {
 	ServiceAccount     *corev1.ServiceAccount
 	ClusterRole        *rbacv1.ClusterRole
 	ClusterRoleBinding *rbacv1.ClusterRoleBinding
+	ConfigMap          *corev1.ConfigMap
 	DaemonSet          *appsv1.DaemonSet
 	// internal fields
 	plat           platform.Platform
@@ -63,24 +65,53 @@ func (mf Manifests) Clone() Manifests {
 	return ret
 }
 
-func (mf Manifests) Update() Manifests {
+type UpdateOptions struct {
+	ConfigData string
+}
+
+func (mf Manifests) Update(options UpdateOptions) Manifests {
 	ret := mf.Clone()
 	if ret.plat == platform.Kubernetes {
 		ret.ServiceAccount.Namespace = mf.namespace
 	}
+	if len(options.ConfigData) > 0 {
+		ret.ConfigMap = createConfigMap(mf.namespace, options.ConfigData)
+	}
+
 	ret.DaemonSet.Namespace = mf.namespace
 	ret.DaemonSet.Spec.Template.Spec.ServiceAccountName = mf.serviceAccount
 	manifests.UpdateClusterRoleBinding(ret.ClusterRoleBinding, mf.serviceAccount, mf.namespace)
-	manifests.UpdateResourceTopologyExporterDaemonSet(ret.DaemonSet, ret.plat)
+	manifests.UpdateResourceTopologyExporterDaemonSet(ret.plat, ret.DaemonSet, ret.ConfigMap)
 	return ret
+}
+
+func createConfigMap(namespace string, configData string) *corev1.ConfigMap {
+	cm := &corev1.ConfigMap{
+		// TODO: why is this needed?
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "rte-config",
+			Namespace: namespace,
+		},
+		Data: map[string]string{
+			"config.yaml": configData,
+		},
+	}
+	return cm
 }
 
 func (mf Manifests) ToObjects() []client.Object {
 	objs := []client.Object{
 		mf.ClusterRole,
 		mf.ClusterRoleBinding,
-		mf.DaemonSet,
 	}
+	if mf.ConfigMap != nil {
+		objs = append(objs, mf.ConfigMap)
+	}
+	objs = append(objs, mf.DaemonSet)
 	if mf.plat == platform.Kubernetes {
 		kubeObjs := []client.Object{
 			mf.Namespace,
@@ -99,6 +130,9 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log deployer.Logger)
 			Obj:  mf.DaemonSet,
 			Wait: func() error { return wait.PodsToBeRunningByRegex(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
 		},
+	}
+	if mf.ConfigMap != nil {
+		objs = append([]deployer.WaitableObject{deployer.WaitableObject{Obj: mf.ConfigMap}}, objs...)
 	}
 	if mf.plat == platform.Kubernetes {
 		kubeObjs := []deployer.WaitableObject{
@@ -123,7 +157,7 @@ func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log deployer.Logger)
 			deployer.WaitableObject{Obj: mf.ServiceAccount},
 		}
 	}
-	return []deployer.WaitableObject{
+	objs := []deployer.WaitableObject{
 		deployer.WaitableObject{
 			Obj:  mf.DaemonSet,
 			Wait: func() error { return wait.PodsToBeGoneByRegex(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
@@ -131,6 +165,10 @@ func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log deployer.Logger)
 		deployer.WaitableObject{Obj: mf.ClusterRole},
 		deployer.WaitableObject{Obj: mf.ClusterRoleBinding},
 	}
+	if mf.ConfigMap != nil {
+		objs = append(objs, deployer.WaitableObject{Obj: mf.ConfigMap})
+	}
+	return objs
 }
 
 func GetManifests(plat platform.Platform) (Manifests, error) {

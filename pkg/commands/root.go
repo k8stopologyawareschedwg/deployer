@@ -27,12 +27,14 @@ import (
 )
 
 type CommonOptions struct {
-	Debug    bool
-	Platform platform.Platform
-	Log      *log.Logger
-	DebugLog *log.Logger
-	Replicas int
-	plat     string
+	Debug         bool
+	Platform      platform.Platform
+	Log           *log.Logger
+	DebugLog      *log.Logger
+	Replicas      int
+	RTEConfigData string
+	rteConfigFile string
+	plat          string
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -64,6 +66,14 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 				return fmt.Errorf("unknown platform: %q", commonOpts.plat)
 			}
 			commonOpts.DebugLog.Printf("platform: %q", commonOpts.Platform)
+			if commonOpts.rteConfigFile != "" {
+				data, err := os.ReadFile(commonOpts.rteConfigFile)
+				if err != nil {
+					return err
+				}
+				commonOpts.RTEConfigData = string(data)
+				commonOpts.DebugLog.Printf("RTE config: read %d bytes", len(commonOpts.RTEConfigData))
+			}
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -76,6 +86,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	root.PersistentFlags().BoolVarP(&commonOpts.Debug, "debug", "D", false, "enable debug log")
 	root.PersistentFlags().StringVarP(&commonOpts.plat, "platform", "P", "kubernetes", "platform to deploy on")
 	root.PersistentFlags().IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
+	root.PersistentFlags().StringVar(&commonOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
 
 	root.AddCommand(
 		NewRenderCommand(commonOpts),

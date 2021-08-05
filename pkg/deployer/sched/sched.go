@@ -27,8 +27,9 @@ import (
 
 type Options struct {
 	Platform       platform.Platform
-	Replicas       int32
 	WaitCompletion bool
+	Replicas       int32
+	RTEConfigData  string
 }
 
 func Deploy(log deployer.Logger, opts Options) error {
@@ -45,6 +46,7 @@ func Deploy(log deployer.Logger, opts Options) error {
 		return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
 	}
 
+	rteMf = rteMf.Update(rtemanifests.UpdateOptions{ConfigData: opts.RTEConfigData})
 	mf = mf.Update(schedmanifests.UpdateOptions{
 		Replicas:               opts.Replicas,
 		NodeResourcesNamespace: rteMf.Namespace.Name,
@@ -86,7 +88,7 @@ func Remove(log deployer.Logger, opts Options) error {
 		return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
 	}
 
-	rteMf = rteMf.Update()
+	rteMf = rteMf.Update(rtemanifests.UpdateOptions{ConfigData: opts.RTEConfigData})
 	mf = mf.Update(schedmanifests.UpdateOptions{
 		Replicas:               opts.Replicas,
 		NodeResourcesNamespace: rteMf.DaemonSet.Namespace,
