@@ -59,8 +59,9 @@ func TestGetNamespace(t *testing.T) {
 
 func TestGetServiceAccount(t *testing.T) {
 	type testCase struct {
-		component   string
-		expectError bool
+		component    string
+		subComponent string
+		expectError  bool
 	}
 
 	testCases := []testCase{
@@ -73,8 +74,14 @@ func TestGetServiceAccount(t *testing.T) {
 			expectError: true,
 		},
 		{
-			component:   ComponentSchedulerPlugin,
-			expectError: false,
+			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginScheduler,
+			expectError:  false,
+		},
+		{
+			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginController,
+			expectError:  false,
 		},
 		{
 			component:   ComponentResourceTopologyExporter,
@@ -84,7 +91,7 @@ func TestGetServiceAccount(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.component, func(t *testing.T) {
-			obj, err := ServiceAccount(tc.component)
+			obj, err := ServiceAccount(tc.component, tc.subComponent)
 			if tc.expectError {
 				if err == nil || obj != nil {
 					t.Fatalf("nil err or non-nil obj=%v", obj)
@@ -96,8 +103,9 @@ func TestGetServiceAccount(t *testing.T) {
 
 func TestGetClusterRole(t *testing.T) {
 	type testCase struct {
-		component   string
-		expectError bool
+		component    string
+		subComponent string
+		expectError  bool
 	}
 
 	testCases := []testCase{
@@ -110,8 +118,14 @@ func TestGetClusterRole(t *testing.T) {
 			expectError: true,
 		},
 		{
-			component:   ComponentSchedulerPlugin,
-			expectError: false,
+			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginScheduler,
+			expectError:  false,
+		},
+		{
+			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginController,
+			expectError:  false,
 		},
 		{
 			component:   ComponentResourceTopologyExporter,
@@ -121,7 +135,55 @@ func TestGetClusterRole(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.component, func(t *testing.T) {
-			obj, err := ClusterRole(tc.component)
+			obj, err := ClusterRole(tc.component, tc.subComponent)
+			if tc.expectError {
+				if err == nil || obj != nil {
+					t.Fatalf("nil err or non-nil obj=%v", obj)
+				}
+			} else {
+				if err != nil || obj == nil {
+					t.Fatalf("nil obj or non-nil err=%v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestGetClusterRoleBinding(t *testing.T) {
+	type testCase struct {
+		component    string
+		subComponent string
+		expectError  bool
+	}
+
+	testCases := []testCase{
+		{
+			component:   "unknown-wrong",
+			expectError: true,
+		},
+		{
+			component:   ComponentAPI,
+			expectError: true,
+		},
+		{
+			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginScheduler,
+			expectError:  false,
+		},
+		{
+			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginController,
+			expectError:  false,
+		},
+		{
+			component:   ComponentResourceTopologyExporter,
+			expectError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.component, func(t *testing.T) {
+			obj, err := ClusterRoleBinding(tc.component, tc.subComponent)
 			if tc.expectError {
 				if err == nil || obj != nil {
 					t.Fatalf("nil err or non-nil obj=%v", obj)
@@ -142,58 +204,140 @@ func TestGetAPICRD(t *testing.T) {
 	}
 }
 
-func TestGetSchedulerPluginConfigMap(t *testing.T) {
-	obj, err := SchedulerPluginConfigMap()
+func TestGetSchedulerCRD(t *testing.T) {
+	obj, err := SchedulerCRD()
 	if obj == nil || err != nil {
 		t.Fatalf("nil obj or non-nil err=%v", err)
 	}
 }
 
-func TestGetSchedulerPluginDeployment(t *testing.T) {
-	obj, err := SchedulerPluginDeployment()
-	if obj == nil || err != nil {
-		t.Fatalf("nil obj or non-nil err=%v", err)
+func TestGetConfigMap(t *testing.T) {
+	type testCase struct {
+		component    string
+		subComponent string
+		expectError  bool
+	}
+
+	testCases := []testCase{
+		{
+			component:   "unknown-wrong",
+			expectError: true,
+		},
+		{
+			component:   ComponentAPI,
+			expectError: true,
+		},
+		{
+			component:   ComponentSchedulerPlugin,
+			expectError: false,
+		},
+		{
+			component:   ComponentResourceTopologyExporter,
+			expectError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.component, func(t *testing.T) {
+			obj, err := ConfigMap(tc.component, tc.subComponent)
+			if tc.expectError {
+				if err == nil || obj != nil {
+					t.Fatalf("nil err or non-nil obj=%v", obj)
+				}
+			} else {
+				if err != nil || obj == nil {
+					t.Fatalf("nil obj or non-nil err=%v", err)
+				}
+			}
+		})
 	}
 }
 
-func TestGetSchedulerPluginClusterRoleBindingKubeScheduler(t *testing.T) {
-	obj, err := SchedulerPluginClusterRoleBindingKubeScheduler()
-	if obj == nil || err != nil {
-		t.Fatalf("nil obj or non-nil err=%v", err)
+func TestGetDeployment(t *testing.T) {
+	type testCase struct {
+		component    string
+		subComponent string
+		expectError  bool
+	}
+
+	testCases := []testCase{
+		{
+			component:   "unknown-wrong",
+			expectError: true,
+		},
+		{
+			component:   ComponentAPI,
+			expectError: true,
+		},
+		{
+			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginScheduler,
+			expectError:  false,
+		},
+		{
+			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginController,
+			expectError:  false,
+		},
+		{
+			component:   ComponentResourceTopologyExporter,
+			expectError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.component, func(t *testing.T) {
+			obj, err := Deployment(tc.component, tc.subComponent)
+			if tc.expectError {
+				if err == nil || obj != nil {
+					t.Fatalf("nil err or non-nil obj=%v", obj)
+				}
+			} else {
+				if err != nil || obj == nil {
+					t.Fatalf("nil obj or non-nil err=%v", err)
+				}
+			}
+		})
 	}
 }
 
-func TestGetSchedulerPluginClusterRoleBindingNodeResourceTopology(t *testing.T) {
-	obj, err := SchedulerPluginClusterRoleBindingNodeResourceTopology()
-	if obj == nil || err != nil {
-		t.Fatalf("nil obj or non-nil err=%v", err)
+func TestGetDaemonSet(t *testing.T) {
+	type testCase struct {
+		component   string
+		expectError bool
 	}
-}
 
-func TestGetSchedulerPluginClusterRoleBindingVolumeScheduler(t *testing.T) {
-	obj, err := SchedulerPluginClusterRoleBindingVolumeScheduler()
-	if obj == nil || err != nil {
-		t.Fatalf("nil obj or non-nil err=%v", err)
+	testCases := []testCase{
+		{
+			component:   "unknown-wrong",
+			expectError: true,
+		},
+		{
+			component:   ComponentAPI,
+			expectError: true,
+		},
+		{
+			component:   ComponentSchedulerPlugin,
+			expectError: true,
+		},
+		{
+			component:   ComponentResourceTopologyExporter,
+			expectError: false,
+		},
 	}
-}
 
-func TestGetSchedulerPluginRoleBindingKubeScheduler(t *testing.T) {
-	obj, err := SchedulerPluginRoleBindingKubeScheduler()
-	if obj == nil || err != nil {
-		t.Fatalf("nil obj or non-nil err=%v", err)
-	}
-}
-
-func TestGetResourceTopologyExporterClusterRoleBinding(t *testing.T) {
-	obj, err := ResourceTopologyExporterClusterRoleBinding()
-	if obj == nil || err != nil {
-		t.Fatalf("nil obj or non-nil err=%v", err)
-	}
-}
-
-func TestGetResourceTopologyExporterDaemonSet(t *testing.T) {
-	obj, err := ResourceTopologyExporterDaemonSet()
-	if obj == nil || err != nil {
-		t.Fatalf("nil obj or non-nil err=%v", err)
+	for _, tc := range testCases {
+		t.Run(tc.component, func(t *testing.T) {
+			obj, err := DaemonSet(tc.component)
+			if tc.expectError {
+				if err == nil || obj != nil {
+					t.Fatalf("nil err or non-nil obj=%v", obj)
+				}
+			} else {
+				if err != nil || obj == nil {
+					t.Fatalf("nil obj or non-nil err=%v", err)
+				}
+			}
+		})
 	}
 }

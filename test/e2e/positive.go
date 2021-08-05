@@ -22,12 +22,10 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
@@ -40,6 +38,9 @@ import (
 	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/fromanirh/deployer/pkg/manifests/rte"
 	"github.com/fromanirh/deployer/pkg/manifests/sched"
+
+	e2enodes "github.com/fromanirh/deployer/test/e2e/utils/nodes"
+	e2epods "github.com/fromanirh/deployer/test/e2e/utils/pods"
 )
 
 var _ = ginkgo.Describe("[PositiveFlow] Deployer render", func() {
@@ -112,13 +113,13 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 			mf, err := rte.GetManifests(platform.Kubernetes)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			mf = mf.Update()
-			waitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DaemonSet.Name))
+			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DaemonSet.Name))
 
 			ginkgo.By("checking that topo-aware-scheduler pod is running")
 			mfs, err := sched.GetManifests(platform.Kubernetes)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			mfs = mfs.Update()
-			waitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.Deployment.Name))
+			mfs = mfs.Update(sched.UpdateOptions{})
+			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
 
 			ginkgo.By("checking that noderesourcetopolgy has some information in it")
 			tc, err := clientutil.NewTopologyClient()
@@ -143,6 +144,46 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				gomega.Expect(hasCPU).To(gomega.BeTrue())
 				gomega.Expect(nrt.TopologyPolicies[0]).ToNot(gomega.BeEmpty())
 			}
+
+			ginkgo.By("checking the cluster resource availability")
+			cli, err := clientutil.NewK8s()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			workerNodes, err := e2enodes.GetWorkerNodes(cli)
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			if len(workerNodes) < 1 {
+				// how come did the validation pass?
+				ginkgo.Fail("no worker nodes found in the cluster")
+			}
+
+			// min 1 reserved + min 1 allocatable = 2
+			nodes, err := e2enodes.FilterNodesWithEnoughCores(workerNodes, "2")
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			if len(nodes) < 1 {
+				// TODO: it is unusual to skip so late, maybe split this spec in 2?
+				ginkgo.Skip("skipping the pod check - not enough resources")
+			}
+
+			testNs := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					GenerateName: "tas-test-",
+				},
+			}
+			ginkgo.By("creating a test namespace")
+			testNs, err = cli.CoreV1().Namespaces().Create(context.TODO(), testNs, metav1.CreateOptions{})
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			defer func() {
+				cli.CoreV1().Namespaces().Delete(context.TODO(), testNs.Name, metav1.DeleteOptions{})
+			}()
+
+			// TODO autodetect the scheduler name
+			testPod := e2epods.GuaranteedSleeperPod(testNs.Name, "topology-aware-scheduler")
+			ginkgo.By("creating a guaranteed sleeper pod using the topology aware scheduler")
+			testPod, err = cli.CoreV1().Pods(testPod.Namespace).Create(context.TODO(), testPod, metav1.CreateOptions{})
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			ginkgo.By("checking the pod goes running")
+			e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name)
 		})
 	})
 })
@@ -162,56 +203,12 @@ func getNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name st
 	return nrt
 }
 
-func waitPodsToBeRunningByRegex(pattern string) {
-	gomega.EventuallyWithOffset(1, func() error {
-		pods, err := getPodsByRegex(fmt.Sprintf("%s-*", pattern))
-		if err != nil {
-			return err
-		}
-		if len(pods) == 0 {
-			return fmt.Errorf("no pods found for %q", pattern)
-		}
-
-		for _, pod := range pods {
-			if pod.Status.Phase != corev1.PodRunning {
-				return fmt.Errorf("pod %q is not in %v state", pod.Name, corev1.PodRunning)
-			}
-		}
-		return nil
-	}, 1*time.Minute, 15*time.Second).ShouldNot(gomega.HaveOccurred())
-}
-
-func getPodsByRegex(reg string) ([]*corev1.Pod, error) {
-	cs, err := clientutil.New()
-	if err != nil {
-		return nil, err
-	}
-
-	podNameRgx, err := regexp.Compile(reg)
-	if err != nil {
-		return nil, err
-	}
-
-	podList := &corev1.PodList{}
-	err = cs.List(context.TODO(), podList)
-	if err != nil {
-		return nil, err
-	}
-
-	ret := []*v1.Pod{}
-	for _, pod := range podList.Items {
-		if match := podNameRgx.FindString(pod.Name); len(match) != 0 {
-			ret = append(ret, &pod)
-		}
-	}
-	return ret, nil
-}
-
 func deploy() error {
 	cmdline := []string{
 		filepath.Join(binariesPath, "deployer"),
 		"--debug",
 		"deploy",
+		"--wait",
 	}
 	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
 

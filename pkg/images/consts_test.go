@@ -20,8 +20,11 @@ import "testing"
 
 func TestImageURISanity(t *testing.T) {
 	// TODO: check these are valid pullSpecs
-	if SchedulerPluginImage == "" {
-		t.Fatalf("invalid Scheduler Plugin Image pull URL")
+	if SchedulerPluginSchedulerImage == "" {
+		t.Fatalf("invalid Scheduler Plugin Scheduler Image pull URL")
+	}
+	if SchedulerPluginControllerImage == "" {
+		t.Fatalf("invalid Scheduler Plugin Controller Image pull URL")
 	}
 	if ResourceTopologyExporterImage == "" {
 		t.Fatalf("invalid Resource Topology Exporter Image pull URL")

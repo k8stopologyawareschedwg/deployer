@@ -20,6 +20,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -29,62 +30,120 @@ import (
 	"github.com/fromanirh/deployer/pkg/manifests"
 )
 
+const (
+	namespaceOCP = "openshift-topology-aware-scheduler"
+)
+
 type Manifests struct {
-	ServiceAccount          *corev1.ServiceAccount
-	ClusterRole             *rbacv1.ClusterRole
-	CRBKubernetesScheduler  *rbacv1.ClusterRoleBinding
-	CRBNodeResourceTopology *rbacv1.ClusterRoleBinding
-	CRBVolumeScheduler      *rbacv1.ClusterRoleBinding
-	RoleBinding             *rbacv1.RoleBinding
-	ConfigMap               *corev1.ConfigMap
-	Deployment              *appsv1.Deployment
-	plat                    platform.Platform
+	// common
+	Crd       *apiextensionv1.CustomResourceDefinition
+	Namespace *corev1.Namespace
+	// controller
+	SAController  *corev1.ServiceAccount
+	CRController  *rbacv1.ClusterRole
+	CRBController *rbacv1.ClusterRoleBinding
+	DPController  *appsv1.Deployment
+	// scheduler proper
+	SAScheduler  *corev1.ServiceAccount
+	CRScheduler  *rbacv1.ClusterRole
+	CRBScheduler *rbacv1.ClusterRoleBinding
+	DPScheduler  *appsv1.Deployment
+	ConfigMap    *corev1.ConfigMap
+	// internal fields
+	plat platform.Platform
 }
 
 func (mf Manifests) Clone() Manifests {
 	return Manifests{
-		ServiceAccount:          mf.ServiceAccount.DeepCopy(),
-		ClusterRole:             mf.ClusterRole.DeepCopy(),
-		CRBKubernetesScheduler:  mf.CRBKubernetesScheduler.DeepCopy(),
-		CRBNodeResourceTopology: mf.CRBNodeResourceTopology.DeepCopy(),
-		CRBVolumeScheduler:      mf.CRBVolumeScheduler.DeepCopy(),
-		RoleBinding:             mf.RoleBinding.DeepCopy(),
-		ConfigMap:               mf.ConfigMap.DeepCopy(),
-		Deployment:              mf.Deployment.DeepCopy(),
+		plat: mf.plat,
+		// objects
+		Crd:           mf.Crd.DeepCopy(),
+		Namespace:     mf.Namespace.DeepCopy(),
+		SAController:  mf.SAController.DeepCopy(),
+		CRController:  mf.CRController.DeepCopy(),
+		CRBController: mf.CRBController.DeepCopy(),
+		DPController:  mf.DPController.DeepCopy(),
+		SAScheduler:   mf.SAScheduler.DeepCopy(),
+		CRScheduler:   mf.CRScheduler.DeepCopy(),
+		CRBScheduler:  mf.CRBScheduler.DeepCopy(),
+		DPScheduler:   mf.DPScheduler.DeepCopy(),
+		ConfigMap:     mf.ConfigMap.DeepCopy(),
 	}
 }
 
-func (mf Manifests) Update() Manifests {
+type UpdateOptions struct {
+	Replicas               int32
+	NodeResourcesNamespace string
+}
+
+func (mf Manifests) Update(options UpdateOptions) Manifests {
 	ret := mf.Clone()
-	ret.Deployment = manifests.UpdateSchedulerPluginDeployment(ret.Deployment)
+	replicas := options.Replicas
+	if replicas <= 0 {
+		replicas = int32(1)
+	}
+	ret.DPScheduler.Spec.Replicas = newInt32(replicas)
+	ret.DPController.Spec.Replicas = newInt32(replicas)
+
+	manifests.UpdateSchedulerPluginSchedulerDeployment(ret.DPScheduler)
+	manifests.UpdateSchedulerPluginControllerDeployment(ret.DPController)
+	if mf.plat == platform.OpenShift {
+		ret.Namespace.Name = namespaceOCP
+	}
+
+	ret.SAController.Namespace = ret.Namespace.Name
+	manifests.UpdateClusterRoleBinding(ret.CRBController, "", ret.Namespace.Name)
+	ret.DPController.Namespace = ret.Namespace.Name
+
+	ret.SAScheduler.Namespace = ret.Namespace.Name
+	manifests.UpdateClusterRoleBinding(ret.CRBScheduler, "", ret.Namespace.Name)
+	ret.DPScheduler.Namespace = ret.Namespace.Name
+	ret.ConfigMap.Namespace = ret.Namespace.Name
+
+	if options.NodeResourcesNamespace != "" {
+		// TODO: fix the KubeSchedulerConfiguration namespaces using options.NodeResourcesNamespace
+	}
 	return ret
 }
 
 func (mf Manifests) ToObjects() []client.Object {
 	return []client.Object{
-		mf.ServiceAccount,
-		mf.ClusterRole,
-		mf.CRBKubernetesScheduler,
-		mf.CRBNodeResourceTopology,
-		mf.CRBVolumeScheduler,
-		mf.RoleBinding,
+		mf.Crd,
+		mf.Namespace,
+		mf.SAScheduler,
+		mf.CRScheduler,
+		mf.CRBScheduler,
 		mf.ConfigMap,
-		mf.Deployment,
+		mf.DPScheduler,
+		mf.SAController,
+		mf.CRController,
+		mf.CRBController,
+		mf.DPController,
 	}
 }
 
 func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
-		deployer.WaitableObject{Obj: mf.ServiceAccount},
-		deployer.WaitableObject{Obj: mf.ClusterRole},
-		deployer.WaitableObject{Obj: mf.CRBKubernetesScheduler},
-		deployer.WaitableObject{Obj: mf.CRBNodeResourceTopology},
-		deployer.WaitableObject{Obj: mf.CRBVolumeScheduler},
-		deployer.WaitableObject{Obj: mf.RoleBinding},
+		deployer.WaitableObject{Obj: mf.Crd},
+		deployer.WaitableObject{Obj: mf.Namespace},
+		deployer.WaitableObject{Obj: mf.SAScheduler},
+		deployer.WaitableObject{Obj: mf.CRScheduler},
+		deployer.WaitableObject{Obj: mf.CRBScheduler},
 		deployer.WaitableObject{Obj: mf.ConfigMap},
 		deployer.WaitableObject{
-			Obj:  mf.Deployment,
-			Wait: func() error { return wait.PodsToBeRunningByRegex(hp, log, mf.Deployment.Namespace, mf.Deployment.Name) },
+			Obj: mf.DPScheduler,
+			Wait: func() error {
+				return wait.PodsToBeRunningByRegex(hp, log, mf.DPScheduler.Namespace, mf.DPScheduler.Name)
+			},
+		},
+		deployer.WaitableObject{Obj: mf.SAController},
+		deployer.WaitableObject{Obj: mf.CRController},
+		deployer.WaitableObject{Obj: mf.CRBController},
+		deployer.WaitableObject{
+			Obj: mf.DPController,
+			Wait: func() error {
+				return wait.PodsToBeRunningByRegex(hp, log, mf.DPController.Namespace, mf.DPController.Name)
+			},
 		},
 	}
 }
@@ -92,16 +151,15 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log deployer.Logger)
 func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
 		deployer.WaitableObject{
-			Obj:  mf.Deployment,
-			Wait: func() error { return wait.PodsToBeGoneByRegex(hp, log, mf.Deployment.Namespace, mf.Deployment.Name) },
+			Obj:  mf.Namespace,
+			Wait: func() error { return wait.NamespaceToBeGone(hp, log, mf.Namespace.Name) },
 		},
-		deployer.WaitableObject{Obj: mf.ConfigMap},
-		deployer.WaitableObject{Obj: mf.RoleBinding},
-		deployer.WaitableObject{Obj: mf.CRBVolumeScheduler},
-		deployer.WaitableObject{Obj: mf.CRBNodeResourceTopology},
-		deployer.WaitableObject{Obj: mf.CRBKubernetesScheduler},
-		deployer.WaitableObject{Obj: mf.ClusterRole},
-		deployer.WaitableObject{Obj: mf.ServiceAccount},
+		// no need to remove objects created inside the namespace we just removed
+		deployer.WaitableObject{Obj: mf.CRBScheduler},
+		deployer.WaitableObject{Obj: mf.CRScheduler},
+		deployer.WaitableObject{Obj: mf.CRBController},
+		deployer.WaitableObject{Obj: mf.CRController},
+		deployer.WaitableObject{Obj: mf.Crd},
 	}
 }
 
@@ -110,37 +168,56 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 	mf := Manifests{
 		plat: plat,
 	}
-	mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin)
+	mf.Crd, err = manifests.SchedulerCRD()
 	if err != nil {
 		return mf, err
 	}
-	mf.ClusterRole, err = manifests.ClusterRole(manifests.ComponentSchedulerPlugin)
+	mf.Namespace, err = manifests.Namespace(manifests.ComponentSchedulerPlugin)
 	if err != nil {
 		return mf, err
 	}
-	mf.CRBKubernetesScheduler, err = manifests.SchedulerPluginClusterRoleBindingKubeScheduler()
+
+	mf.ConfigMap, err = manifests.ConfigMap(manifests.ComponentSchedulerPlugin, "")
 	if err != nil {
 		return mf, err
 	}
-	mf.CRBNodeResourceTopology, err = manifests.SchedulerPluginClusterRoleBindingNodeResourceTopology()
+	mf.SAScheduler, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler)
 	if err != nil {
 		return mf, err
 	}
-	mf.CRBVolumeScheduler, err = manifests.SchedulerPluginClusterRoleBindingVolumeScheduler()
+	mf.CRScheduler, err = manifests.ClusterRole(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler)
 	if err != nil {
 		return mf, err
 	}
-	mf.RoleBinding, err = manifests.SchedulerPluginRoleBindingKubeScheduler()
+	mf.CRBScheduler, err = manifests.ClusterRoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler)
 	if err != nil {
 		return mf, err
 	}
-	mf.ConfigMap, err = manifests.SchedulerPluginConfigMap()
+	mf.DPScheduler, err = manifests.Deployment(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler)
 	if err != nil {
 		return mf, err
 	}
-	mf.Deployment, err = manifests.SchedulerPluginDeployment()
+
+	mf.SAController, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController)
 	if err != nil {
 		return mf, err
 	}
+	mf.CRController, err = manifests.ClusterRole(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController)
+	if err != nil {
+		return mf, err
+	}
+	mf.CRBController, err = manifests.ClusterRoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController)
+	if err != nil {
+		return mf, err
+	}
+	mf.DPController, err = manifests.Deployment(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController)
+	if err != nil {
+		return mf, err
+	}
+
 	return mf, nil
+}
+
+func newInt32(value int32) *int32 {
+	return &value
 }

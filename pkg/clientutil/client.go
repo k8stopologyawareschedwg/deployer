@@ -71,7 +71,7 @@ func NewK8sExt() (*apiextension.Clientset, error) {
 	return clientset, nil
 }
 
-func NewTopologyClient() (*topologyclientset.Clientset, error)  {
+func NewTopologyClient() (*topologyclientset.Clientset, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, err
