@@ -1,5 +1,6 @@
 resources:
- resourcemapping: 
+  reservedcpus: "0"
+  resourcemapping:
     "8086:1520": "intel_sriov_netdevice"
 excludelist:
   "*": [sample.com/exampledevice]
