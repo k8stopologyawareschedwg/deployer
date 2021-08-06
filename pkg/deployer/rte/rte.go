@@ -23,9 +23,10 @@ import (
 )
 
 type Options struct {
-	Platform       platform.Platform
-	WaitCompletion bool
-	RTEConfigData  string
+	Platform         platform.Platform
+	WaitCompletion   bool
+	RTEConfigData    string
+	PullIfNotPresent bool
 }
 
 func Deploy(log deployer.Logger, opts Options) error {
@@ -36,7 +37,10 @@ func Deploy(log deployer.Logger, opts Options) error {
 	if err != nil {
 		return err
 	}
-	mf = mf.Update(rtemanifests.UpdateOptions{ConfigData: opts.RTEConfigData})
+	mf = mf.Update(rtemanifests.UpdateOptions{
+		ConfigData:       opts.RTEConfigData,
+		PullIfNotPresent: opts.PullIfNotPresent,
+	})
 	log.Debugf("RTE manifests loaded")
 
 	hp, err := deployer.NewHelper("RTE", log)
@@ -73,7 +77,10 @@ func Remove(log deployer.Logger, opts Options) error {
 	if err != nil {
 		return err
 	}
-	mf = mf.Update(rtemanifests.UpdateOptions{ConfigData: opts.RTEConfigData})
+	mf = mf.Update(rtemanifests.UpdateOptions{
+		ConfigData:       opts.RTEConfigData,
+		PullIfNotPresent: opts.PullIfNotPresent,
+	})
 	log.Debugf("RTE manifests loaded")
 
 	for _, wo := range mf.ToDeletableObjects(hp, log) {

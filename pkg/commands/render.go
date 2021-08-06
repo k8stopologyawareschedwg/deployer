@@ -79,6 +79,7 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOpti
 			updateOpts := sched.UpdateOptions{
 				Replicas:               int32(commonOpts.Replicas),
 				NodeResourcesNamespace: rteManifests.Namespace.Name,
+				PullIfNotPresent:       commonOpts.PullIfNotPresent,
 			}
 			return renderObjects(schedManifests.Update(updateOpts).ToObjects())
 		},
@@ -97,7 +98,8 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOpti
 				return err
 			}
 			updateOpts := rte.UpdateOptions{
-				ConfigData: commonOpts.RTEConfigData,
+				ConfigData:       commonOpts.RTEConfigData,
+				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			}
 			return renderObjects(rteManifests.Update(updateOpts).ToObjects())
 		},
@@ -120,7 +122,8 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 		return err
 	}
 	rteUpdateOpts := rte.UpdateOptions{
-		ConfigData: commonOpts.RTEConfigData,
+		ConfigData:       commonOpts.RTEConfigData,
+		PullIfNotPresent: commonOpts.PullIfNotPresent,
 	}
 	objs = append(objs, rteManifests.Update(rteUpdateOpts).ToObjects()...)
 
@@ -132,6 +135,7 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	schedUpdateOpts := sched.UpdateOptions{
 		Replicas:               int32(commonOpts.Replicas),
 		NodeResourcesNamespace: rteManifests.Namespace.Name,
+		PullIfNotPresent:       commonOpts.PullIfNotPresent,
 	}
 	objs = append(objs, schedManifests.Update(schedUpdateOpts).ToObjects()...)
 

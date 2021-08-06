@@ -26,10 +26,11 @@ import (
 )
 
 type Options struct {
-	Platform       platform.Platform
-	WaitCompletion bool
-	Replicas       int32
-	RTEConfigData  string
+	Platform         platform.Platform
+	WaitCompletion   bool
+	Replicas         int32
+	RTEConfigData    string
+	PullIfNotPresent bool
 }
 
 func Deploy(log deployer.Logger, opts Options) error {
@@ -50,6 +51,7 @@ func Deploy(log deployer.Logger, opts Options) error {
 	mf = mf.Update(schedmanifests.UpdateOptions{
 		Replicas:               opts.Replicas,
 		NodeResourcesNamespace: rteMf.DaemonSet.Name,
+		PullIfNotPresent:       opts.PullIfNotPresent,
 	})
 	log.Debugf("SCD manifests loaded")
 
@@ -92,6 +94,7 @@ func Remove(log deployer.Logger, opts Options) error {
 	mf = mf.Update(schedmanifests.UpdateOptions{
 		Replicas:               opts.Replicas,
 		NodeResourcesNamespace: rteMf.DaemonSet.Namespace,
+		PullIfNotPresent:       opts.PullIfNotPresent,
 	})
 	log.Debugf("SCD manifests loaded")
 
