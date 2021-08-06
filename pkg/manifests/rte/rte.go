@@ -28,6 +28,7 @@ import (
 	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/fromanirh/deployer/pkg/deployer/wait"
 	"github.com/fromanirh/deployer/pkg/manifests"
+	"github.com/fromanirh/deployer/pkg/tlog"
 )
 
 const (
@@ -123,7 +124,7 @@ func (mf Manifests) ToObjects() []client.Object {
 	return objs
 }
 
-func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
 	objs := []deployer.WaitableObject{
 		deployer.WaitableObject{Obj: mf.ClusterRole},
 		deployer.WaitableObject{Obj: mf.ClusterRoleBinding},
@@ -145,7 +146,7 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log deployer.Logger)
 	return objs
 }
 
-func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
 	if mf.plat == platform.Kubernetes {
 		return []deployer.WaitableObject{
 			deployer.WaitableObject{

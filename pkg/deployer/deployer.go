@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/fromanirh/deployer/pkg/clientutil"
+	"github.com/fromanirh/deployer/pkg/tlog"
 )
 
 type WaitableObject struct {
@@ -34,19 +35,14 @@ type WaitableObject struct {
 	Wait func() error
 }
 
-type Logger interface {
-	Printf(format string, v ...interface{})
-	Debugf(format string, v ...interface{})
-}
-
 type Helper struct {
 	tag    string
 	cli    client.Client
 	k8sCli *kubernetes.Clientset
-	log    Logger
+	log    tlog.Logger
 }
 
-func NewHelper(tag string, log Logger) (*Helper, error) {
+func NewHelper(tag string, log tlog.Logger) (*Helper, error) {
 	cli, err := clientutil.New()
 	if err != nil {
 		return nil, err

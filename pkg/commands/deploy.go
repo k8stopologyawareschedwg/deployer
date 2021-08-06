@@ -22,22 +22,10 @@ import (
 	"github.com/fromanirh/deployer/pkg/deployer/api"
 	"github.com/fromanirh/deployer/pkg/deployer/rte"
 	"github.com/fromanirh/deployer/pkg/deployer/sched"
+	"github.com/fromanirh/deployer/pkg/tlog"
 
 	"github.com/spf13/cobra"
 )
-
-type logAdapter struct {
-	log      *log.Logger
-	debugLog *log.Logger
-}
-
-func (la logAdapter) Printf(format string, v ...interface{}) {
-	la.log.Printf(format, v...)
-}
-
-func (la logAdapter) Debugf(format string, v ...interface{}) {
-	la.debugLog.Printf(format, v...)
-}
 
 type deployOptions struct {
 	waitCompletion bool
@@ -66,10 +54,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "remove",
 		Short: "remove the components and configurations needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			la := logAdapter{
-				log:      commonOpts.Log,
-				debugLog: commonOpts.DebugLog,
-			}
+			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
 			var err error
 			err = sched.Remove(la, sched.Options{
 				Platform:         commonOpts.Platform,
@@ -114,10 +99,7 @@ func NewDeployAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.
 		Use:   "api",
 		Short: "deploy the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			la := logAdapter{
-				log:      commonOpts.Log,
-				debugLog: commonOpts.DebugLog,
-			}
+			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
 			if err := api.Deploy(la, api.Options{Platform: commonOpts.Platform}); err != nil {
 				return err
 			}
@@ -133,10 +115,7 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 		Use:   "scheduler-plugin",
 		Short: "deploy the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			la := logAdapter{
-				log:      commonOpts.Log,
-				debugLog: commonOpts.DebugLog,
-			}
+			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
 			return sched.Deploy(la, sched.Options{
 				Platform:         commonOpts.Platform,
 				WaitCompletion:   opts.waitCompletion,
@@ -154,10 +133,7 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 		Use:   "topology-updater",
 		Short: "deploy the topology updater needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			la := logAdapter{
-				log:      commonOpts.Log,
-				debugLog: commonOpts.DebugLog,
-			}
+			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
 			return rte.Deploy(la, rte.Options{
 				Platform:         commonOpts.Platform,
 				WaitCompletion:   opts.waitCompletion,
@@ -175,10 +151,7 @@ func NewRemoveAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.
 		Use:   "api",
 		Short: "remove the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			la := logAdapter{
-				log:      commonOpts.Log,
-				debugLog: commonOpts.DebugLog,
-			}
+			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
 			if err := api.Remove(la, api.Options{Platform: commonOpts.Platform}); err != nil {
 				return err
 			}
@@ -194,10 +167,7 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 		Use:   "scheduler-plugin",
 		Short: "remove the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			la := logAdapter{
-				log:      commonOpts.Log,
-				debugLog: commonOpts.DebugLog,
-			}
+			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
 			return sched.Remove(la, sched.Options{
 				Platform:         commonOpts.Platform,
 				WaitCompletion:   opts.waitCompletion,
@@ -215,10 +185,7 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 		Use:   "topology-updater",
 		Short: "remove the topology updater needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			la := logAdapter{
-				log:      commonOpts.Log,
-				debugLog: commonOpts.DebugLog,
-			}
+			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
 			return rte.Remove(la, rte.Options{
 				Platform:         commonOpts.Platform,
 				WaitCompletion:   opts.waitCompletion,
@@ -232,10 +199,7 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 }
 
 func deployOnCluster(commonOpts *CommonOptions, opts *deployOptions) error {
-	la := logAdapter{
-		log:      commonOpts.Log,
-		debugLog: commonOpts.DebugLog,
-	}
+	la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
 	if err := api.Deploy(la, api.Options{
 		Platform: commonOpts.Platform,
 	}); err != nil {

@@ -4,11 +4,13 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/drone/envsubst"
 
 	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/fromanirh/deployer/pkg/images"
+	"github.com/fromanirh/deployer/pkg/tlog"
 )
 
 func UpdateRoleBinding(rb *rbacv1.RoleBinding, serviceAccount, namespace string) *rbacv1.RoleBinding {
@@ -42,6 +44,49 @@ func UpdateSchedulerPluginControllerDeployment(dp *appsv1.Deployment, pullIfNotP
 	dp.Spec.Template.Spec.Containers[0].Image = images.SchedulerPluginControllerImage
 	dp.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
 	return dp
+}
+
+func UpdateSchedulerConfigNamespaces(logger tlog.Logger, cm *corev1.ConfigMap, NodeResourcesNamespace string) *corev1.ConfigMap {
+	confData, ok := cm.Data["scheduler-config.yaml"]
+	if !ok {
+		logger.Debugf("missing data for scheduler-config.yaml")
+		return cm
+	}
+	kc, err := KubeSchedulerConfigurationFromData([]byte(confData))
+	if err != nil {
+		logger.Debugf("cannot decode the KubeSchedulerConfiguration: %v", err)
+		return cm
+	}
+
+	for idx := 0; idx < len(kc.Profiles[0].PluginConfig); idx++ {
+		if kc.Profiles[0].PluginConfig[idx].Name == "NodeResourceTopologyMatch" {
+			tcfg, err := NodeResourceTopologyMatchArgsFromData(kc.Profiles[0].PluginConfig[idx].Args.Raw)
+			if err != nil {
+				logger.Debugf("failed to decode NodeResourceTopologyMatchArgs: %v", err)
+				continue
+			}
+
+			namespaces := sets.NewString(tcfg.Namespaces...)
+			namespaces.Insert(NodeResourcesNamespace)
+			tcfg.Namespaces = namespaces.List()
+			logger.Debugf("new namespace list: %v", tcfg.Namespaces)
+
+			blob, err := NodeResourceTopologyMatchArgsToData(tcfg)
+			if err != nil {
+				logger.Debugf("failed to re-encode NodeResourceTopologyMatchArgs: %v", err)
+				continue
+			}
+			kc.Profiles[0].PluginConfig[idx].Args.Raw = blob
+		}
+	}
+
+	binData, err := KubeSchedulerConfigurationToData(kc)
+	if err != nil {
+		logger.Debugf("cannot encode the KubeSchedulerConfiguration: %v", err)
+		return cm
+	}
+	cm.Data["scheduler-config.yaml"] = string(binData)
+	return cm
 }
 
 func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.DaemonSet, cm *corev1.ConfigMap, pullIfNotPresent bool) *appsv1.DaemonSet {

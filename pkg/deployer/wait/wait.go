@@ -26,9 +26,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/fromanirh/deployer/pkg/deployer"
+	"github.com/fromanirh/deployer/pkg/tlog"
 )
 
-func PodsToBeRunningByRegex(hp *deployer.Helper, log deployer.Logger, namespace, name string) error {
+func PodsToBeRunningByRegex(hp *deployer.Helper, log tlog.Logger, namespace, name string) error {
 	log.Printf("wait for all the pods in group %s %s to be running and ready", namespace, name)
 	return wait.PollImmediate(1*time.Second, 3*time.Minute, func() (bool, error) {
 		pods, err := hp.GetPodsByPattern(namespace, fmt.Sprintf("%s-*", name))
@@ -51,7 +52,7 @@ func PodsToBeRunningByRegex(hp *deployer.Helper, log deployer.Logger, namespace,
 	})
 }
 
-func PodsToBeGoneByRegex(hp *deployer.Helper, log deployer.Logger, namespace, name string) error {
+func PodsToBeGoneByRegex(hp *deployer.Helper, log tlog.Logger, namespace, name string) error {
 	log.Printf("wait for all the pods in deployment %s %s to be gone", namespace, name)
 	return wait.PollImmediate(10*time.Second, 3*time.Minute, func() (bool, error) {
 		pods, err := hp.GetPodsByPattern(namespace, fmt.Sprintf("%s-*", name))
@@ -66,7 +67,7 @@ func PodsToBeGoneByRegex(hp *deployer.Helper, log deployer.Logger, namespace, na
 	})
 }
 
-func NamespaceToBeGone(hp *deployer.Helper, log deployer.Logger, namespace string) error {
+func NamespaceToBeGone(hp *deployer.Helper, log tlog.Logger, namespace string) error {
 	log.Printf("wait for the namespace %q to be gone", namespace)
 	return wait.PollImmediate(1*time.Second, 3*time.Minute, func() (bool, error) {
 		nsKey := types.NamespacedName{
