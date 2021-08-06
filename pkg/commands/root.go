@@ -22,19 +22,21 @@ import (
 	"log"
 	"os"
 
-	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/spf13/cobra"
+
+	"github.com/fromanirh/deployer/pkg/deployer/platform"
 )
 
 type CommonOptions struct {
-	Debug         bool
-	Platform      platform.Platform
-	Log           *log.Logger
-	DebugLog      *log.Logger
-	Replicas      int
-	RTEConfigData string
-	rteConfigFile string
-	plat          string
+	Debug            bool
+	Platform         platform.Platform
+	Log              *log.Logger
+	DebugLog         *log.Logger
+	Replicas         int
+	RTEConfigData    string
+	PullIfNotPresent bool
+	rteConfigFile    string
+	plat             string
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -86,6 +88,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	root.PersistentFlags().BoolVarP(&commonOpts.Debug, "debug", "D", false, "enable debug log")
 	root.PersistentFlags().StringVarP(&commonOpts.plat, "platform", "P", "kubernetes", "platform to deploy on")
 	root.PersistentFlags().IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
+	root.PersistentFlags().BoolVar(&commonOpts.PullIfNotPresent, "pull-if-not-present", false, "force pull policies to IfNotPresent.")
 	root.PersistentFlags().StringVar(&commonOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
 
 	root.AddCommand(

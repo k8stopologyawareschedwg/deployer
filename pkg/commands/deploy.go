@@ -72,18 +72,20 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			}
 			var err error
 			err = sched.Remove(la, sched.Options{
-				Platform:       commonOpts.Platform,
-				WaitCompletion: opts.waitCompletion,
-				RTEConfigData:  commonOpts.RTEConfigData,
+				Platform:         commonOpts.Platform,
+				WaitCompletion:   opts.waitCompletion,
+				RTEConfigData:    commonOpts.RTEConfigData,
+				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
 				log.Printf("error removing: %v", err)
 			}
 			err = rte.Remove(la, rte.Options{
-				Platform:       commonOpts.Platform,
-				WaitCompletion: opts.waitCompletion,
-				RTEConfigData:  commonOpts.RTEConfigData,
+				Platform:         commonOpts.Platform,
+				WaitCompletion:   opts.waitCompletion,
+				RTEConfigData:    commonOpts.RTEConfigData,
+				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
@@ -136,9 +138,10 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 				debugLog: commonOpts.DebugLog,
 			}
 			return sched.Deploy(la, sched.Options{
-				Platform:       commonOpts.Platform,
-				WaitCompletion: opts.waitCompletion,
-				RTEConfigData:  commonOpts.RTEConfigData,
+				Platform:         commonOpts.Platform,
+				WaitCompletion:   opts.waitCompletion,
+				RTEConfigData:    commonOpts.RTEConfigData,
+				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -156,9 +159,10 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 				debugLog: commonOpts.DebugLog,
 			}
 			return rte.Deploy(la, rte.Options{
-				Platform:       commonOpts.Platform,
-				WaitCompletion: opts.waitCompletion,
-				RTEConfigData:  commonOpts.RTEConfigData,
+				Platform:         commonOpts.Platform,
+				WaitCompletion:   opts.waitCompletion,
+				RTEConfigData:    commonOpts.RTEConfigData,
+				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -195,9 +199,10 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 				debugLog: commonOpts.DebugLog,
 			}
 			return sched.Remove(la, sched.Options{
-				Platform:       commonOpts.Platform,
-				WaitCompletion: opts.waitCompletion,
-				RTEConfigData:  commonOpts.RTEConfigData,
+				Platform:         commonOpts.Platform,
+				WaitCompletion:   opts.waitCompletion,
+				RTEConfigData:    commonOpts.RTEConfigData,
+				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -215,9 +220,10 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 				debugLog: commonOpts.DebugLog,
 			}
 			return rte.Remove(la, rte.Options{
-				Platform:       commonOpts.Platform,
-				WaitCompletion: opts.waitCompletion,
-				RTEConfigData:  commonOpts.RTEConfigData,
+				Platform:         commonOpts.Platform,
+				WaitCompletion:   opts.waitCompletion,
+				RTEConfigData:    commonOpts.RTEConfigData,
+				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -236,16 +242,18 @@ func deployOnCluster(commonOpts *CommonOptions, opts *deployOptions) error {
 		return err
 	}
 	if err := rte.Deploy(la, rte.Options{
-		Platform:       commonOpts.Platform,
-		WaitCompletion: opts.waitCompletion,
-		RTEConfigData:  commonOpts.RTEConfigData,
+		Platform:         commonOpts.Platform,
+		WaitCompletion:   opts.waitCompletion,
+		RTEConfigData:    commonOpts.RTEConfigData,
+		PullIfNotPresent: commonOpts.PullIfNotPresent,
 	}); err != nil {
 		return err
 	}
 	if err := sched.Deploy(la, sched.Options{
-		Platform:       commonOpts.Platform,
-		WaitCompletion: opts.waitCompletion,
-		RTEConfigData:  commonOpts.RTEConfigData,
+		Platform:         commonOpts.Platform,
+		WaitCompletion:   opts.waitCompletion,
+		RTEConfigData:    commonOpts.RTEConfigData,
+		PullIfNotPresent: commonOpts.PullIfNotPresent,
 	}); err != nil {
 		return err
 	}

@@ -32,19 +32,26 @@ func UpdateClusterRoleBinding(crb *rbacv1.ClusterRoleBinding, serviceAccount, na
 	return crb
 }
 
-func UpdateSchedulerPluginSchedulerDeployment(dp *appsv1.Deployment) *appsv1.Deployment {
+func UpdateSchedulerPluginSchedulerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool) *appsv1.Deployment {
 	dp.Spec.Template.Spec.Containers[0].Image = images.SchedulerPluginSchedulerImage
+	dp.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
 	return dp
 }
 
-func UpdateSchedulerPluginControllerDeployment(dp *appsv1.Deployment) *appsv1.Deployment {
+func UpdateSchedulerPluginControllerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool) *appsv1.Deployment {
 	dp.Spec.Template.Spec.Containers[0].Image = images.SchedulerPluginControllerImage
+	dp.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
 	return dp
 }
 
-func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.DaemonSet, cm *corev1.ConfigMap) *appsv1.DaemonSet {
+func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.DaemonSet, cm *corev1.ConfigMap, pullIfNotPresent bool) *appsv1.DaemonSet {
 	// TODO: better match by name than assume container#0 is RTE proper (not minion)
 	ds.Spec.Template.Spec.Containers[0].Image = images.ResourceTopologyExporterImage
+	ds.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
+	if len(ds.Spec.Template.Spec.Containers) > 1 {
+		// TODO: more polite/proper iteration
+		ds.Spec.Template.Spec.Containers[1].ImagePullPolicy = pullPolicy(pullIfNotPresent)
+	}
 	vars := map[string]string{
 		"RTE_POLL_INTERVAL": "10s",
 		"EXPORT_NAMESPACE":  ds.Namespace,
@@ -100,6 +107,13 @@ func UpdateResourceTopologyExporterCommand(args []string, vars map[string]string
 		res = append(res, "--topology-manager-policy=single-numa-node")
 	}
 	return res
+}
+
+func pullPolicy(pullIfNotPresent bool) corev1.PullPolicy {
+	if pullIfNotPresent {
+		return corev1.PullIfNotPresent
+	}
+	return corev1.PullAlways
 }
 
 func newBool(val bool) *bool {

@@ -66,7 +66,8 @@ func (mf Manifests) Clone() Manifests {
 }
 
 type UpdateOptions struct {
-	ConfigData string
+	ConfigData       string
+	PullIfNotPresent bool
 }
 
 func (mf Manifests) Update(options UpdateOptions) Manifests {
@@ -81,7 +82,7 @@ func (mf Manifests) Update(options UpdateOptions) Manifests {
 	ret.DaemonSet.Namespace = mf.namespace
 	ret.DaemonSet.Spec.Template.Spec.ServiceAccountName = mf.serviceAccount
 	manifests.UpdateClusterRoleBinding(ret.ClusterRoleBinding, mf.serviceAccount, mf.namespace)
-	manifests.UpdateResourceTopologyExporterDaemonSet(ret.plat, ret.DaemonSet, ret.ConfigMap)
+	manifests.UpdateResourceTopologyExporterDaemonSet(ret.plat, ret.DaemonSet, ret.ConfigMap, options.PullIfNotPresent)
 	return ret
 }
 
