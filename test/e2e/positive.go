@@ -35,10 +35,10 @@ import (
 
 	"github.com/fromanirh/deployer/pkg/clientutil"
 	"github.com/fromanirh/deployer/pkg/clientutil/nodes"
-	"github.com/fromanirh/deployer/pkg/deployer"
 	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/fromanirh/deployer/pkg/manifests/rte"
 	"github.com/fromanirh/deployer/pkg/manifests/sched"
+	"github.com/fromanirh/deployer/pkg/tlog"
 
 	e2enodes "github.com/fromanirh/deployer/test/e2e/utils/nodes"
 	e2epods "github.com/fromanirh/deployer/test/e2e/utils/pods"
@@ -120,7 +120,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 			mfs, err := sched.GetManifests(platform.Kubernetes)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			// no need for options!
-			mfs = mfs.Update(deployer.NewNullLogAdapter(), sched.UpdateOptions{})
+			mfs = mfs.Update(tlog.NewNullLogAdapter(), sched.UpdateOptions{})
 			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
 
 			ginkgo.By("checking that noderesourcetopolgy has some information in it")

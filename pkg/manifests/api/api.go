@@ -24,6 +24,7 @@ import (
 	"github.com/fromanirh/deployer/pkg/deployer"
 	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/fromanirh/deployer/pkg/manifests"
+	"github.com/fromanirh/deployer/pkg/tlog"
 )
 
 type Manifests struct {
@@ -38,13 +39,13 @@ func (mf Manifests) ToObjects() []client.Object {
 	}
 }
 
-func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
 		deployer.WaitableObject{Obj: mf.Crd},
 	}
 }
 
-func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
 		deployer.WaitableObject{Obj: mf.Crd},
 	}

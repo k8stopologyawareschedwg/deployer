@@ -28,6 +28,7 @@ import (
 	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/fromanirh/deployer/pkg/deployer/wait"
 	"github.com/fromanirh/deployer/pkg/manifests"
+	"github.com/fromanirh/deployer/pkg/tlog"
 )
 
 const (
@@ -77,7 +78,7 @@ type UpdateOptions struct {
 	PullIfNotPresent       bool
 }
 
-func (mf Manifests) Update(logger deployer.Logger, options UpdateOptions) Manifests {
+func (mf Manifests) Update(logger tlog.Logger, options UpdateOptions) Manifests {
 	ret := mf.Clone()
 	replicas := options.Replicas
 	if replicas <= 0 {
@@ -123,7 +124,7 @@ func (mf Manifests) ToObjects() []client.Object {
 	}
 }
 
-func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
 		deployer.WaitableObject{Obj: mf.Crd},
 		deployer.WaitableObject{Obj: mf.Namespace},
@@ -149,7 +150,7 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log deployer.Logger)
 	}
 }
 
-func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log deployer.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
 		deployer.WaitableObject{
 			Obj:  mf.Namespace,

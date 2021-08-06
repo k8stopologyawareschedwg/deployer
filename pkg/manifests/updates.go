@@ -8,9 +8,9 @@ import (
 
 	"github.com/drone/envsubst"
 
-	"github.com/fromanirh/deployer/pkg/deployer"
 	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/fromanirh/deployer/pkg/images"
+	"github.com/fromanirh/deployer/pkg/tlog"
 )
 
 func UpdateRoleBinding(rb *rbacv1.RoleBinding, serviceAccount, namespace string) *rbacv1.RoleBinding {
@@ -46,7 +46,7 @@ func UpdateSchedulerPluginControllerDeployment(dp *appsv1.Deployment, pullIfNotP
 	return dp
 }
 
-func UpdateSchedulerConfigNamespaces(logger deployer.Logger, cm *corev1.ConfigMap, NodeResourcesNamespace string) *corev1.ConfigMap {
+func UpdateSchedulerConfigNamespaces(logger tlog.Logger, cm *corev1.ConfigMap, NodeResourcesNamespace string) *corev1.ConfigMap {
 	confData, ok := cm.Data["scheduler-config.yaml"]
 	if !ok {
 		logger.Debugf("missing data for scheduler-config.yaml")

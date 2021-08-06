@@ -23,6 +23,7 @@ import (
 	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	rtemanifests "github.com/fromanirh/deployer/pkg/manifests/rte"
 	schedmanifests "github.com/fromanirh/deployer/pkg/manifests/sched"
+	"github.com/fromanirh/deployer/pkg/tlog"
 )
 
 type Options struct {
@@ -33,7 +34,7 @@ type Options struct {
 	PullIfNotPresent bool
 }
 
-func Deploy(log deployer.Logger, opts Options) error {
+func Deploy(log tlog.Logger, opts Options) error {
 	var err error
 	log.Printf("deploying topology-aware-scheduling scheduler plugin...")
 
@@ -76,7 +77,7 @@ func Deploy(log deployer.Logger, opts Options) error {
 	return nil
 }
 
-func Remove(log deployer.Logger, opts Options) error {
+func Remove(log tlog.Logger, opts Options) error {
 	var err error
 	log.Printf("removing topology-aware-scheduling scheduler plugin...")
 
