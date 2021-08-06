@@ -48,7 +48,7 @@ func Deploy(log deployer.Logger, opts Options) error {
 	}
 
 	rteMf = rteMf.Update(rtemanifests.UpdateOptions{ConfigData: opts.RTEConfigData})
-	mf = mf.Update(schedmanifests.UpdateOptions{
+	mf = mf.Update(log, schedmanifests.UpdateOptions{
 		Replicas:               opts.Replicas,
 		NodeResourcesNamespace: rteMf.DaemonSet.Name,
 		PullIfNotPresent:       opts.PullIfNotPresent,
@@ -91,7 +91,7 @@ func Remove(log deployer.Logger, opts Options) error {
 	}
 
 	rteMf = rteMf.Update(rtemanifests.UpdateOptions{ConfigData: opts.RTEConfigData})
-	mf = mf.Update(schedmanifests.UpdateOptions{
+	mf = mf.Update(log, schedmanifests.UpdateOptions{
 		Replicas:               opts.Replicas,
 		NodeResourcesNamespace: rteMf.DaemonSet.Namespace,
 		PullIfNotPresent:       opts.PullIfNotPresent,

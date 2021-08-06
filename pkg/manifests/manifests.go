@@ -17,7 +17,9 @@
 package manifests
 
 import (
+	"bytes"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -27,8 +29,10 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	kubeschedulerconfigv1beta1 "k8s.io/kubernetes/pkg/scheduler/apis/config/v1beta1"
+	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
+
+	kubeschedulerconfigv1beta1 "k8s.io/kube-scheduler/config/v1beta1"
+	apiconfig "sigs.k8s.io/scheduler-plugins/pkg/apis/config"
 
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -49,6 +53,7 @@ var src embed.FS
 
 func init() {
 	apiextensionv1.AddToScheme(scheme.Scheme)
+	apiconfig.AddToScheme(scheme.Scheme)
 	kubeschedulerconfigv1beta1.AddToScheme(scheme.Scheme)
 }
 
@@ -209,9 +214,47 @@ func DaemonSet(component string) (*appsv1.DaemonSet, error) {
 	return ds, nil
 }
 
+func KubeSchedulerConfigurationFromData(data []byte) (*kubeschedulerconfigv1beta1.KubeSchedulerConfiguration, error) {
+	obj, err := deserializeObjectFromData(data)
+	if err != nil {
+		return nil, err
+	}
+
+	sc, ok := obj.(*kubeschedulerconfigv1beta1.KubeSchedulerConfiguration)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type, got %T %v", obj, obj.GetObjectKind())
+	}
+	return sc, nil
+}
+
+func KubeSchedulerConfigurationToData(sc *kubeschedulerconfigv1beta1.KubeSchedulerConfiguration) ([]byte, error) {
+	var buf bytes.Buffer
+	err := SerializeObject(sc, &buf)
+	return buf.Bytes(), err
+}
+
+func NodeResourceTopologyMatchArgsFromData(data []byte) (*apiconfig.NodeResourceTopologyMatchArgs, error) {
+	sc := apiconfig.NodeResourceTopologyMatchArgs{}
+	err := json.Unmarshal(data, &sc)
+	return &sc, err
+}
+
+func NodeResourceTopologyMatchArgsToData(ma *apiconfig.NodeResourceTopologyMatchArgs) ([]byte, error) {
+	return json.Marshal(ma)
+}
+
 func SerializeObject(obj runtime.Object, out io.Writer) error {
-	srz := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	srz := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	return srz.Encode(obj, out)
+}
+
+func deserializeObjectFromData(data []byte) (runtime.Object, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, _, err := decode(data, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
 }
 
 func loadObject(path string) (runtime.Object, error) {
@@ -219,13 +262,7 @@ func loadObject(path string) (runtime.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode(data, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-	return obj, nil
+	return deserializeObjectFromData(data)
 }
 
 func validateComponent(component string) error {

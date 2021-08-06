@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/fromanirh/deployer/pkg/deployer"
 	"github.com/fromanirh/deployer/pkg/manifests"
 	"github.com/fromanirh/deployer/pkg/manifests/api"
 	"github.com/fromanirh/deployer/pkg/manifests/rte"
@@ -76,12 +77,15 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOpti
 			if err != nil {
 				return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
 			}
+			// no Options needed!
+			rteManifests = rteManifests.Update(rte.UpdateOptions{})
 			updateOpts := sched.UpdateOptions{
 				Replicas:               int32(commonOpts.Replicas),
-				NodeResourcesNamespace: rteManifests.Namespace.Name,
+				NodeResourcesNamespace: rteManifests.DaemonSet.Namespace,
 				PullIfNotPresent:       commonOpts.PullIfNotPresent,
 			}
-			return renderObjects(schedManifests.Update(updateOpts).ToObjects())
+			la := deployer.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
+			return renderObjects(schedManifests.Update(la, updateOpts).ToObjects())
 		},
 		Args: cobra.NoArgs,
 	}
@@ -137,7 +141,9 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 		NodeResourcesNamespace: rteManifests.Namespace.Name,
 		PullIfNotPresent:       commonOpts.PullIfNotPresent,
 	}
-	objs = append(objs, schedManifests.Update(schedUpdateOpts).ToObjects()...)
+
+	la := deployer.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
+	objs = append(objs, schedManifests.Update(la, schedUpdateOpts).ToObjects()...)
 
 	return renderObjects(objs)
 }

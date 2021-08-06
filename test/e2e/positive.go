@@ -35,6 +35,7 @@ import (
 
 	"github.com/fromanirh/deployer/pkg/clientutil"
 	"github.com/fromanirh/deployer/pkg/clientutil/nodes"
+	"github.com/fromanirh/deployer/pkg/deployer"
 	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/fromanirh/deployer/pkg/manifests/rte"
 	"github.com/fromanirh/deployer/pkg/manifests/sched"
@@ -118,7 +119,8 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 			ginkgo.By("checking that topo-aware-scheduler pod is running")
 			mfs, err := sched.GetManifests(platform.Kubernetes)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			mfs = mfs.Update(sched.UpdateOptions{})
+			// no need for options!
+			mfs = mfs.Update(deployer.NewNullLogAdapter(), sched.UpdateOptions{})
 			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
 
 			ginkgo.By("checking that noderesourcetopolgy has some information in it")
