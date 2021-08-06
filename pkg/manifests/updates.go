@@ -62,7 +62,7 @@ func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.
 		ds.Spec.Template.Spec.Containers[0].VolumeMounts = append(ds.Spec.Template.Spec.Containers[0].VolumeMounts,
 			corev1.VolumeMount{
 				Name:      "rte-config",
-				MountPath: "/etc/resource-topology-exporter/config.yaml",
+				MountPath: "/etc/resource-topology-exporter/",
 			},
 		)
 		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes,

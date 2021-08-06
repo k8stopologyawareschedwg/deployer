@@ -49,7 +49,7 @@ func Deploy(log deployer.Logger, opts Options) error {
 	rteMf = rteMf.Update(rtemanifests.UpdateOptions{ConfigData: opts.RTEConfigData})
 	mf = mf.Update(schedmanifests.UpdateOptions{
 		Replicas:               opts.Replicas,
-		NodeResourcesNamespace: rteMf.Namespace.Name,
+		NodeResourcesNamespace: rteMf.DaemonSet.Name,
 	})
 	log.Debugf("SCD manifests loaded")
 
