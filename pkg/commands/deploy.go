@@ -74,6 +74,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			err = sched.Remove(la, sched.Options{
 				Platform:       commonOpts.Platform,
 				WaitCompletion: opts.waitCompletion,
+				RTEConfigData:  commonOpts.RTEConfigData,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
@@ -82,6 +83,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			err = rte.Remove(la, rte.Options{
 				Platform:       commonOpts.Platform,
 				WaitCompletion: opts.waitCompletion,
+				RTEConfigData:  commonOpts.RTEConfigData,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
@@ -136,6 +138,7 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 			return sched.Deploy(la, sched.Options{
 				Platform:       commonOpts.Platform,
 				WaitCompletion: opts.waitCompletion,
+				RTEConfigData:  commonOpts.RTEConfigData,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -155,6 +158,7 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 			return rte.Deploy(la, rte.Options{
 				Platform:       commonOpts.Platform,
 				WaitCompletion: opts.waitCompletion,
+				RTEConfigData:  commonOpts.RTEConfigData,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -193,6 +197,7 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 			return sched.Remove(la, sched.Options{
 				Platform:       commonOpts.Platform,
 				WaitCompletion: opts.waitCompletion,
+				RTEConfigData:  commonOpts.RTEConfigData,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -212,6 +217,7 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 			return rte.Remove(la, rte.Options{
 				Platform:       commonOpts.Platform,
 				WaitCompletion: opts.waitCompletion,
+				RTEConfigData:  commonOpts.RTEConfigData,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -232,12 +238,14 @@ func deployOnCluster(commonOpts *CommonOptions, opts *deployOptions) error {
 	if err := rte.Deploy(la, rte.Options{
 		Platform:       commonOpts.Platform,
 		WaitCompletion: opts.waitCompletion,
+		RTEConfigData:  commonOpts.RTEConfigData,
 	}); err != nil {
 		return err
 	}
 	if err := sched.Deploy(la, sched.Options{
 		Platform:       commonOpts.Platform,
 		WaitCompletion: opts.waitCompletion,
+		RTEConfigData:  commonOpts.RTEConfigData,
 	}); err != nil {
 		return err
 	}

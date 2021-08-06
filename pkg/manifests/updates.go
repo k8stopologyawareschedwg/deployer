@@ -42,7 +42,7 @@ func UpdateSchedulerPluginControllerDeployment(dp *appsv1.Deployment) *appsv1.De
 	return dp
 }
 
-func UpdateResourceTopologyExporterDaemonSet(ds *appsv1.DaemonSet, plat platform.Platform) *appsv1.DaemonSet {
+func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.DaemonSet, cm *corev1.ConfigMap) *appsv1.DaemonSet {
 	// TODO: better match by name than assume container#0 is RTE proper (not minion)
 	ds.Spec.Template.Spec.Containers[0].Image = images.ResourceTopologyExporterImage
 	vars := map[string]string{
@@ -57,6 +57,27 @@ func UpdateResourceTopologyExporterDaemonSet(ds *appsv1.DaemonSet, plat platform
 			ds.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{}
 		}
 		ds.Spec.Template.Spec.Containers[0].SecurityContext.Privileged = newBool(true)
+	}
+	if cm != nil {
+		ds.Spec.Template.Spec.Containers[0].VolumeMounts = append(ds.Spec.Template.Spec.Containers[0].VolumeMounts,
+			corev1.VolumeMount{
+				Name:      "rte-config",
+				MountPath: "/etc/resource-topology-exporter/",
+			},
+		)
+		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes,
+			corev1.Volume{
+				Name: "rte-config",
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "rte-config",
+						},
+						Optional: newBool(true),
+					},
+				},
+			},
+		)
 	}
 	return ds
 }
