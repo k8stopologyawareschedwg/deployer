@@ -29,6 +29,7 @@ import (
 
 type CommonOptions struct {
 	Debug            bool
+	UserPlatform     platform.Platform
 	Platform         platform.Platform
 	Log              *log.Logger
 	DebugLog         *log.Logger
@@ -37,6 +38,7 @@ type CommonOptions struct {
 	PullIfNotPresent bool
 	rteConfigFile    string
 	plat             string
+	platDetect       detectionOutput
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -62,12 +64,15 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 			}
 			// we abuse the logger to have a common interface and the timestamps
 			commonOpts.Log = log.New(os.Stdout, "", log.LstdFlags)
-			var ok bool
-			commonOpts.Platform, ok = platform.FromString(commonOpts.plat)
-			if !ok {
-				return fmt.Errorf("unknown platform: %q", commonOpts.plat)
+
+			// if it is unknown, it's fine
+			commonOpts.UserPlatform, _ = platform.FromString(commonOpts.plat)
+			commonOpts.platDetect = detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			commonOpts.Platform = commonOpts.platDetect.Discovered
+			if commonOpts.Platform == platform.Unknown {
+				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			commonOpts.DebugLog.Printf("platform: %q", commonOpts.Platform)
+
 			if commonOpts.rteConfigFile != "" {
 				data, err := os.ReadFile(commonOpts.rteConfigFile)
 				if err != nil {
@@ -86,7 +91,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	}
 
 	root.PersistentFlags().BoolVarP(&commonOpts.Debug, "debug", "D", false, "enable debug log")
-	root.PersistentFlags().StringVarP(&commonOpts.plat, "platform", "P", "kubernetes", "platform to deploy on")
+	root.PersistentFlags().StringVarP(&commonOpts.plat, "platform", "P", "", "platform to deploy on")
 	root.PersistentFlags().IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
 	root.PersistentFlags().BoolVar(&commonOpts.PullIfNotPresent, "pull-if-not-present", false, "force pull policies to IfNotPresent.")
 	root.PersistentFlags().StringVar(&commonOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
@@ -97,6 +102,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 		NewDeployCommand(commonOpts),
 		NewRemoveCommand(commonOpts),
 		NewSetupCommand(commonOpts),
+		NewDetectCommand(commonOpts),
 	)
 	for _, extraCmd := range extraCmds {
 		root.AddCommand(extraCmd(commonOpts))

@@ -7,6 +7,8 @@ require (
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.9
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
+	github.com/openshift/api v0.0.0-20210713130143-be21c6cb1bea // indirect
+	github.com/openshift/client-go v0.0.0-20200320143156-e7fa42a1261e
 	github.com/spf13/cobra v1.1.1
 	k8s.io/api v0.21.2
 	k8s.io/apiextensions-apiserver v0.21.2

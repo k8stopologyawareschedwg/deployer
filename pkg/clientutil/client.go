@@ -26,6 +26,8 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
+	securityv1 "github.com/openshift/client-go/security/clientset/versioned/typed/security/v1"
+
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 )
 
@@ -82,4 +84,24 @@ func NewTopologyClient() (*topologyclientset.Clientset, error) {
 		return nil, err
 	}
 	return topologyClient, nil
+}
+
+type OCPClientSet struct {
+	SecurityV1 *securityv1.SecurityV1Client
+}
+
+func NewOCPClientSet() (*OCPClientSet, error) {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	securityclient, err := securityv1.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &OCPClientSet{
+		SecurityV1: securityclient,
+	}, nil
 }

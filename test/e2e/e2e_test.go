@@ -25,6 +25,7 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 
+	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/fromanirh/deployer/pkg/validator"
 )
 
@@ -54,6 +55,12 @@ type validationOutput struct {
 	Errors  []validator.ValidationResult `json:"errors,omitempty"`
 }
 
+type detectionOutput struct {
+	AutoDetected platform.Platform `json:"auto_detected"`
+	UserSupplied platform.Platform `json:"user_supplied"`
+	Discovered   platform.Platform `json:"discovered"`
+}
+
 func waitForReasource(body interface{}) {
-	gomega.Eventually(body, )
+	gomega.Eventually(body)
 }

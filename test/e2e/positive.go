@@ -71,6 +71,32 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer render", func() {
 	})
 })
 
+var _ = ginkgo.Describe("[PositiveFlow] Deployer detection", func() {
+	ginkgo.Context("with cluster with the expected settings", func() {
+		ginkgo.It("it should detect a kubernetes cluster as such", func() {
+			cmdline := []string{
+				filepath.Join(binariesPath, "deployer"),
+				"detect",
+				"--json",
+			}
+			fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
+
+			cmd := exec.Command(cmdline[0], cmdline[1:]...)
+			cmd.Stderr = ginkgo.GinkgoWriter
+
+			out, err := cmd.Output()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			do := detectionOutput{}
+			if err := json.Unmarshal(out, &do); err != nil {
+				ginkgo.Fail(fmt.Sprintf("Error unmarshalling output %q: %v", out, err))
+			}
+			gomega.Expect(do.AutoDetected).To(gomega.Equal(platform.Kubernetes))
+			gomega.Expect(do.Discovered).To(gomega.Equal(platform.Kubernetes))
+		})
+	})
+})
+
 var _ = ginkgo.Describe("[PositiveFlow] Deployer validation", func() {
 	ginkgo.Context("with cluster with the expected settings", func() {
 		ginkgo.It("it should pass the validation", func() {
