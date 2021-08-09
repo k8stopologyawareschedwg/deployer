@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/fromanirh/deployer/pkg/manifests"
 	"github.com/fromanirh/deployer/pkg/manifests/api"
 	"github.com/fromanirh/deployer/pkg/manifests/rte"
@@ -38,6 +39,9 @@ func NewRenderCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "render",
 		Short: "render all the manifests",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if commonOpts.UserPlatform == platform.Unknown {
+				return fmt.Errorf("must explicitely select a cluster platform")
+			}
 			return renderManifests(cmd, commonOpts, opts, args)
 		},
 		Args: cobra.NoArgs,
@@ -53,7 +57,10 @@ func NewRenderAPICommand(commonOpts *CommonOptions, opts *renderOptions) *cobra.
 		Use:   "api",
 		Short: "render the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			apiManifests, err := api.GetManifests(commonOpts.Platform)
+			if commonOpts.UserPlatform == platform.Unknown {
+				return fmt.Errorf("must explicitely select a cluster platform")
+			}
+			apiManifests, err := api.GetManifests(commonOpts.UserPlatform)
 			if err != nil {
 				return err
 			}
@@ -69,11 +76,14 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOpti
 		Use:   "scheduler-plugin",
 		Short: "render the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			schedManifests, err := sched.GetManifests(commonOpts.Platform)
+			if commonOpts.UserPlatform == platform.Unknown {
+				return fmt.Errorf("must explicitely select a cluster platform")
+			}
+			schedManifests, err := sched.GetManifests(commonOpts.UserPlatform)
 			if err != nil {
 				return err
 			}
-			rteManifests, err := rte.GetManifests(commonOpts.Platform)
+			rteManifests, err := rte.GetManifests(commonOpts.UserPlatform)
 			if err != nil {
 				return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
 			}
@@ -97,7 +107,10 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOpti
 		Use:   "topology-updater",
 		Short: "render the topology updater needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			rteManifests, err := rte.GetManifests(commonOpts.Platform)
+			if commonOpts.UserPlatform == platform.Unknown {
+				return fmt.Errorf("must explicitely select a cluster platform")
+			}
+			rteManifests, err := rte.GetManifests(commonOpts.UserPlatform)
 			if err != nil {
 				return err
 			}
@@ -115,13 +128,13 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOpti
 func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *renderOptions, args []string) error {
 	var objs []client.Object
 
-	apiManifests, err := api.GetManifests(commonOpts.Platform)
+	apiManifests, err := api.GetManifests(commonOpts.UserPlatform)
 	if err != nil {
 		return err
 	}
 	objs = append(objs, apiManifests.Update().ToObjects()...)
 
-	rteManifests, err := rte.GetManifests(commonOpts.Platform)
+	rteManifests, err := rte.GetManifests(commonOpts.UserPlatform)
 	if err != nil {
 		return err
 	}
@@ -131,14 +144,14 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	}
 	objs = append(objs, rteManifests.Update(rteUpdateOpts).ToObjects()...)
 
-	schedManifests, err := sched.GetManifests(commonOpts.Platform)
+	schedManifests, err := sched.GetManifests(commonOpts.UserPlatform)
 	if err != nil {
 		return err
 	}
 
 	schedUpdateOpts := sched.UpdateOptions{
 		Replicas:               int32(commonOpts.Replicas),
-		NodeResourcesNamespace: rteManifests.Namespace.Name,
+		NodeResourcesNamespace: rteManifests.DaemonSet.Namespace,
 		PullIfNotPresent:       commonOpts.PullIfNotPresent,
 	}
 

@@ -30,7 +30,6 @@ import (
 type CommonOptions struct {
 	Debug            bool
 	UserPlatform     platform.Platform
-	Platform         platform.Platform
 	Log              *log.Logger
 	DebugLog         *log.Logger
 	Replicas         int
@@ -38,7 +37,6 @@ type CommonOptions struct {
 	PullIfNotPresent bool
 	rteConfigFile    string
 	plat             string
-	platDetect       detectionOutput
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -67,11 +65,6 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 
 			// if it is unknown, it's fine
 			commonOpts.UserPlatform, _ = platform.FromString(commonOpts.plat)
-			commonOpts.platDetect = detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
-			commonOpts.Platform = commonOpts.platDetect.Discovered
-			if commonOpts.Platform == platform.Unknown {
-				return fmt.Errorf("cannot autodetect the platform, and no platform given")
-			}
 
 			if commonOpts.rteConfigFile != "" {
 				data, err := os.ReadFile(commonOpts.rteConfigFile)
