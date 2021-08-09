@@ -38,10 +38,11 @@ func NewDetectCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "detect",
 		Short: "detect the cluster platform (kubernetes, openshift...)",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
 			if opts.jsonOutput {
-				json.NewEncoder(os.Stdout).Encode(commonOpts.platDetect)
+				json.NewEncoder(os.Stdout).Encode(platDetect)
 			} else {
-				fmt.Printf("%s\n", commonOpts.platDetect.Discovered)
+				fmt.Printf("%s\n", platDetect.Discovered)
 			}
 			return nil
 		},

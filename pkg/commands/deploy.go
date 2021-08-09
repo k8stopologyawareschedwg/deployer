@@ -17,9 +17,11 @@
 package commands
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/fromanirh/deployer/pkg/deployer/api"
+	"github.com/fromanirh/deployer/pkg/deployer/platform"
 	"github.com/fromanirh/deployer/pkg/deployer/rte"
 	"github.com/fromanirh/deployer/pkg/deployer/sched"
 	"github.com/fromanirh/deployer/pkg/tlog"
@@ -28,7 +30,8 @@ import (
 )
 
 type deployOptions struct {
-	waitCompletion bool
+	clusterPlatform platform.Platform
+	waitCompletion  bool
 }
 
 func NewDeployCommand(commonOpts *CommonOptions) *cobra.Command {
@@ -55,9 +58,15 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 		Short: "remove the components and configurations needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
+			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			opts.clusterPlatform = platDetect.Discovered
+			if opts.clusterPlatform == platform.Unknown {
+				return fmt.Errorf("cannot autodetect the platform, and no platform given")
+			}
+
 			var err error
 			err = sched.Remove(la, sched.Options{
-				Platform:         commonOpts.Platform,
+				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
 				RTEConfigData:    commonOpts.RTEConfigData,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
@@ -67,7 +76,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 				log.Printf("error removing: %v", err)
 			}
 			err = rte.Remove(la, rte.Options{
-				Platform:         commonOpts.Platform,
+				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
 				RTEConfigData:    commonOpts.RTEConfigData,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
@@ -77,7 +86,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 				log.Printf("error removing: %v", err)
 			}
 			err = api.Remove(la, api.Options{
-				Platform: commonOpts.Platform,
+				Platform: opts.clusterPlatform,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
@@ -100,7 +109,12 @@ func NewDeployAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.
 		Short: "deploy the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
-			if err := api.Deploy(la, api.Options{Platform: commonOpts.Platform}); err != nil {
+			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			opts.clusterPlatform = platDetect.Discovered
+			if opts.clusterPlatform == platform.Unknown {
+				return fmt.Errorf("cannot autodetect the platform, and no platform given")
+			}
+			if err := api.Deploy(la, api.Options{Platform: opts.clusterPlatform}); err != nil {
 				return err
 			}
 			return nil
@@ -116,8 +130,13 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 		Short: "deploy the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
+			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			opts.clusterPlatform = platDetect.Discovered
+			if opts.clusterPlatform == platform.Unknown {
+				return fmt.Errorf("cannot autodetect the platform, and no platform given")
+			}
 			return sched.Deploy(la, sched.Options{
-				Platform:         commonOpts.Platform,
+				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
 				RTEConfigData:    commonOpts.RTEConfigData,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
@@ -134,8 +153,13 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 		Short: "deploy the topology updater needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
+			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			opts.clusterPlatform = platDetect.Discovered
+			if opts.clusterPlatform == platform.Unknown {
+				return fmt.Errorf("cannot autodetect the platform, and no platform given")
+			}
 			return rte.Deploy(la, rte.Options{
-				Platform:         commonOpts.Platform,
+				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
 				RTEConfigData:    commonOpts.RTEConfigData,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
@@ -152,7 +176,13 @@ func NewRemoveAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.
 		Short: "remove the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
-			if err := api.Remove(la, api.Options{Platform: commonOpts.Platform}); err != nil {
+			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			opts.clusterPlatform = platDetect.Discovered
+			if opts.clusterPlatform == platform.Unknown {
+				return fmt.Errorf("cannot autodetect the platform, and no platform given")
+			}
+
+			if err := api.Remove(la, api.Options{Platform: opts.clusterPlatform}); err != nil {
 				return err
 			}
 			return nil
@@ -168,8 +198,13 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 		Short: "remove the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
+			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			opts.clusterPlatform = platDetect.Discovered
+			if opts.clusterPlatform == platform.Unknown {
+				return fmt.Errorf("cannot autodetect the platform, and no platform given")
+			}
 			return sched.Remove(la, sched.Options{
-				Platform:         commonOpts.Platform,
+				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
 				RTEConfigData:    commonOpts.RTEConfigData,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
@@ -186,8 +221,13 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 		Short: "remove the topology updater needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
+			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			opts.clusterPlatform = platDetect.Discovered
+			if opts.clusterPlatform == platform.Unknown {
+				return fmt.Errorf("cannot autodetect the platform, and no platform given")
+			}
 			return rte.Remove(la, rte.Options{
-				Platform:         commonOpts.Platform,
+				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
 				RTEConfigData:    commonOpts.RTEConfigData,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
@@ -200,13 +240,18 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 
 func deployOnCluster(commonOpts *CommonOptions, opts *deployOptions) error {
 	la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
+	platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+	opts.clusterPlatform = platDetect.Discovered
+	if opts.clusterPlatform == platform.Unknown {
+		return fmt.Errorf("cannot autodetect the platform, and no platform given")
+	}
 	if err := api.Deploy(la, api.Options{
-		Platform: commonOpts.Platform,
+		Platform: opts.clusterPlatform,
 	}); err != nil {
 		return err
 	}
 	if err := rte.Deploy(la, rte.Options{
-		Platform:         commonOpts.Platform,
+		Platform:         opts.clusterPlatform,
 		WaitCompletion:   opts.waitCompletion,
 		RTEConfigData:    commonOpts.RTEConfigData,
 		PullIfNotPresent: commonOpts.PullIfNotPresent,
@@ -214,7 +259,7 @@ func deployOnCluster(commonOpts *CommonOptions, opts *deployOptions) error {
 		return err
 	}
 	if err := sched.Deploy(la, sched.Options{
-		Platform:         commonOpts.Platform,
+		Platform:         opts.clusterPlatform,
 		WaitCompletion:   opts.waitCompletion,
 		RTEConfigData:    commonOpts.RTEConfigData,
 		PullIfNotPresent: commonOpts.PullIfNotPresent,

@@ -49,6 +49,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer render", func() {
 		ginkgo.It("it should reflect the overrides in the output", func() {
 			cmdline := []string{
 				filepath.Join(binariesPath, "deployer"),
+				"-P", "kubernetes",
 				"render",
 			}
 			fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
