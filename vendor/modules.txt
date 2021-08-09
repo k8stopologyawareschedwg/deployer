@@ -93,6 +93,13 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
+# github.com/openshift/api v0.0.0-20210713130143-be21c6cb1bea
+## explicit
+github.com/openshift/api/security/v1
+# github.com/openshift/client-go v0.0.0-20200320143156-e7fa42a1261e
+## explicit
+github.com/openshift/client-go/security/clientset/versioned/scheme
+github.com/openshift/client-go/security/clientset/versioned/typed/security/v1
 # github.com/pkg/errors v0.9.1
 github.com/pkg/errors
 # github.com/spf13/cobra v1.1.1
