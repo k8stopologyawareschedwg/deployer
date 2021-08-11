@@ -16,14 +16,18 @@ update-deps:
 update-manifests:
 	./pkg/manifests/yaml/update.sh
 
+.PHONY: update-version
+update-version:
+	@hack/make-version.sh > pkg/version/version.go
+
 deployer-static: outdir
 	CGO_ENABLED=0 go build -o _out/deployer ./cmd/deployer
 
-deployer: outdir
+deployer: outdir update-version
 	go build -o _out/deployer ./cmd/deployer/
 
 outdir:
-	mkdir -p _out || :
+	@mkdir -p _out || :
 
 .PHONY: test-unit
 test-unit:
