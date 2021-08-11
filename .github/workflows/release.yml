@@ -61,17 +61,23 @@ jobs:
         sha256sum _out/* >> SHA256SUMS
         mv SHA256SUMS _out
 
+    - name: upload build artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: build-artifacts
+        path: _out/*
+
     - name: export kind logs
       if: ${{ failure() }}
       run: |
-        kind export logs /tmp/kind_logs
+        kind export logs /tmp/kind-logs
 
     - name: archive kind logs
       if: ${{ failure() }}
       uses: actions/upload-artifact@v2
       with:
-        name: kind_logs
-        path: /tmp/kind_logs
+        name: kind-logs
+        path: /tmp/kind-logs
 
   release:
     needs: [release-build]
@@ -83,6 +89,11 @@ jobs:
         fetch-depth: 0
 
     # todo: create changelog and/or release body
+
+    - name: download again the build artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: build-artifacts
 
     - name: create release
       uses: ncipollo/release-action@v1
