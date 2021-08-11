@@ -58,8 +58,7 @@ jobs:
 
     - name: compute signature
       run: |
-        sha256sum _out/* >> SHA256SUMS
-        mv SHA256SUMS _out
+        pushd _out && sha256sum * >> ../SHA256SUMS && mv ../SHA256SUMS . && popd
 
     - name: upload build artifacts
       uses: actions/upload-artifact@v2

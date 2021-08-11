@@ -2,7 +2,7 @@
 
 set -eu
 
-GIT_TAG=$( git tag --sort=committerdate | head -n 1)
+GIT_TAG=$( git describe --tags )
 GIT_COMMIT=$( git log -1 --format="%H" )
 
 cat << EOF
