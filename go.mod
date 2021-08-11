@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/drone/envsubst v1.0.3
+	github.com/hashicorp/go-version v1.2.0
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.9
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0

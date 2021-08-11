@@ -30,6 +30,8 @@ import (
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
+
+	"github.com/hashicorp/go-version"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 
@@ -43,6 +45,30 @@ import (
 	e2enodes "github.com/fromanirh/deployer/test/e2e/utils/nodes"
 	e2epods "github.com/fromanirh/deployer/test/e2e/utils/pods"
 )
+
+var _ = ginkgo.Describe("[PositiveFlow] Deployer version", func() {
+	ginkgo.Context("with the tool available", func() {
+		ginkgo.It("it should show the correct version", func() {
+			cmdline := []string{
+				filepath.Join(binariesPath, "deployer"),
+				"version",
+			}
+			fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
+
+			cmd := exec.Command(cmdline[0], cmdline[1:]...)
+			cmd.Stderr = ginkgo.GinkgoWriter
+
+			out, err := cmd.Output()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			text := strings.TrimSpace(string(out))
+			fmt.Fprintf(ginkgo.GinkgoWriter, "reported version: %q\n", text)
+			gomega.Expect(text).ToNot(gomega.BeEmpty())
+			_, err = version.NewVersion(text)
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+		})
+	})
+})
 
 var _ = ginkgo.Describe("[PositiveFlow] Deployer render", func() {
 	ginkgo.Context("with cluster image overrides", func() {
