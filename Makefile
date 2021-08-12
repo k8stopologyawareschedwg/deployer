@@ -18,6 +18,7 @@ update-manifests:
 
 .PHONY: update-version
 update-version:
+	@mkdir -p pkg/version || :
 	@hack/make-version.sh > pkg/version/version.go
 
 deployer-static: outdir
