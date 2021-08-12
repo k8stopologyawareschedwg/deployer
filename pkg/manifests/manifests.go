@@ -239,8 +239,20 @@ func NodeResourceTopologyMatchArgsFromData(data []byte) (*apiconfig.NodeResource
 	return &sc, err
 }
 
+// helper type to marshal the right names (forcing lowercase)
+type nodeResourceTopologyMatchArgs struct {
+	KubeConfigPath string   `json:"kubeconfigpath"`
+	MasterOverride string   `json:"masteroverride"`
+	Namespaces     []string `json:"namespaces"`
+}
+
 func NodeResourceTopologyMatchArgsToData(ma *apiconfig.NodeResourceTopologyMatchArgs) ([]byte, error) {
-	return json.Marshal(ma)
+	cfg := nodeResourceTopologyMatchArgs{
+		KubeConfigPath: ma.KubeConfigPath,
+		MasterOverride: ma.MasterOverride,
+		Namespaces:     ma.Namespaces,
+	}
+	return json.Marshal(cfg)
 }
 
 func SerializeObject(obj runtime.Object, out io.Writer) error {

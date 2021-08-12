@@ -19,6 +19,6 @@
 package version
 
 const (
-	GitCommit = "17e2862839e5e9ada333b83aac7020d7bc0ac764"
-	GitVersion = "v0.0.5-1-g17e2862"
+	GitCommit = "a82cac4386999a97bb03cdd8cf606eb8641e81dd"
+	GitVersion = "v0.0.5-2-ga82cac4"
 )
