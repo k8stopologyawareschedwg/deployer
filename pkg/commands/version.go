@@ -21,7 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	deployerversion "github.com/fromanirh/deployer/pkg/version"
+	deployerversion "github.com/k8stopologyawareschedwg/deployer/pkg/version"
 )
 
 type versionOptions struct {

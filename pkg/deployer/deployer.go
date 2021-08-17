@@ -26,8 +26,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/fromanirh/deployer/pkg/clientutil"
-	"github.com/fromanirh/deployer/pkg/tlog"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
 type WaitableObject struct {

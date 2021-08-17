@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/fromanirh/deployer/pkg/clientutil"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 )
 
 func GetWorkers() ([]corev1.Node, error) {

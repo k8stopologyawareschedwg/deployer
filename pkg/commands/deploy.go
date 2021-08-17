@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/fromanirh/deployer/pkg/deployer/api"
-	"github.com/fromanirh/deployer/pkg/deployer/platform"
-	"github.com/fromanirh/deployer/pkg/deployer/rte"
-	"github.com/fromanirh/deployer/pkg/deployer/sched"
-	"github.com/fromanirh/deployer/pkg/tlog"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/api"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/rte"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/sched"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 
 	"github.com/spf13/cobra"
 )

@@ -23,8 +23,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/fromanirh/deployer/pkg/clientutil/nodes"
-	"github.com/fromanirh/deployer/pkg/validator"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil/nodes"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/validator"
 )
 
 type validateOptions struct {

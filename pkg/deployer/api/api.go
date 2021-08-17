@@ -17,10 +17,10 @@
 package api
 
 import (
-	"github.com/fromanirh/deployer/pkg/deployer"
-	"github.com/fromanirh/deployer/pkg/deployer/platform"
-	apimanifests "github.com/fromanirh/deployer/pkg/manifests/api"
-	"github.com/fromanirh/deployer/pkg/tlog"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	apimanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
 type Options struct {

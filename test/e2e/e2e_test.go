@@ -25,8 +25,8 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 
-	"github.com/fromanirh/deployer/pkg/deployer/platform"
-	"github.com/fromanirh/deployer/pkg/validator"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/validator"
 )
 
 var (

@@ -17,10 +17,10 @@
 package rte
 
 import (
-	"github.com/fromanirh/deployer/pkg/deployer"
-	"github.com/fromanirh/deployer/pkg/deployer/platform"
-	rtemanifests "github.com/fromanirh/deployer/pkg/manifests/rte"
-	"github.com/fromanirh/deployer/pkg/tlog"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	rtemanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
 type Options struct {
