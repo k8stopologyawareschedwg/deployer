@@ -19,11 +19,11 @@ package sched
 import (
 	"fmt"
 
-	"github.com/fromanirh/deployer/pkg/deployer"
-	"github.com/fromanirh/deployer/pkg/deployer/platform"
-	rtemanifests "github.com/fromanirh/deployer/pkg/manifests/rte"
-	schedmanifests "github.com/fromanirh/deployer/pkg/manifests/sched"
-	"github.com/fromanirh/deployer/pkg/tlog"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	rtemanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
+	schedmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
 type Options struct {

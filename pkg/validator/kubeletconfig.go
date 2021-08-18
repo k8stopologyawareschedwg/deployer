@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 
-	"github.com/fromanirh/deployer/pkg/kubeletconfig"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/kubeletconfig"
 )
 
 const (

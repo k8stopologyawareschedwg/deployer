@@ -22,8 +22,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 
-	"github.com/fromanirh/deployer/pkg/clientutil"
-	"github.com/fromanirh/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 )
 
 func Detect() (platform.Platform, error) {

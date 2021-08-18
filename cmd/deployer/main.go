@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fromanirh/deployer/pkg/commands"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/commands"
 )
 
 func main() {

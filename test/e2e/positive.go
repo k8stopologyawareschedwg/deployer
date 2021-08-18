@@ -35,15 +35,15 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 
-	"github.com/fromanirh/deployer/pkg/clientutil"
-	"github.com/fromanirh/deployer/pkg/clientutil/nodes"
-	"github.com/fromanirh/deployer/pkg/deployer/platform"
-	"github.com/fromanirh/deployer/pkg/manifests/rte"
-	"github.com/fromanirh/deployer/pkg/manifests/sched"
-	"github.com/fromanirh/deployer/pkg/tlog"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil/nodes"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 
-	e2enodes "github.com/fromanirh/deployer/test/e2e/utils/nodes"
-	e2epods "github.com/fromanirh/deployer/test/e2e/utils/pods"
+	e2enodes "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/nodes"
+	e2epods "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/pods"
 )
 
 var _ = ginkgo.Describe("[PositiveFlow] Deployer version", func() {

@@ -23,12 +23,12 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/fromanirh/deployer/pkg/deployer/platform"
-	"github.com/fromanirh/deployer/pkg/manifests"
-	"github.com/fromanirh/deployer/pkg/manifests/api"
-	"github.com/fromanirh/deployer/pkg/manifests/rte"
-	"github.com/fromanirh/deployer/pkg/manifests/sched"
-	"github.com/fromanirh/deployer/pkg/tlog"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
 type renderOptions struct{}

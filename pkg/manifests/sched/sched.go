@@ -24,11 +24,11 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/fromanirh/deployer/pkg/deployer"
-	"github.com/fromanirh/deployer/pkg/deployer/platform"
-	"github.com/fromanirh/deployer/pkg/deployer/wait"
-	"github.com/fromanirh/deployer/pkg/manifests"
-	"github.com/fromanirh/deployer/pkg/tlog"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
 const (

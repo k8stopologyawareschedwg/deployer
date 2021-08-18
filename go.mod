@@ -1,4 +1,4 @@
-module github.com/fromanirh/deployer
+module github.com/k8stopologyawareschedwg/deployer
 
 go 1.16
 
