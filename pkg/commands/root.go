@@ -97,6 +97,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 		NewSetupCommand(commonOpts),
 		NewDetectCommand(commonOpts),
 		NewVersionCommand(commonOpts),
+		NewImagesCommand(commonOpts),
 	)
 	for _, extraCmd := range extraCmds {
 		root.AddCommand(extraCmd(commonOpts))

@@ -61,6 +61,12 @@ type detectionOutput struct {
 	Discovered   platform.Platform `json:"discovered"`
 }
 
+type imageOutput struct {
+	TopologyUpdater     string `json:"topology_updater"`
+	SchedulerPlugin     string `json:"scheduler_plugin"`
+	SchedulerController string `json:"scheduler_controller"`
+}
+
 func waitForReasource(body interface{}) {
 	gomega.Eventually(body)
 }
