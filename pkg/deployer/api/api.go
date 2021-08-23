@@ -18,16 +18,11 @@ package api
 
 import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	apimanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
-type Options struct {
-	Platform platform.Platform
-}
-
-func Deploy(log tlog.Logger, opts Options) error {
+func Deploy(log tlog.Logger, opts deployer.Options) error {
 	var err error
 	log.Printf("deploying topology-aware-scheduling API...")
 
@@ -50,7 +45,7 @@ func Deploy(log tlog.Logger, opts Options) error {
 	return nil
 }
 
-func Remove(log tlog.Logger, opts Options) error {
+func Remove(log tlog.Logger, opts deployer.Options) error {
 	var err error
 	log.Printf("removing topology-aware-scheduling API...")
 

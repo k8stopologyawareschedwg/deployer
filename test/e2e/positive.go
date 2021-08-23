@@ -38,6 +38,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil/nodes"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
@@ -104,6 +105,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer render", func() {
 			cmdline := []string{
 				filepath.Join(binariesPath, "deployer"),
 				"-P", "kubernetes",
+				"--upstream-repo",
 				"render",
 			}
 			fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
@@ -194,14 +196,14 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 			ginkgo.By("checking that resource-topology-exporter pod is running")
 			mf, err := rte.GetManifests(platform.Kubernetes)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			mf = mf.Update(rte.UpdateOptions{})
+			mf = mf.Update(manifests.UpdateOptions{})
 			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DaemonSet.Name))
 
 			ginkgo.By("checking that topo-aware-scheduler pod is running")
 			mfs, err := sched.GetManifests(platform.Kubernetes)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			// no need for options!
-			mfs = mfs.Update(tlog.NewNullLogAdapter(), sched.UpdateOptions{})
+			mfs = mfs.Update(tlog.NewNullLogAdapter(), manifests.UpdateOptions{})
 			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
 
 			ginkgo.By("checking that noderesourcetopolgy has some information in it")

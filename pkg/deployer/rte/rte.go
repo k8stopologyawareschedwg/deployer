@@ -18,19 +18,12 @@ package rte
 
 import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	rtemanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
-type Options struct {
-	Platform         platform.Platform
-	WaitCompletion   bool
-	RTEConfigData    string
-	PullIfNotPresent bool
-}
-
-func Deploy(log tlog.Logger, opts Options) error {
+func Deploy(log tlog.Logger, opts deployer.Options) error {
 	var err error
 	log.Printf("deploying topology-aware-scheduling topology updater...")
 
@@ -38,9 +31,10 @@ func Deploy(log tlog.Logger, opts Options) error {
 	if err != nil {
 		return err
 	}
-	mf = mf.Update(rtemanifests.UpdateOptions{
+	mf = mf.Update(manifests.UpdateOptions{
 		ConfigData:       opts.RTEConfigData,
 		PullIfNotPresent: opts.PullIfNotPresent,
+		UpstreamRepo:     opts.UpstreamRepo,
 	})
 	log.Debugf("RTE manifests loaded")
 
@@ -65,7 +59,7 @@ func Deploy(log tlog.Logger, opts Options) error {
 	return nil
 }
 
-func Remove(log tlog.Logger, opts Options) error {
+func Remove(log tlog.Logger, opts deployer.Options) error {
 	var err error
 	log.Printf("removing topology-aware-scheduling topology updater...")
 
@@ -78,9 +72,10 @@ func Remove(log tlog.Logger, opts Options) error {
 	if err != nil {
 		return err
 	}
-	mf = mf.Update(rtemanifests.UpdateOptions{
+	mf = mf.Update(manifests.UpdateOptions{
 		ConfigData:       opts.RTEConfigData,
 		PullIfNotPresent: opts.PullIfNotPresent,
+		UpstreamRepo:     opts.UpstreamRepo,
 	})
 	log.Debugf("RTE manifests loaded")
 

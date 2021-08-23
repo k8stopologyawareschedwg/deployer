@@ -13,6 +13,28 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
+type UpdateOptions struct {
+	Replicas               int32
+	NodeResourcesNamespace string
+	PullIfNotPresent       bool
+	UpstreamRepo           bool
+	ConfigData             string
+}
+
+func (uo UpdateOptions) PullPolicy() corev1.PullPolicy {
+	if uo.PullIfNotPresent {
+		return corev1.PullIfNotPresent
+	}
+	return corev1.PullAlways
+}
+
+func (uo UpdateOptions) Images() images.Images {
+	if uo.UpstreamRepo {
+		return images.Upstream()
+	}
+	return images.Current()
+}
+
 func UpdateRoleBinding(rb *rbacv1.RoleBinding, serviceAccount, namespace string) *rbacv1.RoleBinding {
 	rb.Namespace = namespace // TODO
 	for idx := 0; idx < len(rb.Subjects); idx++ {
@@ -34,17 +56,17 @@ func UpdateClusterRoleBinding(crb *rbacv1.ClusterRoleBinding, serviceAccount, na
 	return crb
 }
 
-func UpdateSchedulerPluginSchedulerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool) *appsv1.Deployment {
-	imgs := images.Current()
+func UpdateSchedulerPluginSchedulerDeployment(dp *appsv1.Deployment, options UpdateOptions) *appsv1.Deployment {
+	imgs := options.Images()
 	dp.Spec.Template.Spec.Containers[0].Image = imgs.SchedulerPluginScheduler
-	dp.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
+	dp.Spec.Template.Spec.Containers[0].ImagePullPolicy = options.PullPolicy()
 	return dp
 }
 
-func UpdateSchedulerPluginControllerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool) *appsv1.Deployment {
-	imgs := images.Current()
+func UpdateSchedulerPluginControllerDeployment(dp *appsv1.Deployment, options UpdateOptions) *appsv1.Deployment {
+	imgs := options.Images()
 	dp.Spec.Template.Spec.Containers[0].Image = imgs.SchedulerPluginController
-	dp.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
+	dp.Spec.Template.Spec.Containers[0].ImagePullPolicy = options.PullPolicy()
 	return dp
 }
 
@@ -91,14 +113,15 @@ func UpdateSchedulerConfigNamespaces(logger tlog.Logger, cm *corev1.ConfigMap, N
 	return cm
 }
 
-func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.DaemonSet, cm *corev1.ConfigMap, pullIfNotPresent bool) *appsv1.DaemonSet {
+func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.DaemonSet, cm *corev1.ConfigMap, options UpdateOptions) *appsv1.DaemonSet {
 	// TODO: better match by name than assume container#0 is RTE proper (not minion)
-	imgs := images.Current()
+	imgs := options.Images()
+	pullPolicy := options.PullPolicy()
 	ds.Spec.Template.Spec.Containers[0].Image = imgs.ResourceTopologyExporter
-	ds.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
+	ds.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy
 	if len(ds.Spec.Template.Spec.Containers) > 1 {
 		// TODO: more polite/proper iteration
-		ds.Spec.Template.Spec.Containers[1].ImagePullPolicy = pullPolicy(pullIfNotPresent)
+		ds.Spec.Template.Spec.Containers[1].ImagePullPolicy = pullPolicy
 	}
 	vars := map[string]string{
 		"RTE_POLL_INTERVAL": "10s",
@@ -155,13 +178,6 @@ func UpdateResourceTopologyExporterCommand(args []string, vars map[string]string
 		res = append(res, "--topology-manager-policy=single-numa-node")
 	}
 	return res
-}
-
-func pullPolicy(pullIfNotPresent bool) corev1.PullPolicy {
-	if pullIfNotPresent {
-		return corev1.PullIfNotPresent
-	}
-	return corev1.PullAlways
 }
 
 func newBool(val bool) *bool {

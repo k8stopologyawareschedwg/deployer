@@ -72,13 +72,7 @@ func (mf Manifests) Clone() Manifests {
 	}
 }
 
-type UpdateOptions struct {
-	Replicas               int32
-	NodeResourcesNamespace string
-	PullIfNotPresent       bool
-}
-
-func (mf Manifests) Update(logger tlog.Logger, options UpdateOptions) Manifests {
+func (mf Manifests) Update(logger tlog.Logger, options manifests.UpdateOptions) Manifests {
 	ret := mf.Clone()
 	replicas := options.Replicas
 	if replicas <= 0 {
@@ -87,8 +81,8 @@ func (mf Manifests) Update(logger tlog.Logger, options UpdateOptions) Manifests 
 	ret.DPScheduler.Spec.Replicas = newInt32(replicas)
 	ret.DPController.Spec.Replicas = newInt32(replicas)
 
-	manifests.UpdateSchedulerPluginSchedulerDeployment(ret.DPScheduler, options.PullIfNotPresent)
-	manifests.UpdateSchedulerPluginControllerDeployment(ret.DPController, options.PullIfNotPresent)
+	manifests.UpdateSchedulerPluginSchedulerDeployment(ret.DPScheduler, options)
+	manifests.UpdateSchedulerPluginControllerDeployment(ret.DPController, options)
 	if mf.plat == platform.OpenShift {
 		ret.Namespace.Name = namespaceOCP
 	}

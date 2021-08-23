@@ -31,6 +31,17 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
+func makeUpdateOptions(commonOpts *CommonOptions, nodeResourcesNamespace string) manifests.UpdateOptions {
+	return manifests.UpdateOptions{
+		NodeResourcesNamespace: nodeResourcesNamespace,
+		Replicas:               int32(commonOpts.Replicas),
+		ConfigData:             commonOpts.RTEConfigData,
+		PullIfNotPresent:       commonOpts.PullIfNotPresent,
+		UpstreamRepo:           commonOpts.UpstreamRepo,
+	}
+
+}
+
 type renderOptions struct{}
 
 func NewRenderCommand(commonOpts *CommonOptions) *cobra.Command {
@@ -88,12 +99,8 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOpti
 				return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
 			}
 			// no Options needed!
-			rteManifests = rteManifests.Update(rte.UpdateOptions{})
-			updateOpts := sched.UpdateOptions{
-				Replicas:               int32(commonOpts.Replicas),
-				NodeResourcesNamespace: rteManifests.DaemonSet.Namespace,
-				PullIfNotPresent:       commonOpts.PullIfNotPresent,
-			}
+			rteManifests = rteManifests.Update(manifests.UpdateOptions{})
+			updateOpts := makeUpdateOptions(commonOpts, rteManifests.DaemonSet.Namespace)
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
 			return renderObjects(schedManifests.Update(la, updateOpts).ToObjects())
 		},
@@ -114,10 +121,7 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOpti
 			if err != nil {
 				return err
 			}
-			updateOpts := rte.UpdateOptions{
-				ConfigData:       commonOpts.RTEConfigData,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
-			}
+			updateOpts := makeUpdateOptions(commonOpts, "")
 			return renderObjects(rteManifests.Update(updateOpts).ToObjects())
 		},
 		Args: cobra.NoArgs,
@@ -138,10 +142,7 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	if err != nil {
 		return err
 	}
-	rteUpdateOpts := rte.UpdateOptions{
-		ConfigData:       commonOpts.RTEConfigData,
-		PullIfNotPresent: commonOpts.PullIfNotPresent,
-	}
+	rteUpdateOpts := makeUpdateOptions(commonOpts, "")
 	objs = append(objs, rteManifests.Update(rteUpdateOpts).ToObjects()...)
 
 	schedManifests, err := sched.GetManifests(commonOpts.UserPlatform)
@@ -149,12 +150,7 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 		return err
 	}
 
-	schedUpdateOpts := sched.UpdateOptions{
-		Replicas:               int32(commonOpts.Replicas),
-		NodeResourcesNamespace: rteManifests.DaemonSet.Namespace,
-		PullIfNotPresent:       commonOpts.PullIfNotPresent,
-	}
-
+	schedUpdateOpts := makeUpdateOptions(commonOpts, rteManifests.DaemonSet.Namespace)
 	la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
 	objs = append(objs, schedManifests.Update(la, schedUpdateOpts).ToObjects()...)
 

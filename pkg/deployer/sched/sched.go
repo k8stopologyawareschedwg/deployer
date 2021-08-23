@@ -20,21 +20,13 @@ import (
 	"fmt"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	rtemanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	schedmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
-type Options struct {
-	Platform         platform.Platform
-	WaitCompletion   bool
-	Replicas         int32
-	RTEConfigData    string
-	PullIfNotPresent bool
-}
-
-func Deploy(log tlog.Logger, opts Options) error {
+func Deploy(log tlog.Logger, opts deployer.Options) error {
 	var err error
 	log.Printf("deploying topology-aware-scheduling scheduler plugin...")
 
@@ -48,11 +40,12 @@ func Deploy(log tlog.Logger, opts Options) error {
 		return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
 	}
 
-	rteMf = rteMf.Update(rtemanifests.UpdateOptions{ConfigData: opts.RTEConfigData})
-	mf = mf.Update(log, schedmanifests.UpdateOptions{
+	rteMf = rteMf.Update(manifests.UpdateOptions{ConfigData: opts.RTEConfigData})
+	mf = mf.Update(log, manifests.UpdateOptions{
 		Replicas:               opts.Replicas,
 		NodeResourcesNamespace: rteMf.DaemonSet.Name,
 		PullIfNotPresent:       opts.PullIfNotPresent,
+		UpstreamRepo:           opts.UpstreamRepo,
 	})
 	log.Debugf("SCD manifests loaded")
 
@@ -77,7 +70,7 @@ func Deploy(log tlog.Logger, opts Options) error {
 	return nil
 }
 
-func Remove(log tlog.Logger, opts Options) error {
+func Remove(log tlog.Logger, opts deployer.Options) error {
 	var err error
 	log.Printf("removing topology-aware-scheduling scheduler plugin...")
 
@@ -91,11 +84,12 @@ func Remove(log tlog.Logger, opts Options) error {
 		return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
 	}
 
-	rteMf = rteMf.Update(rtemanifests.UpdateOptions{ConfigData: opts.RTEConfigData})
-	mf = mf.Update(log, schedmanifests.UpdateOptions{
+	rteMf = rteMf.Update(manifests.UpdateOptions{ConfigData: opts.RTEConfigData})
+	mf = mf.Update(log, manifests.UpdateOptions{
 		Replicas:               opts.Replicas,
 		NodeResourcesNamespace: rteMf.DaemonSet.Namespace,
 		PullIfNotPresent:       opts.PullIfNotPresent,
+		UpstreamRepo:           opts.UpstreamRepo,
 	})
 	log.Debugf("SCD manifests loaded")
 

@@ -27,8 +27,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
+
+type Options struct {
+	Platform         platform.Platform
+	WaitCompletion   bool
+	Replicas         int32
+	RTEConfigData    string
+	PullIfNotPresent bool
+	UpstreamRepo     bool
+}
 
 type WaitableObject struct {
 	Obj  client.Object

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/rte"
@@ -32,6 +33,17 @@ import (
 type deployOptions struct {
 	clusterPlatform platform.Platform
 	waitCompletion  bool
+}
+
+func makeDeployerOptions(commonOpts *CommonOptions, opts *deployOptions) deployer.Options {
+	return deployer.Options{
+		Platform:         opts.clusterPlatform,
+		WaitCompletion:   opts.waitCompletion,
+		Replicas:         int32(commonOpts.Replicas),
+		RTEConfigData:    commonOpts.RTEConfigData,
+		PullIfNotPresent: commonOpts.PullIfNotPresent,
+		UpstreamRepo:     commonOpts.UpstreamRepo,
+	}
 }
 
 func NewDeployCommand(commonOpts *CommonOptions) *cobra.Command {
@@ -65,29 +77,17 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			}
 
 			var err error
-			err = sched.Remove(la, sched.Options{
-				Platform:         opts.clusterPlatform,
-				WaitCompletion:   opts.waitCompletion,
-				RTEConfigData:    commonOpts.RTEConfigData,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
-			})
+			err = sched.Remove(la, makeDeployerOptions(commonOpts, opts))
 			if err != nil {
 				// intentionally keep going to remove as much as possible
 				log.Printf("error removing: %v", err)
 			}
-			err = rte.Remove(la, rte.Options{
-				Platform:         opts.clusterPlatform,
-				WaitCompletion:   opts.waitCompletion,
-				RTEConfigData:    commonOpts.RTEConfigData,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
-			})
+			err = rte.Remove(la, makeDeployerOptions(commonOpts, opts))
 			if err != nil {
 				// intentionally keep going to remove as much as possible
 				log.Printf("error removing: %v", err)
 			}
-			err = api.Remove(la, api.Options{
-				Platform: opts.clusterPlatform,
-			})
+			err = api.Remove(la, deployer.Options{Platform: opts.clusterPlatform})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
 				log.Printf("error removing: %v", err)
@@ -114,7 +114,7 @@ func NewDeployAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			if err := api.Deploy(la, api.Options{Platform: opts.clusterPlatform}); err != nil {
+			if err := api.Deploy(la, deployer.Options{Platform: opts.clusterPlatform}); err != nil {
 				return err
 			}
 			return nil
@@ -135,12 +135,7 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			return sched.Deploy(la, sched.Options{
-				Platform:         opts.clusterPlatform,
-				WaitCompletion:   opts.waitCompletion,
-				RTEConfigData:    commonOpts.RTEConfigData,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
-			})
+			return sched.Deploy(la, makeDeployerOptions(commonOpts, opts))
 		},
 		Args: cobra.NoArgs,
 	}
@@ -158,12 +153,7 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			return rte.Deploy(la, rte.Options{
-				Platform:         opts.clusterPlatform,
-				WaitCompletion:   opts.waitCompletion,
-				RTEConfigData:    commonOpts.RTEConfigData,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
-			})
+			return rte.Deploy(la, makeDeployerOptions(commonOpts, opts))
 		},
 		Args: cobra.NoArgs,
 	}
@@ -182,7 +172,7 @@ func NewRemoveAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
 
-			if err := api.Remove(la, api.Options{Platform: opts.clusterPlatform}); err != nil {
+			if err := api.Remove(la, deployer.Options{Platform: opts.clusterPlatform}); err != nil {
 				return err
 			}
 			return nil
@@ -203,12 +193,7 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			return sched.Remove(la, sched.Options{
-				Platform:         opts.clusterPlatform,
-				WaitCompletion:   opts.waitCompletion,
-				RTEConfigData:    commonOpts.RTEConfigData,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
-			})
+			return sched.Remove(la, makeDeployerOptions(commonOpts, opts))
 		},
 		Args: cobra.NoArgs,
 	}
@@ -226,12 +211,7 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			return rte.Remove(la, rte.Options{
-				Platform:         opts.clusterPlatform,
-				WaitCompletion:   opts.waitCompletion,
-				RTEConfigData:    commonOpts.RTEConfigData,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
-			})
+			return rte.Remove(la, makeDeployerOptions(commonOpts, opts))
 		},
 		Args: cobra.NoArgs,
 	}
@@ -245,25 +225,15 @@ func deployOnCluster(commonOpts *CommonOptions, opts *deployOptions) error {
 	if opts.clusterPlatform == platform.Unknown {
 		return fmt.Errorf("cannot autodetect the platform, and no platform given")
 	}
-	if err := api.Deploy(la, api.Options{
+	if err := api.Deploy(la, deployer.Options{
 		Platform: opts.clusterPlatform,
 	}); err != nil {
 		return err
 	}
-	if err := rte.Deploy(la, rte.Options{
-		Platform:         opts.clusterPlatform,
-		WaitCompletion:   opts.waitCompletion,
-		RTEConfigData:    commonOpts.RTEConfigData,
-		PullIfNotPresent: commonOpts.PullIfNotPresent,
-	}); err != nil {
+	if err := rte.Deploy(la, makeDeployerOptions(commonOpts, opts)); err != nil {
 		return err
 	}
-	if err := sched.Deploy(la, sched.Options{
-		Platform:         opts.clusterPlatform,
-		WaitCompletion:   opts.waitCompletion,
-		RTEConfigData:    commonOpts.RTEConfigData,
-		PullIfNotPresent: commonOpts.PullIfNotPresent,
-	}); err != nil {
+	if err := sched.Deploy(la, makeDeployerOptions(commonOpts, opts)); err != nil {
 		return err
 	}
 	return nil
