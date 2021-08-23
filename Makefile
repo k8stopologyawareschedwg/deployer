@@ -17,18 +17,21 @@ update-manifests:
 	./pkg/manifests/yaml/update.sh
 
 .PHONY: update-version
-update-version:
-	@mkdir -p pkg/version || :
+update-version: prepare
 	@hack/make-version.sh > pkg/version/version.go
 
-deployer-static: outdir
+.PHONY: update-images
+update-images: hacks
+	@_out/updateimage \
+		< pkg/images/images.json \
+		> pkg/images/consts.go && \
+	gofmt -w pkg/images/consts.go
+
+deployer-static: prepare
 	CGO_ENABLED=0 go build -o _out/deployer ./cmd/deployer
 
-deployer: outdir update-version
+deployer: prepare update-version
 	go build -o _out/deployer ./cmd/deployer/
-
-outdir:
-	@mkdir -p _out || :
 
 .PHONY: test-unit
 test-unit:
@@ -50,6 +53,19 @@ gofmt:
 .PHONY: build-e2e
 build-e2e: _out/rte-e2e.test
 
-_out/rte-e2e.test: outdir test/e2e/*.go
+_out/rte-e2e.test: prepare test/e2e/*.go
 	go test -v -c -o _out/e2e.test ./test/e2e/
+
+.PHONY: hacks
+hacks: prepare
+	go build -o _out/mirrorurl hack/tools/mirrorurl/main.go
+	go build -o _out/mirrorgen hack/tools/mirrorgen/main.go
+	go build -o _out/updateimage hack/tools/updateimage/main.go
+
+.PHONY: prepare
+prepare: outdir
+	@mkdir -p pkg/version || :
+
+outdir:
+	@mkdir -p _out || :
 

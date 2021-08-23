@@ -35,6 +35,7 @@ type CommonOptions struct {
 	Replicas         int
 	RTEConfigData    string
 	PullIfNotPresent bool
+	UpstreamRepo     bool
 	rteConfigFile    string
 	plat             string
 }
@@ -87,6 +88,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	root.PersistentFlags().StringVarP(&commonOpts.plat, "platform", "P", "", "platform to deploy on")
 	root.PersistentFlags().IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
 	root.PersistentFlags().BoolVar(&commonOpts.PullIfNotPresent, "pull-if-not-present", false, "force pull policies to IfNotPresent.")
+	root.PersistentFlags().BoolVar(&commonOpts.UpstreamRepo, "upstream-repo", false, "use images from their original repo, not the k8stopologyawareschedwg mirror")
 	root.PersistentFlags().StringVar(&commonOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
 
 	root.AddCommand(

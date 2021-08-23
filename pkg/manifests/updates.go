@@ -35,13 +35,15 @@ func UpdateClusterRoleBinding(crb *rbacv1.ClusterRoleBinding, serviceAccount, na
 }
 
 func UpdateSchedulerPluginSchedulerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool) *appsv1.Deployment {
-	dp.Spec.Template.Spec.Containers[0].Image = images.SchedulerPluginSchedulerImage
+	imgs := images.Current()
+	dp.Spec.Template.Spec.Containers[0].Image = imgs.SchedulerPluginScheduler
 	dp.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
 	return dp
 }
 
 func UpdateSchedulerPluginControllerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool) *appsv1.Deployment {
-	dp.Spec.Template.Spec.Containers[0].Image = images.SchedulerPluginControllerImage
+	imgs := images.Current()
+	dp.Spec.Template.Spec.Containers[0].Image = imgs.SchedulerPluginController
 	dp.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
 	return dp
 }
@@ -91,7 +93,8 @@ func UpdateSchedulerConfigNamespaces(logger tlog.Logger, cm *corev1.ConfigMap, N
 
 func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.DaemonSet, cm *corev1.ConfigMap, pullIfNotPresent bool) *appsv1.DaemonSet {
 	// TODO: better match by name than assume container#0 is RTE proper (not minion)
-	ds.Spec.Template.Spec.Containers[0].Image = images.ResourceTopologyExporterImage
+	imgs := images.Current()
+	ds.Spec.Template.Spec.Containers[0].Image = imgs.ResourceTopologyExporter
 	ds.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
 	if len(ds.Spec.Template.Spec.Containers) > 1 {
 		// TODO: more polite/proper iteration

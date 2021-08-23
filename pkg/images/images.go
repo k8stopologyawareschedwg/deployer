@@ -16,7 +16,16 @@
 
 package images
 
-import "os"
+import (
+	"fmt"
+	"os"
+	"strings"
+)
+
+const (
+	Registry     = "quay.io"
+	Organization = "k8stopologyawareschedwg"
+)
 
 func init() {
 	if schedImage, ok := os.LookupEnv("TAS_SCHEDULER_PLUGIN_IMAGE"); ok {
@@ -35,3 +44,61 @@ var (
 	SchedulerPluginControllerImage = SchedulerPluginSchedulerDefaultImage
 	ResourceTopologyExporterImage  = ResourceTopologyExporterDefaultImage
 )
+
+type Images struct {
+	SchedulerPluginScheduler  string
+	SchedulerPluginController string
+	ResourceTopologyExporter  string
+}
+
+func (im Images) ToStrings() []string {
+	return []string{
+		im.SchedulerPluginController,
+		im.SchedulerPluginScheduler,
+		im.ResourceTopologyExporter,
+	}
+}
+
+func Current() Images {
+	imgs := Upstream()
+	return Images{
+		SchedulerPluginScheduler:  Mirror(imgs.SchedulerPluginScheduler),
+		SchedulerPluginController: Mirror(imgs.SchedulerPluginController),
+		ResourceTopologyExporter:  Mirror(imgs.ResourceTopologyExporter),
+	}
+}
+
+func Defaults() Images {
+	return Images{
+		SchedulerPluginScheduler:  SchedulerPluginSchedulerDefaultImage,
+		SchedulerPluginController: SchedulerPluginControllerDefaultImage,
+		ResourceTopologyExporter:  ResourceTopologyExporterDefaultImage,
+	}
+}
+
+func Upstream() Images {
+	return Images{
+		SchedulerPluginScheduler:  SchedulerPluginSchedulerImage,
+		SchedulerPluginController: SchedulerPluginControllerImage,
+		ResourceTopologyExporter:  ResourceTopologyExporterImage,
+	}
+}
+
+func Mirror(pullSpec string) string {
+	if strings.Contains(pullSpec, "@sha256") {
+		// these are safe already, no need to do any logic
+		return pullSpec
+	}
+	f := func(c rune) bool {
+		return c == '/' || c == ':'
+	}
+	components := strings.FieldsFunc(pullSpec, f)
+	num := len(components)
+	if num < 3 {
+		// host, name, tag
+		return pullSpec
+	}
+	tag := fmt.Sprintf("r%d-%s", Revision, components[num-1])
+	name := strings.Join(components[1:num-1], "-")
+	return fmt.Sprintf("%s/%s/%s:%s", Registry, Organization, name, tag)
+}

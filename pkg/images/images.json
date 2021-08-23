@@ -1,0 +1,5 @@
+{
+	"scheduler_plugin_scheduler": "k8s.gcr.io/scheduler-plugins/kube-scheduler:v0.19.9",
+	"scheduler_plugin_controller": "k8s.gcr.io/scheduler-plugins/controller:v0.19.9",
+	"resource_topology_exporter": "quay.io/openshift-kni/resource-topology-exporter:4.9-snapshot"
+}

@@ -29,8 +29,9 @@ import (
 )
 
 type imagesOptions struct {
-	jsonOutput bool
-	rawOutput  bool
+	jsonOutput   bool
+	rawOutput    bool
+	upstreamRepo bool
 }
 
 func NewImagesCommand(commonOpts *CommonOptions) *cobra.Command {
@@ -39,7 +40,12 @@ func NewImagesCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "images",
 		Short: "dump the container images used to deploy",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			imo := newImageOutput()
+			var imo imageOutput
+			if commonOpts.UpstreamRepo {
+				imo = newImageOutput(images.Upstream())
+			} else {
+				imo = newImageOutput(images.Current())
+			}
 			if opts.rawOutput {
 				il := imo.ToList()
 				if opts.jsonOutput {
@@ -69,11 +75,11 @@ type imageOutput struct {
 	SchedulerController string `json:"scheduler_controller"`
 }
 
-func newImageOutput() imageOutput {
+func newImageOutput(imgs images.Images) imageOutput {
 	return imageOutput{
-		TopologyUpdater:     images.ResourceTopologyExporterDefaultImage,
-		SchedulerPlugin:     images.SchedulerPluginSchedulerDefaultImage,
-		SchedulerController: images.SchedulerPluginControllerDefaultImage,
+		TopologyUpdater:     imgs.ResourceTopologyExporter,
+		SchedulerPlugin:     imgs.SchedulerPluginScheduler,
+		SchedulerController: imgs.SchedulerPluginController,
 	}
 }
 
