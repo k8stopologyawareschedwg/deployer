@@ -70,6 +70,34 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer version", func() {
 	})
 })
 
+var _ = ginkgo.Describe("[PositiveFlow] Deployer images", func() {
+	ginkgo.Context("with the tool available", func() {
+		ginkgo.It("it should emit the images being used", func() {
+			cmdline := []string{
+				filepath.Join(binariesPath, "deployer"),
+				"images",
+				"--json",
+			}
+			fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
+
+			cmd := exec.Command(cmdline[0], cmdline[1:]...)
+			cmd.Stderr = ginkgo.GinkgoWriter
+
+			out, err := cmd.Output()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			imo := imageOutput{}
+			if err := json.Unmarshal(out, &imo); err != nil {
+				ginkgo.Fail(fmt.Sprintf("Error unmarshalling output %q: %v", out, err))
+			}
+
+			gomega.Expect(imo.TopologyUpdater).ToNot(gomega.BeNil())
+			gomega.Expect(imo.SchedulerPlugin).ToNot(gomega.BeNil())
+			gomega.Expect(imo.SchedulerController).ToNot(gomega.BeNil())
+		})
+	})
+})
+
 var _ = ginkgo.Describe("[PositiveFlow] Deployer render", func() {
 	ginkgo.Context("with cluster image overrides", func() {
 		ginkgo.It("it should reflect the overrides in the output", func() {
