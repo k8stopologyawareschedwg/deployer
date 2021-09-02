@@ -28,15 +28,16 @@ import (
 )
 
 type CommonOptions struct {
-	Debug            bool
-	UserPlatform     platform.Platform
-	Log              *log.Logger
-	DebugLog         *log.Logger
-	Replicas         int
-	RTEConfigData    string
-	PullIfNotPresent bool
-	rteConfigFile    string
-	plat             string
+	Debug             bool
+	UserPlatform      platform.Platform
+	Log               *log.Logger
+	DebugLog          *log.Logger
+	Replicas          int
+	UpdaterConfigData string
+	PullIfNotPresent  bool
+	updaterConfigFile string
+	plat              string
+	UpdaterType       string
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -66,14 +67,19 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 			// if it is unknown, it's fine
 			commonOpts.UserPlatform, _ = platform.FromString(commonOpts.plat)
 
-			if commonOpts.rteConfigFile != "" {
-				data, err := os.ReadFile(commonOpts.rteConfigFile)
+			if commonOpts.updaterConfigFile != "" {
+				data, err := os.ReadFile(commonOpts.updaterConfigFile)
 				if err != nil {
 					return err
 				}
-				commonOpts.RTEConfigData = string(data)
-				commonOpts.DebugLog.Printf("RTE config: read %d bytes", len(commonOpts.RTEConfigData))
+				commonOpts.UpdaterConfigData = string(data)
+				commonOpts.DebugLog.Printf("Updater config: read %d bytes", len(commonOpts.UpdaterConfigData))
 			}
+
+			if commonOpts.UpdaterType != "RTE" && commonOpts.UpdaterType != "NFD" {
+				return fmt.Errorf("%s is invalid updater type", commonOpts.UpdaterType)
+			}
+
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -87,7 +93,8 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	root.PersistentFlags().StringVarP(&commonOpts.plat, "platform", "P", "", "platform to deploy on")
 	root.PersistentFlags().IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
 	root.PersistentFlags().BoolVar(&commonOpts.PullIfNotPresent, "pull-if-not-present", false, "force pull policies to IfNotPresent.")
-	root.PersistentFlags().StringVar(&commonOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
+	root.PersistentFlags().StringVar(&commonOpts.updaterConfigFile, "updater-config-file", "", "inject topology updater configuration reading from this file.")
+	root.PersistentFlags().StringVar(&commonOpts.UpdaterType, "updater-type", "RTE", "type of updater to deploy - RTE or NFD")
 
 	root.AddCommand(
 		NewRenderCommand(commonOpts),

@@ -20,4 +20,6 @@ const (
 	SchedulerPluginSchedulerDefaultImage  = "k8s.gcr.io/scheduler-plugins/kube-scheduler:v0.19.9"
 	SchedulerPluginControllerDefaultImage = "k8s.gcr.io/scheduler-plugins/controller:v0.19.9"
 	ResourceTopologyExporterDefaultImage  = "quay.io/openshift-kni/resource-topology-exporter:v0.0.20"
+	// TODO replace this image with some image from k8stopologyawareschedwg quay repo
+	NodeFeatureDiscoveryDefaultImage = "quay.io/swsehgal/node-feature-discovery:v0.10.0-devel-36-g5b0761f3"
 )

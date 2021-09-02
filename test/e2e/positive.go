@@ -38,8 +38,8 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil/nodes"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/updater"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 
 	e2enodes "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/nodes"
@@ -192,10 +192,10 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 
 		ginkgo.It("should perform overall deployment and verify all pods are running", func() {
 			ginkgo.By("checking that resource-topology-exporter pod is running")
-			mf, err := rte.GetManifests(platform.Kubernetes)
+			mf, err := updater.GetManifestsHandler(platform.Kubernetes, "RTE")
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			mf = mf.Update(rte.UpdateOptions{})
-			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DaemonSet.Name))
+			mf = mf.Update(updater.UpdateOptions{})
+			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.GetManifests().DaemonSet.Name))
 
 			ginkgo.By("checking that topo-aware-scheduler pod is running")
 			mfs, err := sched.GetManifests(platform.Kubernetes)
@@ -214,7 +214,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
 
 				// the name of the nrt object is the same as the worker node's name
-				nrt := getNodeResourceTopology(tc, mf.Namespace.Name, node.Name)
+				nrt := getNodeResourceTopology(tc, mf.GetManifests().Namespace.Name, node.Name)
 				// we check CPUs because that's the only resource we know it will always be available
 				hasCPU := false
 				for _, zone := range nrt.Zones {
@@ -291,7 +291,7 @@ func deploy() error {
 		filepath.Join(binariesPath, "deployer"),
 		"--debug",
 		"deploy",
-		"--rte-config-file", filepath.Join(deployerBaseDir, "hack", "rte.yaml"),
+		"--updater-config-file", filepath.Join(deployerBaseDir, "hack", "rte.yaml"),
 		"--wait",
 	}
 	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)

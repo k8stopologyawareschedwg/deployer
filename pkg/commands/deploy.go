@@ -22,8 +22,8 @@ import (
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/sched"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updater"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 
 	"github.com/spf13/cobra"
@@ -68,18 +68,20 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			err = sched.Remove(la, sched.Options{
 				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
-				RTEConfigData:    commonOpts.RTEConfigData,
+				RTEConfigData:    commonOpts.UpdaterConfigData,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
+				UpdaterType:      commonOpts.UpdaterType,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
 				log.Printf("error removing: %v", err)
 			}
-			err = rte.Remove(la, rte.Options{
-				Platform:         opts.clusterPlatform,
-				WaitCompletion:   opts.waitCompletion,
-				RTEConfigData:    commonOpts.RTEConfigData,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
+			err = updater.Remove(la, updater.Options{
+				Platform:          opts.clusterPlatform,
+				WaitCompletion:    opts.waitCompletion,
+				UpdaterConfigData: commonOpts.UpdaterConfigData,
+				PullIfNotPresent:  commonOpts.PullIfNotPresent,
+				UpdaterType:       commonOpts.UpdaterType,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
@@ -138,8 +140,9 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 			return sched.Deploy(la, sched.Options{
 				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
-				RTEConfigData:    commonOpts.RTEConfigData,
+				RTEConfigData:    commonOpts.UpdaterConfigData,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
+				UpdaterType:      commonOpts.UpdaterType,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -158,11 +161,12 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			return rte.Deploy(la, rte.Options{
-				Platform:         opts.clusterPlatform,
-				WaitCompletion:   opts.waitCompletion,
-				RTEConfigData:    commonOpts.RTEConfigData,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
+			return updater.Deploy(la, updater.Options{
+				Platform:          opts.clusterPlatform,
+				WaitCompletion:    opts.waitCompletion,
+				UpdaterConfigData: commonOpts.UpdaterConfigData,
+				PullIfNotPresent:  commonOpts.PullIfNotPresent,
+				UpdaterType:       commonOpts.UpdaterType,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -206,8 +210,9 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 			return sched.Remove(la, sched.Options{
 				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
-				RTEConfigData:    commonOpts.RTEConfigData,
+				RTEConfigData:    commonOpts.UpdaterConfigData,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
+				UpdaterType:      commonOpts.UpdaterType,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -226,11 +231,12 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			return rte.Remove(la, rte.Options{
-				Platform:         opts.clusterPlatform,
-				WaitCompletion:   opts.waitCompletion,
-				RTEConfigData:    commonOpts.RTEConfigData,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
+			return updater.Remove(la, updater.Options{
+				Platform:          opts.clusterPlatform,
+				WaitCompletion:    opts.waitCompletion,
+				UpdaterConfigData: commonOpts.UpdaterConfigData,
+				PullIfNotPresent:  commonOpts.PullIfNotPresent,
+				UpdaterType:       commonOpts.UpdaterType,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -246,23 +252,26 @@ func deployOnCluster(commonOpts *CommonOptions, opts *deployOptions) error {
 		return fmt.Errorf("cannot autodetect the platform, and no platform given")
 	}
 	if err := api.Deploy(la, api.Options{
-		Platform: opts.clusterPlatform,
+		Platform:    opts.clusterPlatform,
+		UpdaterType: commonOpts.UpdaterType,
 	}); err != nil {
 		return err
 	}
-	if err := rte.Deploy(la, rte.Options{
-		Platform:         opts.clusterPlatform,
-		WaitCompletion:   opts.waitCompletion,
-		RTEConfigData:    commonOpts.RTEConfigData,
-		PullIfNotPresent: commonOpts.PullIfNotPresent,
+	if err := updater.Deploy(la, updater.Options{
+		Platform:          opts.clusterPlatform,
+		WaitCompletion:    opts.waitCompletion,
+		UpdaterConfigData: commonOpts.UpdaterConfigData,
+		PullIfNotPresent:  commonOpts.PullIfNotPresent,
+		UpdaterType:       commonOpts.UpdaterType,
 	}); err != nil {
 		return err
 	}
 	if err := sched.Deploy(la, sched.Options{
 		Platform:         opts.clusterPlatform,
 		WaitCompletion:   opts.waitCompletion,
-		RTEConfigData:    commonOpts.RTEConfigData,
+		RTEConfigData:    commonOpts.UpdaterConfigData,
 		PullIfNotPresent: commonOpts.PullIfNotPresent,
+		UpdaterType:      commonOpts.UpdaterType,
 	}); err != nil {
 		return err
 	}

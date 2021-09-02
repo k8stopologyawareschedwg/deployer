@@ -29,4 +29,7 @@ func TestImageURISanity(t *testing.T) {
 	if ResourceTopologyExporterImage == "" {
 		t.Fatalf("invalid Resource Topology Exporter Image pull URL")
 	}
+	if NodeFeatureDiscoveryImage == "" {
+		t.Fatalf("invalid Node feature Discovery Image pull URL")
+	}
 }

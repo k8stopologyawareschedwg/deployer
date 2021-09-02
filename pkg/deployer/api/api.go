@@ -24,14 +24,15 @@ import (
 )
 
 type Options struct {
-	Platform platform.Platform
+	Platform    platform.Platform
+	UpdaterType string
 }
 
 func Deploy(log tlog.Logger, opts Options) error {
 	var err error
 	log.Printf("deploying topology-aware-scheduling API...")
 
-	mf, err := apimanifests.GetManifests(opts.Platform)
+	mf, err := apimanifests.GetManifests(opts.Platform, opts.UpdaterType)
 	if err != nil {
 		return err
 	}
@@ -54,7 +55,7 @@ func Remove(log tlog.Logger, opts Options) error {
 	var err error
 	log.Printf("removing topology-aware-scheduling API...")
 
-	mf, err := apimanifests.GetManifests(opts.Platform)
+	mf, err := apimanifests.GetManifests(opts.Platform, opts.UpdaterType)
 	if err != nil {
 		return err
 	}

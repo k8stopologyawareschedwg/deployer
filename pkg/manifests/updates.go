@@ -1,6 +1,8 @@
 package manifests
 
 import (
+	"fmt"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -154,6 +156,53 @@ func UpdateResourceTopologyExporterCommand(args []string, vars map[string]string
 	return res
 }
 
+func UpdateNodeFeatureDiscoveryDaemonSet(plat platform.Platform, ds *appsv1.DaemonSet, cm *corev1.ConfigMap, pullIfNotPresent bool) *appsv1.DaemonSet {
+	for index := 0; index < len(ds.Spec.Template.Spec.Containers); index++ {
+		ds.Spec.Template.Spec.Containers[index].Image = images.NodeFeatureDiscoveryImage
+		ds.Spec.Template.Spec.Containers[index].ImagePullPolicy = pullPolicy(pullIfNotPresent)
+	}
+
+	vars := map[string]string{
+		"EXPORT_NAMESPACE": "*",
+	}
+	index := nfdTopologyUpdaterContainerIndex(ds.Spec.Template.Spec.Containers)
+	ds.Spec.Template.Spec.Containers[index].Args = UpdateNodeFeatureDiscoveryCommand(ds.Spec.Template.Spec.Containers[index].Args, vars, plat)
+	if plat == platform.OpenShift {
+		// this is needed to put watches in the kubelet state dirs AND
+		// to open the podresources socket in R/W mode
+		if ds.Spec.Template.Spec.Containers[index].SecurityContext == nil {
+			ds.Spec.Template.Spec.Containers[index].SecurityContext = &corev1.SecurityContext{}
+		}
+		ds.Spec.Template.Spec.Containers[index].SecurityContext.Privileged = newBool(true)
+	}
+	if cm != nil {
+		ds.Spec.Template.Spec.Containers[index].VolumeMounts = append(ds.Spec.Template.Spec.Containers[0].VolumeMounts,
+			corev1.VolumeMount{
+				Name:      "nfd-config",
+				MountPath: "/etc/resource-topology-exporter/",
+			},
+		)
+		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes,
+			corev1.Volume{
+				Name: "nfd-config",
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "nfd-config",
+						},
+						Optional: newBool(true),
+					},
+				},
+			},
+		)
+	}
+	return ds
+}
+
+func UpdateNodeFeatureDiscoveryCommand(args []string, vars map[string]string, plat platform.Platform) []string {
+	return UpdateResourceTopologyExporterCommand(args, vars, plat)
+}
+
 func pullPolicy(pullIfNotPresent bool) corev1.PullPolicy {
 	if pullIfNotPresent {
 		return corev1.PullIfNotPresent
@@ -163,4 +212,14 @@ func pullPolicy(pullIfNotPresent bool) corev1.PullPolicy {
 
 func newBool(val bool) *bool {
 	return &val
+}
+
+func nfdTopologyUpdaterContainerIndex(containers []corev1.Container) int {
+	for index, cont := range containers {
+		if cont.Name == "nfd-topology-updater" {
+			return index
+		}
+	}
+	// should never happen
+	panic(fmt.Errorf("container named nfd-topology-updater was not found, please check the manifests"))
 }

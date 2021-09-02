@@ -26,8 +26,8 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/updater"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
@@ -60,7 +60,7 @@ func NewRenderAPICommand(commonOpts *CommonOptions, opts *renderOptions) *cobra.
 			if commonOpts.UserPlatform == platform.Unknown {
 				return fmt.Errorf("must explicitely select a cluster platform")
 			}
-			apiManifests, err := api.GetManifests(commonOpts.UserPlatform)
+			apiManifests, err := api.GetManifests(commonOpts.UserPlatform, commonOpts.UpdaterType)
 			if err != nil {
 				return err
 			}
@@ -83,15 +83,15 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOpti
 			if err != nil {
 				return err
 			}
-			rteManifests, err := rte.GetManifests(commonOpts.UserPlatform)
+			updaterManifests, err := updater.GetManifestsHandler(commonOpts.UserPlatform, commonOpts.UpdaterType)
 			if err != nil {
 				return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
 			}
 			// no Options needed!
-			rteManifests = rteManifests.Update(rte.UpdateOptions{})
+			updaterManifests = updaterManifests.Update(updater.UpdateOptions{})
 			updateOpts := sched.UpdateOptions{
 				Replicas:               int32(commonOpts.Replicas),
-				NodeResourcesNamespace: rteManifests.DaemonSet.Namespace,
+				NodeResourcesNamespace: updaterManifests.GetManifests().DaemonSet.Namespace,
 				PullIfNotPresent:       commonOpts.PullIfNotPresent,
 			}
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
@@ -110,15 +110,15 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOpti
 			if commonOpts.UserPlatform == platform.Unknown {
 				return fmt.Errorf("must explicitely select a cluster platform")
 			}
-			rteManifests, err := rte.GetManifests(commonOpts.UserPlatform)
+			updaterManifests, err := updater.GetManifestsHandler(commonOpts.UserPlatform, commonOpts.UpdaterType)
 			if err != nil {
 				return err
 			}
-			updateOpts := rte.UpdateOptions{
-				ConfigData:       commonOpts.RTEConfigData,
+			updateOpts := updater.UpdateOptions{
+				ConfigData:       commonOpts.UpdaterConfigData,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			}
-			return renderObjects(rteManifests.Update(updateOpts).ToObjects())
+			return renderObjects(updaterManifests.Update(updateOpts).ToObjects())
 		},
 		Args: cobra.NoArgs,
 	}
@@ -128,21 +128,21 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOpti
 func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *renderOptions, args []string) error {
 	var objs []client.Object
 
-	apiManifests, err := api.GetManifests(commonOpts.UserPlatform)
+	apiManifests, err := api.GetManifests(commonOpts.UserPlatform, commonOpts.UpdaterType)
 	if err != nil {
 		return err
 	}
 	objs = append(objs, apiManifests.Update().ToObjects()...)
 
-	rteManifests, err := rte.GetManifests(commonOpts.UserPlatform)
+	updaterManifests, err := updater.GetManifestsHandler(commonOpts.UserPlatform, commonOpts.UpdaterType)
 	if err != nil {
 		return err
 	}
-	rteUpdateOpts := rte.UpdateOptions{
-		ConfigData:       commonOpts.RTEConfigData,
+	updaterUpdateOpts := updater.UpdateOptions{
+		ConfigData:       commonOpts.UpdaterConfigData,
 		PullIfNotPresent: commonOpts.PullIfNotPresent,
 	}
-	objs = append(objs, rteManifests.Update(rteUpdateOpts).ToObjects()...)
+	objs = append(objs, updaterManifests.Update(updaterUpdateOpts).ToObjects()...)
 
 	schedManifests, err := sched.GetManifests(commonOpts.UserPlatform)
 	if err != nil {
@@ -151,7 +151,7 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 
 	schedUpdateOpts := sched.UpdateOptions{
 		Replicas:               int32(commonOpts.Replicas),
-		NodeResourcesNamespace: rteManifests.DaemonSet.Namespace,
+		NodeResourcesNamespace: updaterManifests.GetManifests().DaemonSet.Namespace,
 		PullIfNotPresent:       commonOpts.PullIfNotPresent,
 	}
 
