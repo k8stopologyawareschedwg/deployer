@@ -43,11 +43,13 @@ type Manifests struct {
 	SAController  *corev1.ServiceAccount
 	CRController  *rbacv1.ClusterRole
 	CRBController *rbacv1.ClusterRoleBinding
+	RBController  *rbacv1.RoleBinding
 	DPController  *appsv1.Deployment
 	// scheduler proper
 	SAScheduler  *corev1.ServiceAccount
 	CRScheduler  *rbacv1.ClusterRole
 	CRBScheduler *rbacv1.ClusterRoleBinding
+	RBScheduler  *rbacv1.RoleBinding
 	DPScheduler  *appsv1.Deployment
 	ConfigMap    *corev1.ConfigMap
 	// internal fields
@@ -64,11 +66,13 @@ func (mf Manifests) Clone() Manifests {
 		CRController:  mf.CRController.DeepCopy(),
 		CRBController: mf.CRBController.DeepCopy(),
 		DPController:  mf.DPController.DeepCopy(),
+		RBController:  mf.RBController.DeepCopy(),
 		SAScheduler:   mf.SAScheduler.DeepCopy(),
 		CRScheduler:   mf.CRScheduler.DeepCopy(),
 		CRBScheduler:  mf.CRBScheduler.DeepCopy(),
 		DPScheduler:   mf.DPScheduler.DeepCopy(),
 		ConfigMap:     mf.ConfigMap.DeepCopy(),
+		RBScheduler:   mf.RBScheduler.DeepCopy(),
 	}
 }
 
@@ -94,11 +98,13 @@ func (mf Manifests) Update(logger tlog.Logger, options UpdateOptions) Manifests 
 	}
 
 	ret.SAController.Namespace = ret.Namespace.Name
-	manifests.UpdateClusterRoleBinding(ret.CRBController, "", ret.Namespace.Name)
+	manifests.UpdateClusterRoleBinding(ret.CRBController, ret.SAController.Name, ret.Namespace.Name)
+	manifests.UpdateRoleBinding(ret.RBController, ret.SAController.Name, ret.Namespace.Name)
 	ret.DPController.Namespace = ret.Namespace.Name
 
 	ret.SAScheduler.Namespace = ret.Namespace.Name
-	manifests.UpdateClusterRoleBinding(ret.CRBScheduler, "", ret.Namespace.Name)
+	manifests.UpdateClusterRoleBinding(ret.CRBScheduler, ret.SAScheduler.Name, ret.Namespace.Name)
+	manifests.UpdateRoleBinding(ret.RBScheduler, ret.SAScheduler.Name, ret.Namespace.Name)
 	ret.DPScheduler.Namespace = ret.Namespace.Name
 	ret.ConfigMap.Namespace = ret.Namespace.Name
 
@@ -116,11 +122,13 @@ func (mf Manifests) ToObjects() []client.Object {
 		mf.CRScheduler,
 		mf.CRBScheduler,
 		mf.ConfigMap,
+		mf.RBScheduler,
 		mf.DPScheduler,
 		mf.SAController,
 		mf.CRController,
 		mf.CRBController,
 		mf.DPController,
+		mf.RBController,
 	}
 }
 
@@ -131,6 +139,7 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []d
 		{Obj: mf.SAScheduler},
 		{Obj: mf.CRScheduler},
 		{Obj: mf.CRBScheduler},
+		{Obj: mf.RBScheduler},
 		{Obj: mf.ConfigMap},
 		{
 			Obj: mf.DPScheduler,
@@ -141,6 +150,7 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []d
 		{Obj: mf.SAController},
 		{Obj: mf.CRController},
 		{Obj: mf.CRBController},
+		{Obj: mf.RBController},
 		{
 			Obj: mf.DPController,
 			Wait: func() error {
@@ -161,6 +171,7 @@ func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []d
 		{Obj: mf.CRScheduler},
 		{Obj: mf.CRBController},
 		{Obj: mf.CRController},
+		{Obj: mf.RBController},
 		{Obj: mf.Crd},
 	}
 }
@@ -199,6 +210,10 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
+	mf.RBScheduler, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler)
+	if err != nil {
+		return mf, err
+	}
 	mf.DPScheduler, err = manifests.Deployment(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler)
 	if err != nil {
 		return mf, err
@@ -213,6 +228,10 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 		return mf, err
 	}
 	mf.CRBController, err = manifests.ClusterRoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController)
+	if err != nil {
+		return mf, err
+	}
+	mf.RBController, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController)
 	if err != nil {
 		return mf, err
 	}
