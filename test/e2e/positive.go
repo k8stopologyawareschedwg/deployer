@@ -181,12 +181,12 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer validation", func() {
 var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 	ginkgo.Context("with a running cluster without any components", func() {
 		ginkgo.BeforeEach(func() {
-			err := deploy()
+			err := deploy([]string{})
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 		})
 
 		ginkgo.AfterEach(func() {
-			err := remove()
+			err := remove([]string{})
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 		})
 
@@ -269,6 +269,56 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 			e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name)
 		})
 	})
+	ginkgo.Context("with a running cluster with NFD as the topology-updater component", func() {
+		ginkgo.BeforeEach(func() {
+			err := deploy([]string{"--updater-type", "NFD"})
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+		})
+
+		ginkgo.AfterEach(func() {
+			err := remove([]string{"--updater-type", "NFD"})
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+		})
+
+		ginkgo.It("should have some information in the noderesourcetopology object", func() {
+			ginkgo.By("checking that resource-topology-exporter pod is running")
+			mf, err := updater.GetManifestsHandler(platform.Kubernetes, "NFD")
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			mf = mf.Update(updater.UpdateOptions{})
+			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.GetManifests().DaemonSet.Name))
+
+			ginkgo.By("checking that topo-aware-scheduler pod is running")
+			mfs, err := sched.GetManifests(platform.Kubernetes)
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			// no need for options!
+			mfs = mfs.Update(tlog.NewNullLogAdapter(), sched.UpdateOptions{})
+			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
+
+			ginkgo.By("checking that noderesourcetopolgy has some information in it")
+			tc, err := clientutil.NewTopologyClient()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			workers, err := nodes.GetWorkers()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			for _, node := range workers {
+				ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
+
+				// the name of the nrt object is the same as the worker node's name
+				nrt := getNodeResourceTopology(tc, mf.GetManifests().Namespace.Name, node.Name)
+				// we check CPUs because that's the only resource we know it will always be available
+				hasCPU := false
+				for _, zone := range nrt.Zones {
+					for _, resource := range zone.Resources {
+						if resource.Name == string(corev1.ResourceCPU) && resource.Capacity.Size() >= 1 {
+							hasCPU = true
+						}
+					}
+				}
+				gomega.Expect(hasCPU).To(gomega.BeTrue())
+				gomega.Expect(nrt.TopologyPolicies[0]).ToNot(gomega.BeEmpty())
+			}
+		})
+	})
 })
 
 func getNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name string) *v1alpha1.NodeResourceTopology {
@@ -286,7 +336,7 @@ func getNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name st
 	return nrt
 }
 
-func deploy() error {
+func deploy(extraArgs []string) error {
 	cmdline := []string{
 		filepath.Join(binariesPath, "deployer"),
 		"--debug",
@@ -294,6 +344,7 @@ func deploy() error {
 		"--updater-config-file", filepath.Join(deployerBaseDir, "hack", "rte.yaml"),
 		"--wait",
 	}
+	cmdline = append(cmdline, extraArgs...)
 	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
 
 	cmd := exec.Command(cmdline[0], cmdline[1:]...)
@@ -306,12 +357,13 @@ func deploy() error {
 	return nil
 }
 
-func remove() error {
+func remove(extraArgs []string) error {
 	cmdline := []string{
 		filepath.Join(binariesPath, "deployer"),
 		"--debug",
 		"remove",
 	}
+	cmdline = append(cmdline, extraArgs...)
 	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
 
 	cmd := exec.Command(cmdline[0], cmdline[1:]...)
