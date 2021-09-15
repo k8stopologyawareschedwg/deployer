@@ -49,7 +49,7 @@ func GuaranteedSleeperPod(namespace, schedulerName string) *corev1.Pod {
 			SchedulerName: schedulerName,
 			RestartPolicy: corev1.RestartPolicyNever,
 			Containers: []corev1.Container{
-				corev1.Container{
+				{
 					Name:  "sleeper-gu-cnt",
 					Image: CentosImage,
 					// 1 hour (or >= 1h in general) is "forever" for our purposes
