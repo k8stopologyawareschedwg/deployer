@@ -126,22 +126,22 @@ func (mf Manifests) ToObjects() []client.Object {
 
 func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
-		deployer.WaitableObject{Obj: mf.Crd},
-		deployer.WaitableObject{Obj: mf.Namespace},
-		deployer.WaitableObject{Obj: mf.SAScheduler},
-		deployer.WaitableObject{Obj: mf.CRScheduler},
-		deployer.WaitableObject{Obj: mf.CRBScheduler},
-		deployer.WaitableObject{Obj: mf.ConfigMap},
-		deployer.WaitableObject{
+		{Obj: mf.Crd},
+		{Obj: mf.Namespace},
+		{Obj: mf.SAScheduler},
+		{Obj: mf.CRScheduler},
+		{Obj: mf.CRBScheduler},
+		{Obj: mf.ConfigMap},
+		{
 			Obj: mf.DPScheduler,
 			Wait: func() error {
 				return wait.PodsToBeRunningByRegex(hp, log, mf.DPScheduler.Namespace, mf.DPScheduler.Name)
 			},
 		},
-		deployer.WaitableObject{Obj: mf.SAController},
-		deployer.WaitableObject{Obj: mf.CRController},
-		deployer.WaitableObject{Obj: mf.CRBController},
-		deployer.WaitableObject{
+		{Obj: mf.SAController},
+		{Obj: mf.CRController},
+		{Obj: mf.CRBController},
+		{
 			Obj: mf.DPController,
 			Wait: func() error {
 				return wait.PodsToBeRunningByRegex(hp, log, mf.DPController.Namespace, mf.DPController.Name)
@@ -152,16 +152,16 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []d
 
 func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
-		deployer.WaitableObject{
+		{
 			Obj:  mf.Namespace,
 			Wait: func() error { return wait.NamespaceToBeGone(hp, log, mf.Namespace.Name) },
 		},
 		// no need to remove objects created inside the namespace we just removed
-		deployer.WaitableObject{Obj: mf.CRBScheduler},
-		deployer.WaitableObject{Obj: mf.CRScheduler},
-		deployer.WaitableObject{Obj: mf.CRBController},
-		deployer.WaitableObject{Obj: mf.CRController},
-		deployer.WaitableObject{Obj: mf.Crd},
+		{Obj: mf.CRBScheduler},
+		{Obj: mf.CRScheduler},
+		{Obj: mf.CRBController},
+		{Obj: mf.CRController},
+		{Obj: mf.Crd},
 	}
 }
 

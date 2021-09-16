@@ -41,13 +41,13 @@ func (mf Manifests) ToObjects() []client.Object {
 
 func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
-		deployer.WaitableObject{Obj: mf.Crd},
+		{Obj: mf.Crd},
 	}
 }
 
 func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
-		deployer.WaitableObject{Obj: mf.Crd},
+		{Obj: mf.Crd},
 	}
 }
 

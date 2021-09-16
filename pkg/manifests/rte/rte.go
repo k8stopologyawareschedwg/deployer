@@ -126,20 +126,20 @@ func (mf Manifests) ToObjects() []client.Object {
 
 func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
 	objs := []deployer.WaitableObject{
-		deployer.WaitableObject{Obj: mf.ClusterRole},
-		deployer.WaitableObject{Obj: mf.ClusterRoleBinding},
-		deployer.WaitableObject{
+		{Obj: mf.ClusterRole},
+		{Obj: mf.ClusterRoleBinding},
+		{
 			Obj:  mf.DaemonSet,
 			Wait: func() error { return wait.PodsToBeRunningByRegex(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
 		},
 	}
 	if mf.ConfigMap != nil {
-		objs = append([]deployer.WaitableObject{deployer.WaitableObject{Obj: mf.ConfigMap}}, objs...)
+		objs = append([]deployer.WaitableObject{{Obj: mf.ConfigMap}}, objs...)
 	}
 	if mf.plat == platform.Kubernetes {
 		kubeObjs := []deployer.WaitableObject{
-			deployer.WaitableObject{Obj: mf.Namespace},
-			deployer.WaitableObject{Obj: mf.ServiceAccount},
+			{Obj: mf.Namespace},
+			{Obj: mf.ServiceAccount},
 		}
 		return append(kubeObjs, objs...)
 	}
@@ -149,23 +149,23 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []d
 func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
 	if mf.plat == platform.Kubernetes {
 		return []deployer.WaitableObject{
-			deployer.WaitableObject{
+			{
 				Obj:  mf.Namespace,
 				Wait: func() error { return wait.NamespaceToBeGone(hp, log, mf.Namespace.Name) },
 			},
 			// no need to remove objects created inside the namespace we just removed
-			deployer.WaitableObject{Obj: mf.ClusterRole},
-			deployer.WaitableObject{Obj: mf.ClusterRoleBinding},
-			deployer.WaitableObject{Obj: mf.ServiceAccount},
+			{Obj: mf.ClusterRole},
+			{Obj: mf.ClusterRoleBinding},
+			{Obj: mf.ServiceAccount},
 		}
 	}
 	objs := []deployer.WaitableObject{
-		deployer.WaitableObject{
+		{
 			Obj:  mf.DaemonSet,
 			Wait: func() error { return wait.PodsToBeGoneByRegex(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
 		},
-		deployer.WaitableObject{Obj: mf.ClusterRole},
-		deployer.WaitableObject{Obj: mf.ClusterRoleBinding},
+		{Obj: mf.ClusterRole},
+		{Obj: mf.ClusterRoleBinding},
 	}
 	if mf.ConfigMap != nil {
 		objs = append(objs, deployer.WaitableObject{Obj: mf.ConfigMap})

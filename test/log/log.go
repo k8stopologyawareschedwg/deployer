@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type TestLogger struct{
+type TestLogger struct {
 	Logger io.Writer
 }
 
