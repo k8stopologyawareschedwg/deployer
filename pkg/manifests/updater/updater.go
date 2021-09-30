@@ -30,11 +30,9 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
-type Type string
-
 const (
-	RTE Type = "RTE"
-	NFD Type = "NFD"
+	RTE = "RTE"
+	NFD = "NFD"
 )
 
 const (
@@ -69,11 +67,11 @@ type UpdateOptions struct {
 }
 
 func GetManifestsHandler(plat platform.Platform, updaterType string) (ManifestsHandler, error) {
-	switch Type(updaterType) {
+	switch updaterType {
 	case RTE:
 		return rteManifestsHandler(plat)
 	case NFD:
 		return nfdManifestsHandler(plat)
 	}
-	return nil, fmt.Errorf("%s is invalid updater type", updaterType)
+	return nil, fmt.Errorf("%q is invalid updater type", updaterType)
 }
