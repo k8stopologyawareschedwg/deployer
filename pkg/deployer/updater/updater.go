@@ -17,54 +17,16 @@
 package updater
 
 import (
-	"fmt"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
-type Type string
-
 const (
-	RTE Type = "RTE"
-	NFD Type = "NFD"
+	RTE = "RTE"
+	NFD = "NFD"
 )
 
 type Options struct {
-	Platform          platform.Platform
-	WaitCompletion    bool
-	UpdaterConfigData string
-	PullIfNotPresent  bool
-	UpdaterType       string
-}
-
-func Deploy(log tlog.Logger, opts Options) error {
-	switch Type(opts.UpdaterType) {
-	case RTE:
-		return deployRTE(log, rteOptions{
-			Options:       opts,
-			RTEConfigData: opts.UpdaterConfigData,
-		})
-	case NFD:
-		return deployNFD(log, nfdOptions{
-			Options:       opts,
-			NFDConfigData: opts.UpdaterConfigData,
-		})
-	}
-	return fmt.Errorf("%s is invalid updater type", opts.UpdaterType)
-}
-
-func Remove(log tlog.Logger, opts Options) error {
-	switch Type(opts.UpdaterType) {
-	case RTE:
-		return removeRTE(log, rteOptions{
-			Options:       opts,
-			RTEConfigData: opts.UpdaterConfigData,
-		})
-	case NFD:
-		return removeNFD(log, nfdOptions{
-			Options:       opts,
-			NFDConfigData: opts.UpdaterConfigData,
-		})
-	}
-	return fmt.Errorf("%s is invalid updater type", opts.UpdaterType)
+	Platform         platform.Platform
+	WaitCompletion   bool
+	PullIfNotPresent bool
 }

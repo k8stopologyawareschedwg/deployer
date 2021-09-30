@@ -14,28 +14,29 @@
  * Copyright 2021 Red Hat, Inc.
  */
 
-package updater
+package nfd
 
 import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/updater"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updater"
+	mfupdater "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/updater"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
-type nfdOptions struct {
-	Options
+type Options struct {
+	updater.Options
 	NFDConfigData string
 }
 
-func deployNFD(log tlog.Logger, opts nfdOptions) error {
+func Deploy(log tlog.Logger, opts Options) error {
 	var err error
 	log.Printf("deploying topology-aware-scheduling topology updater...")
 
-	mf, err := updater.GetManifestsHandler(opts.Platform, "NFD")
+	mf, err := mfupdater.GetManifestsHandler(opts.Platform, "NFD")
 	if err != nil {
 		return err
 	}
-	mf = mf.Update(updater.UpdateOptions{
+	mf = mf.Update(mfupdater.UpdateOptions{
 		ConfigData:       opts.NFDConfigData,
 		PullIfNotPresent: opts.PullIfNotPresent,
 	})
@@ -62,7 +63,7 @@ func deployNFD(log tlog.Logger, opts nfdOptions) error {
 	return nil
 }
 
-func removeNFD(log tlog.Logger, opts nfdOptions) error {
+func Remove(log tlog.Logger, opts Options) error {
 	var err error
 	log.Printf("removing topology-aware-scheduling topology updater...")
 
@@ -71,11 +72,11 @@ func removeNFD(log tlog.Logger, opts nfdOptions) error {
 		return err
 	}
 
-	mf, err := updater.GetManifestsHandler( opts.Platform, "NFD")
+	mf, err := mfupdater.GetManifestsHandler(opts.Platform, "NFD")
 	if err != nil {
 		return err
 	}
-	mf = mf.Update(updater.UpdateOptions{
+	mf = mf.Update(mfupdater.UpdateOptions{
 		ConfigData:       opts.NFDConfigData,
 		PullIfNotPresent: opts.PullIfNotPresent,
 	})

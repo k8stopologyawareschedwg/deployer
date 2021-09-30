@@ -14,28 +14,29 @@
  * Copyright 2021 Red Hat, Inc.
  */
 
-package updater
+package rte
 
 import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/updater"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updater"
+	mfupdater "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/updater"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
-type rteOptions struct {
-	Options
+type Options struct {
+	updater.Options
 	RTEConfigData string
 }
 
-func deployRTE(log tlog.Logger, opts rteOptions) error {
+func Deploy(log tlog.Logger, opts Options) error {
 	var err error
 	log.Printf("deploying topology-aware-scheduling topology updater...")
 
-	mf, err := updater.GetManifestsHandler(opts.Platform, "RTE")
+	mf, err := mfupdater.GetManifestsHandler(opts.Platform, "RTE")
 	if err != nil {
 		return err
 	}
-	mf = mf.Update(updater.UpdateOptions{
+	mf = mf.Update(mfupdater.UpdateOptions{
 		ConfigData:       opts.RTEConfigData,
 		PullIfNotPresent: opts.PullIfNotPresent,
 	})
@@ -62,7 +63,7 @@ func deployRTE(log tlog.Logger, opts rteOptions) error {
 	return nil
 }
 
-func removeRTE(log tlog.Logger, opts rteOptions) error {
+func Remove(log tlog.Logger, opts Options) error {
 	var err error
 	log.Printf("removing topology-aware-scheduling topology updater...")
 
@@ -71,11 +72,11 @@ func removeRTE(log tlog.Logger, opts rteOptions) error {
 		return err
 	}
 
-	mf, err := updater.GetManifestsHandler(opts.Platform, "RTE")
+	mf, err := mfupdater.GetManifestsHandler(opts.Platform, "RTE")
 	if err != nil {
 		return err
 	}
-	mf = mf.Update(updater.UpdateOptions{
+	mf = mf.Update(mfupdater.UpdateOptions{
 		ConfigData:       opts.RTEConfigData,
 		PullIfNotPresent: opts.PullIfNotPresent,
 	})
