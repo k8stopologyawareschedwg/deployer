@@ -221,5 +221,6 @@ func nfdTopologyUpdaterContainerIndex(containers []corev1.Container) int {
 		}
 	}
 	// should never happen
-	panic(fmt.Errorf("container named nfd-topology-updater was not found, please check the manifests"))
+	fmt.Printf("container named nfd-topology-updater was not found, please check the manifests")
+	return -1
 }
