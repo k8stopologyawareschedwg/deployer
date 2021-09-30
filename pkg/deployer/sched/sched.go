@@ -27,12 +27,12 @@ import (
 )
 
 type Options struct {
-	Platform         platform.Platform
-	WaitCompletion   bool
-	Replicas         int32
-	RTEConfigData    string
-	PullIfNotPresent bool
-	UpdaterType      string
+	Platform              platform.Platform
+	WaitCompletion        bool
+	Replicas              int32
+	UpdaterSpecificConfig string
+	PullIfNotPresent      bool
+	UpdaterType           string
 }
 
 func Deploy(log tlog.Logger, opts Options) error {
@@ -49,7 +49,7 @@ func Deploy(log tlog.Logger, opts Options) error {
 		return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
 	}
 
-	rteMf = rteMf.Update(updater.UpdateOptions{ConfigData: opts.RTEConfigData})
+	rteMf = rteMf.Update(updater.UpdateOptions{ConfigData: opts.UpdaterSpecificConfig})
 	mf = mf.Update(log, schedmanifests.UpdateOptions{
 		Replicas:               opts.Replicas,
 		NodeResourcesNamespace: rteMf.GetManifests().DaemonSet.Namespace,
@@ -92,7 +92,7 @@ func Remove(log tlog.Logger, opts Options) error {
 		return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
 	}
 
-	rteMf = rteMf.Update(updater.UpdateOptions{ConfigData: opts.RTEConfigData})
+	rteMf = rteMf.Update(updater.UpdateOptions{ConfigData: opts.UpdaterSpecificConfig})
 	mf = mf.Update(log, schedmanifests.UpdateOptions{
 		Replicas:               opts.Replicas,
 		NodeResourcesNamespace: rteMf.GetManifests().DaemonSet.Namespace,

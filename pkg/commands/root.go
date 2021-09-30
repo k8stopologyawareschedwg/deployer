@@ -18,6 +18,7 @@ package commands
 
 import (
 	"fmt"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/updater"
 	"io/ioutil"
 	"log"
 	"os"
@@ -28,16 +29,16 @@ import (
 )
 
 type CommonOptions struct {
-	Debug             bool
-	UserPlatform      platform.Platform
-	Log               *log.Logger
-	DebugLog          *log.Logger
-	Replicas          int
-	UpdaterConfigData string
-	PullIfNotPresent  bool
-	updaterConfigFile string
-	plat              string
-	UpdaterType       string
+	Debug                     bool
+	UserPlatform              platform.Platform
+	Log                       *log.Logger
+	DebugLog                  *log.Logger
+	Replicas                  int
+	UpdaterSpecificConfig     string
+	PullIfNotPresent          bool
+	UpdaterType               string
+	updaterSpecificConfigFile string
+	plat                      string
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -67,16 +68,16 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 			// if it is unknown, it's fine
 			commonOpts.UserPlatform, _ = platform.FromString(commonOpts.plat)
 
-			if commonOpts.updaterConfigFile != "" {
-				data, err := os.ReadFile(commonOpts.updaterConfigFile)
+			if commonOpts.updaterSpecificConfigFile != "" {
+				data, err := os.ReadFile(commonOpts.updaterSpecificConfigFile)
 				if err != nil {
 					return err
 				}
-				commonOpts.UpdaterConfigData = string(data)
-				commonOpts.DebugLog.Printf("Updater config: read %d bytes", len(commonOpts.UpdaterConfigData))
+				commonOpts.UpdaterSpecificConfig = string(data)
+				commonOpts.DebugLog.Printf("Updater specific config: read %d bytes", len(commonOpts.UpdaterSpecificConfig))
 			}
 
-			if commonOpts.UpdaterType != "RTE" && commonOpts.UpdaterType != "NFD" {
+			if commonOpts.UpdaterType != updater.RTE && commonOpts.UpdaterType != updater.NFD {
 				return fmt.Errorf("%s is invalid updater type", commonOpts.UpdaterType)
 			}
 
@@ -93,7 +94,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	root.PersistentFlags().StringVarP(&commonOpts.plat, "platform", "P", "", "platform to deploy on")
 	root.PersistentFlags().IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
 	root.PersistentFlags().BoolVar(&commonOpts.PullIfNotPresent, "pull-if-not-present", false, "force pull policies to IfNotPresent.")
-	root.PersistentFlags().StringVar(&commonOpts.updaterConfigFile, "updater-config-file", "", "inject topology updater configuration reading from this file.")
+	root.PersistentFlags().StringVar(&commonOpts.updaterSpecificConfigFile, "updater-specific-config-file", "", "inject topology updater configuration reading from this file.")
 	root.PersistentFlags().StringVar(&commonOpts.UpdaterType, "updater-type", "RTE", "type of updater to deploy - RTE or NFD")
 
 	root.AddCommand(

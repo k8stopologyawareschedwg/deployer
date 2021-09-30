@@ -60,7 +60,7 @@ func NewRenderAPICommand(commonOpts *CommonOptions, opts *renderOptions) *cobra.
 			if commonOpts.UserPlatform == platform.Unknown {
 				return fmt.Errorf("must explicitely select a cluster platform")
 			}
-			apiManifests, err := api.GetManifests(commonOpts.UserPlatform, commonOpts.UpdaterType)
+			apiManifests, err := api.GetManifests(commonOpts.UserPlatform)
 			if err != nil {
 				return err
 			}
@@ -115,7 +115,7 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOpti
 				return err
 			}
 			updateOpts := updater.UpdateOptions{
-				ConfigData:       commonOpts.UpdaterConfigData,
+				ConfigData:       commonOpts.UpdaterSpecificConfig,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			}
 			return renderObjects(updaterManifests.Update(updateOpts).ToObjects())
@@ -128,7 +128,7 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOpti
 func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *renderOptions, args []string) error {
 	var objs []client.Object
 
-	apiManifests, err := api.GetManifests(commonOpts.UserPlatform, commonOpts.UpdaterType)
+	apiManifests, err := api.GetManifests(commonOpts.UserPlatform)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 		return err
 	}
 	updaterUpdateOpts := updater.UpdateOptions{
-		ConfigData:       commonOpts.UpdaterConfigData,
+		ConfigData:       commonOpts.UpdaterSpecificConfig,
 		PullIfNotPresent: commonOpts.PullIfNotPresent,
 	}
 	objs = append(objs, updaterManifests.Update(updaterUpdateOpts).ToObjects()...)
