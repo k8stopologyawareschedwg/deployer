@@ -148,22 +148,6 @@ func APICRD() (*apiextensionv1.CustomResourceDefinition, error) {
 	return crd, nil
 }
 
-// APINFDCRD will return a newer CRD version that being used by NFD
-// Eventually we should use only the newer version
-// but we need to wait until scheduler plugin and RTE will catch up
-func APINFDCRD() (*apiextensionv1.CustomResourceDefinition, error) {
-	obj, err := loadObject("yaml/api/crd_for_nfd.yaml")
-	if err != nil {
-		return nil, err
-	}
-
-	crd, ok := obj.(*apiextensionv1.CustomResourceDefinition)
-	if !ok {
-		return nil, fmt.Errorf("unexpected type, got %t", obj)
-	}
-	return crd, nil
-}
-
 func SchedulerCRD() (*apiextensionv1.CustomResourceDefinition, error) {
 	obj, err := loadObject("yaml/sched/podgroup.crd.yaml")
 	if err != nil {

@@ -32,7 +32,7 @@ func Deploy(log tlog.Logger, opts Options) error {
 	var err error
 	log.Printf("deploying topology-aware-scheduling API...")
 
-	mf, err := apimanifests.GetManifests(opts.Platform, opts.UpdaterType)
+	mf, err := apimanifests.GetManifests(opts.Platform)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func Remove(log tlog.Logger, opts Options) error {
 	var err error
 	log.Printf("removing topology-aware-scheduling API...")
 
-	mf, err := apimanifests.GetManifests(opts.Platform, opts.UpdaterType)
+	mf, err := apimanifests.GetManifests(opts.Platform)
 	if err != nil {
 		return err
 	}

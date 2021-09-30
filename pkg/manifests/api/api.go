@@ -23,7 +23,6 @@ import (
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updater"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
@@ -66,17 +65,12 @@ func (mf Manifests) Update() Manifests {
 	return ret
 }
 
-func GetManifests(plat platform.Platform, updaterType string) (Manifests, error) {
+func GetManifests(plat platform.Platform) (Manifests, error) {
 	var err error
 	mf := Manifests{
 		plat: plat,
 	}
-
-	if updaterType == string(updater.NFD) {
-		mf.Crd, err = manifests.APINFDCRD()
-	} else {
-		mf.Crd, err = manifests.APICRD()
-	}
+	mf.Crd, err = manifests.APICRD()
 
 	if err != nil {
 		return mf, err
