@@ -181,12 +181,12 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer validation", func() {
 var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 	ginkgo.Context("with a running cluster without any components", func() {
 		ginkgo.BeforeEach(func() {
-			err := deploy([]string{})
+			err := deploy(updater.RTE)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 		})
 
 		ginkgo.AfterEach(func() {
-			err := remove([]string{})
+			err := remove(updater.RTE)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 		})
 
@@ -271,12 +271,12 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 	})
 	ginkgo.Context("with a running cluster with NFD as the topology-updater component", func() {
 		ginkgo.BeforeEach(func() {
-			err := deploy([]string{"--updater-type", "NFD"})
+			err := deploy(updater.NFD)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 		})
 
 		ginkgo.AfterEach(func() {
-			err := remove([]string{"--updater-type", "NFD"})
+			err := remove(updater.NFD)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 		})
 
@@ -336,7 +336,7 @@ func getNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name st
 	return nrt
 }
 
-func deploy(extraArgs []string) error {
+func deploy(updaterType string) error {
 	cmdline := []string{
 		filepath.Join(binariesPath, "deployer"),
 		"--debug",
@@ -344,7 +344,8 @@ func deploy(extraArgs []string) error {
 		"--updater-config-file", filepath.Join(deployerBaseDir, "hack", "rte.yaml"),
 		"--wait",
 	}
-	cmdline = append(cmdline, extraArgs...)
+
+	cmdline = append(cmdline, []string{"--updater-type", updaterType}...)
 	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
 
 	cmd := exec.Command(cmdline[0], cmdline[1:]...)
@@ -357,13 +358,13 @@ func deploy(extraArgs []string) error {
 	return nil
 }
 
-func remove(extraArgs []string) error {
+func remove(updaterType string) error {
 	cmdline := []string{
 		filepath.Join(binariesPath, "deployer"),
 		"--debug",
 		"remove",
 	}
-	cmdline = append(cmdline, extraArgs...)
+	cmdline = append(cmdline, []string{"--updater-type", updaterType}...)
 	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
 
 	cmd := exec.Command(cmdline[0], cmdline[1:]...)
