@@ -17,7 +17,11 @@
 package images
 
 const (
-	SchedulerPluginSchedulerDefaultImage  = "k8s.gcr.io/scheduler-plugins/kube-scheduler:v0.19.9"
-	SchedulerPluginControllerDefaultImage = "k8s.gcr.io/scheduler-plugins/controller:v0.19.9"
-	ResourceTopologyExporterDefaultImage  = "quay.io/openshift-kni/resource-topology-exporter:v0.0.20"
+	SchedulerPluginSchedulerDefaultImageTag  = "k8s.gcr.io/scheduler-plugins/kube-scheduler:v0.19.9"
+	SchedulerPluginControllerDefaultImageTag = "k8s.gcr.io/scheduler-plugins/controller:v0.19.9"
+	ResourceTopologyExporterDefaultImageTag  = "quay.io/k8stopologyawareschedwg/resource-topology-exporter:v0.2.3"
+)
+
+const (
+	ResourceTopologyExporterDefaultImageSHA = "quay.io/k8stopologyawareschedwg/resource-topology-exporter@sha256:7d26e37c6456f4ba0689f5d1382b62637b072eb071b87777f115862d302af2b4"
 )
