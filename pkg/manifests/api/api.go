@@ -21,9 +21,9 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/k8stopologyawareschedwg/deployer/assets"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
@@ -71,7 +71,7 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 		plat: plat,
 	}
 
-	mf.Crd, err = manifests.APICRD()
+	mf.Crd, err = assets.APICRD()
 	if err != nil {
 		return mf, err
 	}

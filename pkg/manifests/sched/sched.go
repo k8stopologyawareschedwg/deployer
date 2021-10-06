@@ -24,6 +24,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/k8stopologyawareschedwg/deployer/assets"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
@@ -170,49 +171,49 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 	mf := Manifests{
 		plat: plat,
 	}
-	mf.Crd, err = manifests.SchedulerCRD()
+	mf.Crd, err = assets.SchedulerCRD()
 	if err != nil {
 		return mf, err
 	}
-	mf.Namespace, err = manifests.Namespace(manifests.ComponentSchedulerPlugin)
-	if err != nil {
-		return mf, err
-	}
-
-	mf.ConfigMap, err = manifests.ConfigMap(manifests.ComponentSchedulerPlugin, "")
-	if err != nil {
-		return mf, err
-	}
-	mf.SAScheduler, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler)
-	if err != nil {
-		return mf, err
-	}
-	mf.CRScheduler, err = manifests.ClusterRole(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler)
-	if err != nil {
-		return mf, err
-	}
-	mf.CRBScheduler, err = manifests.ClusterRoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler)
-	if err != nil {
-		return mf, err
-	}
-	mf.DPScheduler, err = manifests.Deployment(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler)
+	mf.Namespace, err = assets.Namespace(assets.ComponentSchedulerPlugin)
 	if err != nil {
 		return mf, err
 	}
 
-	mf.SAController, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController)
+	mf.ConfigMap, err = assets.ConfigMap(assets.ComponentSchedulerPlugin, "")
 	if err != nil {
 		return mf, err
 	}
-	mf.CRController, err = manifests.ClusterRole(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController)
+	mf.SAScheduler, err = assets.ServiceAccount(assets.ComponentSchedulerPlugin, assets.SubComponentSchedulerPluginScheduler)
 	if err != nil {
 		return mf, err
 	}
-	mf.CRBController, err = manifests.ClusterRoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController)
+	mf.CRScheduler, err = assets.ClusterRole(assets.ComponentSchedulerPlugin, assets.SubComponentSchedulerPluginScheduler)
 	if err != nil {
 		return mf, err
 	}
-	mf.DPController, err = manifests.Deployment(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController)
+	mf.CRBScheduler, err = assets.ClusterRoleBinding(assets.ComponentSchedulerPlugin, assets.SubComponentSchedulerPluginScheduler)
+	if err != nil {
+		return mf, err
+	}
+	mf.DPScheduler, err = assets.Deployment(assets.ComponentSchedulerPlugin, assets.SubComponentSchedulerPluginScheduler)
+	if err != nil {
+		return mf, err
+	}
+
+	mf.SAController, err = assets.ServiceAccount(assets.ComponentSchedulerPlugin, assets.SubComponentSchedulerPluginController)
+	if err != nil {
+		return mf, err
+	}
+	mf.CRController, err = assets.ClusterRole(assets.ComponentSchedulerPlugin, assets.SubComponentSchedulerPluginController)
+	if err != nil {
+		return mf, err
+	}
+	mf.CRBController, err = assets.ClusterRoleBinding(assets.ComponentSchedulerPlugin, assets.SubComponentSchedulerPluginController)
+	if err != nil {
+		return mf, err
+	}
+	mf.DPController, err = assets.Deployment(assets.ComponentSchedulerPlugin, assets.SubComponentSchedulerPluginController)
 	if err != nil {
 		return mf, err
 	}

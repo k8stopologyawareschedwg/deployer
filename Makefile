@@ -12,10 +12,6 @@ clean-deps:
 update-deps:
 	go mod tidy && go mod vendor
 
-.PHONY: update-manifests
-update-manifests:
-	./pkg/manifests/yaml/update.sh
-
 .PHONY: update-version
 update-version:
 	@mkdir -p pkg/version || :
@@ -32,7 +28,7 @@ outdir:
 
 .PHONY: test-unit
 test-unit:
-	go test ./pkg/...
+	go test ./assets/... ./cmd/... ./pkg/...
 
 .PHONY: test-e2e-positive
 test-e2e-positive: build-e2e

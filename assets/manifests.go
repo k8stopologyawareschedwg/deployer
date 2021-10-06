@@ -14,7 +14,7 @@
  * Copyright 2021 Red Hat, Inc.
  */
 
-package manifests
+package assets
 
 import (
 	"bytes"

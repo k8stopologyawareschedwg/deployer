@@ -1,3 +1,19 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Copyright 2021 Red Hat, Inc.
+ */
+
 package manifests
 
 import (
@@ -8,6 +24,7 @@ import (
 
 	"github.com/drone/envsubst"
 
+	"github.com/k8stopologyawareschedwg/deployer/assets"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
@@ -52,7 +69,7 @@ func UpdateSchedulerConfigNamespaces(logger tlog.Logger, cm *corev1.ConfigMap, N
 		logger.Debugf("missing data for scheduler-config.yaml")
 		return cm
 	}
-	kc, err := KubeSchedulerConfigurationFromData([]byte(confData))
+	kc, err := assets.KubeSchedulerConfigurationFromData([]byte(confData))
 	if err != nil {
 		logger.Debugf("cannot decode the KubeSchedulerConfiguration: %v", err)
 		return cm
@@ -60,7 +77,7 @@ func UpdateSchedulerConfigNamespaces(logger tlog.Logger, cm *corev1.ConfigMap, N
 
 	for idx := 0; idx < len(kc.Profiles[0].PluginConfig); idx++ {
 		if kc.Profiles[0].PluginConfig[idx].Name == "NodeResourceTopologyMatch" {
-			tcfg, err := NodeResourceTopologyMatchArgsFromData(kc.Profiles[0].PluginConfig[idx].Args.Raw)
+			tcfg, err := assets.NodeResourceTopologyMatchArgsFromData(kc.Profiles[0].PluginConfig[idx].Args.Raw)
 			if err != nil {
 				logger.Debugf("failed to decode NodeResourceTopologyMatchArgs: %v", err)
 				continue
@@ -71,7 +88,7 @@ func UpdateSchedulerConfigNamespaces(logger tlog.Logger, cm *corev1.ConfigMap, N
 			tcfg.Namespaces = namespaces.List()
 			logger.Debugf("new namespace list: %v", tcfg.Namespaces)
 
-			blob, err := NodeResourceTopologyMatchArgsToData(tcfg)
+			blob, err := assets.NodeResourceTopologyMatchArgsToData(tcfg)
 			if err != nil {
 				logger.Debugf("failed to re-encode NodeResourceTopologyMatchArgs: %v", err)
 				continue
@@ -80,7 +97,7 @@ func UpdateSchedulerConfigNamespaces(logger tlog.Logger, cm *corev1.ConfigMap, N
 		}
 	}
 
-	binData, err := KubeSchedulerConfigurationToData(kc)
+	binData, err := assets.KubeSchedulerConfigurationToData(kc)
 	if err != nil {
 		logger.Debugf("cannot encode the KubeSchedulerConfiguration: %v", err)
 		return cm

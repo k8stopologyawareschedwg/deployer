@@ -24,6 +24,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/k8stopologyawareschedwg/deployer/assets"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
@@ -179,13 +180,13 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 		plat: plat,
 	}
 	if plat == platform.Kubernetes {
-		mf.Namespace, err = manifests.Namespace(manifests.ComponentResourceTopologyExporter)
+		mf.Namespace, err = assets.Namespace(assets.ComponentResourceTopologyExporter)
 		if err != nil {
 			return mf, err
 		}
 		mf.namespace = mf.Namespace.Name
 
-		mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentResourceTopologyExporter, "")
+		mf.ServiceAccount, err = assets.ServiceAccount(assets.ComponentResourceTopologyExporter, "")
 		if err != nil {
 			return mf, err
 		}
@@ -194,15 +195,15 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 		mf.namespace = namespaceOCP
 		mf.serviceAccount = serviceAccountOCP
 	}
-	mf.ClusterRole, err = manifests.ClusterRole(manifests.ComponentResourceTopologyExporter, "")
+	mf.ClusterRole, err = assets.ClusterRole(assets.ComponentResourceTopologyExporter, "")
 	if err != nil {
 		return mf, err
 	}
-	mf.ClusterRoleBinding, err = manifests.ClusterRoleBinding(manifests.ComponentResourceTopologyExporter, "")
+	mf.ClusterRoleBinding, err = assets.ClusterRoleBinding(assets.ComponentResourceTopologyExporter, "")
 	if err != nil {
 		return mf, err
 	}
-	mf.DaemonSet, err = manifests.DaemonSet(manifests.ComponentResourceTopologyExporter)
+	mf.DaemonSet, err = assets.DaemonSet(assets.ComponentResourceTopologyExporter)
 	if err != nil {
 		return mf, err
 	}

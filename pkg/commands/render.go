@@ -23,8 +23,8 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/k8stopologyawareschedwg/deployer/assets"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
@@ -164,7 +164,7 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 func renderObjects(objs []client.Object) error {
 	for _, obj := range objs {
 		fmt.Printf("---\n")
-		if err := manifests.SerializeObject(obj, os.Stdout); err != nil {
+		if err := assets.SerializeObject(obj, os.Stdout); err != nil {
 			return err
 		}
 	}
