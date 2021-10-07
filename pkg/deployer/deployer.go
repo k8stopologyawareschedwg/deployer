@@ -18,7 +18,6 @@ package deployer
 
 import (
 	"context"
-	"log"
 	"regexp"
 
 	corev1 "k8s.io/api/core/v1"
@@ -63,20 +62,20 @@ func NewHelper(tag string, log tlog.Logger) (*Helper, error) {
 func (hp *Helper) CreateObject(obj client.Object) error {
 	objKind := obj.GetObjectKind().GroupVersionKind().Kind // shortcut
 	if err := hp.cli.Create(context.TODO(), obj); err != nil {
-		log.Printf("-%5s> error creating %s %q: %v", hp.tag, objKind, obj.GetName(), err)
+		hp.log.Printf("-%5s> error creating %s %q: %v", hp.tag, objKind, obj.GetName(), err)
 		return err
 	}
-	log.Printf("-%5s> created %s %q", hp.tag, objKind, obj.GetName())
+	hp.log.Printf("-%5s> created %s %q", hp.tag, objKind, obj.GetName())
 	return nil
 }
 
 func (hp *Helper) DeleteObject(obj client.Object) error {
 	objKind := obj.GetObjectKind().GroupVersionKind().Kind // shortcut
 	if err := hp.cli.Delete(context.TODO(), obj); err != nil {
-		log.Printf("-%5s> error deleting %s %q: %v", hp.tag, objKind, obj.GetName(), err)
+		hp.log.Printf("-%5s> error deleting %s %q: %v", hp.tag, objKind, obj.GetName(), err)
 		return err
 	}
-	log.Printf("-%5s> deleted %s %q", hp.tag, objKind, obj.GetName())
+	hp.log.Printf("-%5s> deleted %s %q", hp.tag, objKind, obj.GetName())
 	return nil
 }
 
