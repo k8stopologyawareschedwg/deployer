@@ -37,12 +37,12 @@ const (
 )
 
 type Manifests struct {
-	Namespace          *corev1.Namespace
-	ServiceAccount     *corev1.ServiceAccount
-	ClusterRole        *rbacv1.ClusterRole
-	ClusterRoleBinding *rbacv1.ClusterRoleBinding
-	ConfigMap          *corev1.ConfigMap
-	DaemonSet          *appsv1.DaemonSet
+	Namespace      *corev1.Namespace
+	ServiceAccount *corev1.ServiceAccount
+	Role           *rbacv1.Role
+	RoleBinding    *rbacv1.RoleBinding
+	ConfigMap      *corev1.ConfigMap
+	DaemonSet      *appsv1.DaemonSet
 	// internal fields
 	plat           platform.Platform
 	namespace      string
@@ -55,9 +55,9 @@ func (mf Manifests) Clone() Manifests {
 		namespace:      mf.namespace,
 		serviceAccount: mf.serviceAccount,
 		// objects
-		ClusterRole:        mf.ClusterRole.DeepCopy(),
-		ClusterRoleBinding: mf.ClusterRoleBinding.DeepCopy(),
-		DaemonSet:          mf.DaemonSet.DeepCopy(),
+		Role:        mf.Role.DeepCopy(),
+		RoleBinding: mf.RoleBinding.DeepCopy(),
+		DaemonSet:   mf.DaemonSet.DeepCopy(),
 	}
 	if mf.plat == platform.Kubernetes {
 		ret.Namespace = mf.Namespace.DeepCopy()
@@ -82,7 +82,8 @@ func (mf Manifests) Update(options UpdateOptions) Manifests {
 
 	ret.DaemonSet.Namespace = mf.namespace
 	ret.DaemonSet.Spec.Template.Spec.ServiceAccountName = mf.serviceAccount
-	manifests.UpdateClusterRoleBinding(ret.ClusterRoleBinding, mf.serviceAccount, mf.namespace)
+	ret.Role.Namespace = mf.namespace
+	manifests.UpdateRoleBinding(ret.RoleBinding, mf.serviceAccount, mf.namespace)
 	manifests.UpdateResourceTopologyExporterDaemonSet(ret.plat, ret.DaemonSet, ret.ConfigMap, options.PullIfNotPresent)
 	return ret
 }
@@ -107,8 +108,8 @@ func createConfigMap(namespace string, configData string) *corev1.ConfigMap {
 
 func (mf Manifests) ToObjects() []client.Object {
 	objs := []client.Object{
-		mf.ClusterRole,
-		mf.ClusterRoleBinding,
+		mf.Role,
+		mf.RoleBinding,
 	}
 	if mf.ConfigMap != nil {
 		objs = append(objs, mf.ConfigMap)
@@ -126,8 +127,8 @@ func (mf Manifests) ToObjects() []client.Object {
 
 func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
 	objs := []deployer.WaitableObject{
-		{Obj: mf.ClusterRole},
-		{Obj: mf.ClusterRoleBinding},
+		{Obj: mf.Role},
+		{Obj: mf.RoleBinding},
 		{
 			Obj:  mf.DaemonSet,
 			Wait: func() error { return wait.PodsToBeRunningByRegex(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
@@ -154,8 +155,8 @@ func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []d
 				Wait: func() error { return wait.NamespaceToBeGone(hp, log, mf.Namespace.Name) },
 			},
 			// no need to remove objects created inside the namespace we just removed
-			{Obj: mf.ClusterRole},
-			{Obj: mf.ClusterRoleBinding},
+			{Obj: mf.Role},
+			{Obj: mf.RoleBinding},
 			{Obj: mf.ServiceAccount},
 		}
 	}
@@ -164,8 +165,8 @@ func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []d
 			Obj:  mf.DaemonSet,
 			Wait: func() error { return wait.PodsToBeGoneByRegex(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
 		},
-		{Obj: mf.ClusterRole},
-		{Obj: mf.ClusterRoleBinding},
+		{Obj: mf.Role},
+		{Obj: mf.RoleBinding},
 	}
 	if mf.ConfigMap != nil {
 		objs = append(objs, deployer.WaitableObject{Obj: mf.ConfigMap})
@@ -194,11 +195,11 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 		mf.namespace = namespaceOCP
 		mf.serviceAccount = serviceAccountOCP
 	}
-	mf.ClusterRole, err = manifests.ClusterRole(manifests.ComponentResourceTopologyExporter, "")
+	mf.Role, err = manifests.Role(manifests.ComponentResourceTopologyExporter, "")
 	if err != nil {
 		return mf, err
 	}
-	mf.ClusterRoleBinding, err = manifests.ClusterRoleBinding(manifests.ComponentResourceTopologyExporter, "")
+	mf.RoleBinding, err = manifests.RoleBinding(manifests.ComponentResourceTopologyExporter, "")
 	if err != nil {
 		return mf, err
 	}
