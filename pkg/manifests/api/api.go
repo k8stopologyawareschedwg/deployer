@@ -17,6 +17,8 @@
 package api
 
 import (
+	"fmt"
+
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -77,4 +79,8 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 	}
 
 	return mf, nil
+}
+
+func GetManifestsForNamespace(plat platform.Platform, namespace string) (Manifests, error) {
+	return Manifests{plat: plat}, fmt.Errorf("APIs are cluster scoped")
 }

@@ -60,8 +60,10 @@ func (mf Manifests) Clone() Manifests {
 		DaemonSet:   mf.DaemonSet.DeepCopy(),
 	}
 	if mf.plat == platform.Kubernetes {
-		ret.Namespace = mf.Namespace.DeepCopy()
 		ret.ServiceAccount = mf.ServiceAccount.DeepCopy()
+	}
+	if mf.Namespace != nil {
+		ret.Namespace = mf.Namespace.DeepCopy()
 	}
 	return ret
 }
@@ -73,9 +75,7 @@ type UpdateOptions struct {
 
 func (mf Manifests) Update(options UpdateOptions) Manifests {
 	ret := mf.Clone()
-	if ret.plat == platform.Kubernetes {
-		ret.ServiceAccount.Namespace = mf.namespace
-	}
+	ret.ServiceAccount.Namespace = mf.namespace
 	if len(options.ConfigData) > 0 {
 		ret.ConfigMap = createConfigMap(mf.namespace, options.ConfigData)
 	}
@@ -115,12 +115,11 @@ func (mf Manifests) ToObjects() []client.Object {
 		objs = append(objs, mf.ConfigMap)
 	}
 	objs = append(objs, mf.DaemonSet)
+	if mf.Namespace != nil {
+		objs = append([]client.Object{mf.Namespace}, objs...)
+	}
 	if mf.plat == platform.Kubernetes {
-		kubeObjs := []client.Object{
-			mf.Namespace,
-			mf.ServiceAccount,
-		}
-		return append(kubeObjs, objs...)
+		objs = append([]client.Object{mf.ServiceAccount}, objs...)
 	}
 	return objs
 }
@@ -154,10 +153,6 @@ func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []d
 				Obj:  mf.Namespace,
 				Wait: func() error { return wait.NamespaceToBeGone(hp, log, mf.Namespace.Name) },
 			},
-			// no need to remove objects created inside the namespace we just removed
-			{Obj: mf.Role},
-			{Obj: mf.RoleBinding},
-			{Obj: mf.ServiceAccount},
 		}
 	}
 	objs := []deployer.WaitableObject{
@@ -193,6 +188,36 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 		mf.serviceAccount = mf.ServiceAccount.Name
 	} else {
 		mf.namespace = namespaceOCP
+		mf.serviceAccount = serviceAccountOCP
+	}
+	mf.Role, err = manifests.Role(manifests.ComponentResourceTopologyExporter, "")
+	if err != nil {
+		return mf, err
+	}
+	mf.RoleBinding, err = manifests.RoleBinding(manifests.ComponentResourceTopologyExporter, "")
+	if err != nil {
+		return mf, err
+	}
+	mf.DaemonSet, err = manifests.DaemonSet(manifests.ComponentResourceTopologyExporter)
+	if err != nil {
+		return mf, err
+	}
+	return mf, nil
+}
+
+func GetManifestsForNamespace(plat platform.Platform, namespace string) (Manifests, error) {
+	var err error
+	mf := Manifests{
+		namespace: namespace,
+		plat:      plat,
+	}
+	if plat == platform.Kubernetes {
+		mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentResourceTopologyExporter, "")
+		if err != nil {
+			return mf, err
+		}
+		mf.serviceAccount = mf.ServiceAccount.Name
+	} else {
 		mf.serviceAccount = serviceAccountOCP
 	}
 	mf.Role, err = manifests.Role(manifests.ComponentResourceTopologyExporter, "")

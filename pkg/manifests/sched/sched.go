@@ -51,15 +51,16 @@ type Manifests struct {
 	DPScheduler  *appsv1.Deployment
 	ConfigMap    *corev1.ConfigMap
 	// internal fields
-	plat platform.Platform
+	plat      platform.Platform
+	namespace string
 }
 
 func (mf Manifests) Clone() Manifests {
-	return Manifests{
-		plat: mf.plat,
+	ret := Manifests{
+		plat:      mf.plat,
+		namespace: mf.namespace,
 		// objects
 		Crd:           mf.Crd.DeepCopy(),
-		Namespace:     mf.Namespace.DeepCopy(),
 		SAController:  mf.SAController.DeepCopy(),
 		CRController:  mf.CRController.DeepCopy(),
 		CRBController: mf.CRBController.DeepCopy(),
@@ -70,6 +71,10 @@ func (mf Manifests) Clone() Manifests {
 		DPScheduler:   mf.DPScheduler.DeepCopy(),
 		ConfigMap:     mf.ConfigMap.DeepCopy(),
 	}
+	if mf.Namespace != nil {
+		ret.Namespace = mf.Namespace.DeepCopy()
+	}
+	return ret
 }
 
 type UpdateOptions struct {
@@ -80,6 +85,12 @@ type UpdateOptions struct {
 
 func (mf Manifests) Update(logger tlog.Logger, options UpdateOptions) Manifests {
 	ret := mf.Clone()
+
+	if mf.plat == platform.OpenShift {
+		mf.Namespace.Name = namespaceOCP
+	}
+	mf.namespace = mf.Namespace.Name
+
 	replicas := options.Replicas
 	if replicas <= 0 {
 		replicas = int32(1)
@@ -89,18 +100,15 @@ func (mf Manifests) Update(logger tlog.Logger, options UpdateOptions) Manifests 
 
 	manifests.UpdateSchedulerPluginSchedulerDeployment(ret.DPScheduler, options.PullIfNotPresent)
 	manifests.UpdateSchedulerPluginControllerDeployment(ret.DPController, options.PullIfNotPresent)
-	if mf.plat == platform.OpenShift {
-		ret.Namespace.Name = namespaceOCP
-	}
 
-	ret.SAController.Namespace = ret.Namespace.Name
-	manifests.UpdateClusterRoleBinding(ret.CRBController, "", ret.Namespace.Name)
-	ret.DPController.Namespace = ret.Namespace.Name
+	ret.SAController.Namespace = mf.namespace
+	manifests.UpdateClusterRoleBinding(ret.CRBController, "", mf.namespace)
+	ret.DPController.Namespace = mf.namespace
 
-	ret.SAScheduler.Namespace = ret.Namespace.Name
-	manifests.UpdateClusterRoleBinding(ret.CRBScheduler, "", ret.Namespace.Name)
-	ret.DPScheduler.Namespace = ret.Namespace.Name
-	ret.ConfigMap.Namespace = ret.Namespace.Name
+	ret.SAScheduler.Namespace = mf.namespace
+	manifests.UpdateClusterRoleBinding(ret.CRBScheduler, "", mf.namespace)
+	ret.DPScheduler.Namespace = mf.namespace
+	ret.ConfigMap.Namespace = mf.namespace
 
 	if options.NodeResourcesNamespace != "" {
 		ret.ConfigMap = manifests.UpdateSchedulerConfigNamespaces(logger, ret.ConfigMap, options.NodeResourcesNamespace)
@@ -109,8 +117,13 @@ func (mf Manifests) Update(logger tlog.Logger, options UpdateOptions) Manifests 
 }
 
 func (mf Manifests) ToObjects() []client.Object {
-	return []client.Object{
+	objs := []client.Object{
 		mf.Crd,
+	}
+	if mf.Namespace != nil {
+		objs = append(objs, mf.Namespace)
+	}
+	objs = append(objs,
 		mf.Namespace,
 		mf.SAScheduler,
 		mf.CRScheduler,
@@ -121,60 +134,80 @@ func (mf Manifests) ToObjects() []client.Object {
 		mf.CRController,
 		mf.CRBController,
 		mf.DPController,
-	}
+	)
+	return objs
 }
 
 func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
-	return []deployer.WaitableObject{
+	objs := []deployer.WaitableObject{
 		{Obj: mf.Crd},
-		{Obj: mf.Namespace},
-		{Obj: mf.SAScheduler},
-		{Obj: mf.CRScheduler},
-		{Obj: mf.CRBScheduler},
-		{Obj: mf.ConfigMap},
-		{
+	}
+	if mf.Namespace != nil {
+		objs = append(objs, deployer.WaitableObject{Obj: mf.Namespace})
+	}
+	objs = append(objs,
+		deployer.WaitableObject{Obj: mf.SAScheduler},
+		deployer.WaitableObject{Obj: mf.CRScheduler},
+		deployer.WaitableObject{Obj: mf.CRBScheduler},
+		deployer.WaitableObject{Obj: mf.ConfigMap},
+		deployer.WaitableObject{
 			Obj: mf.DPScheduler,
 			Wait: func() error {
 				return wait.PodsToBeRunningByRegex(hp, log, mf.DPScheduler.Namespace, mf.DPScheduler.Name)
 			},
 		},
-		{Obj: mf.SAController},
-		{Obj: mf.CRController},
-		{Obj: mf.CRBController},
-		{
+		deployer.WaitableObject{Obj: mf.SAController},
+		deployer.WaitableObject{Obj: mf.CRController},
+		deployer.WaitableObject{Obj: mf.CRBController},
+		deployer.WaitableObject{
 			Obj: mf.DPController,
 			Wait: func() error {
 				return wait.PodsToBeRunningByRegex(hp, log, mf.DPController.Namespace, mf.DPController.Name)
 			},
 		},
-	}
+	)
+	return objs
 }
 
 func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
-	return []deployer.WaitableObject{
-		{
-			Obj:  mf.Namespace,
-			Wait: func() error { return wait.NamespaceToBeGone(hp, log, mf.Namespace.Name) },
-		},
-		// no need to remove objects created inside the namespace we just removed
-		{Obj: mf.CRBScheduler},
-		{Obj: mf.CRScheduler},
-		{Obj: mf.CRBController},
-		{Obj: mf.CRController},
-		{Obj: mf.Crd},
+	if mf.Namespace != nil {
+		return []deployer.WaitableObject{
+			{
+				Obj:  mf.Namespace,
+				Wait: func() error { return wait.NamespaceToBeGone(hp, log, mf.Namespace.Name) },
+			},
+			// no need to remove objects created inside the namespace we just removed
+			{Obj: mf.CRBScheduler},
+			{Obj: mf.CRScheduler},
+			{Obj: mf.CRBController},
+			{Obj: mf.CRController},
+			{Obj: mf.Crd},
+		}
 	}
+	// TODO
+	return nil
 }
 
 func GetManifests(plat platform.Platform) (Manifests, error) {
-	var err error
-	mf := Manifests{
-		plat: plat,
-	}
-	mf.Crd, err = manifests.SchedulerCRD()
+	mf, err := GetManifestsForNamespace(plat, "")
 	if err != nil {
 		return mf, err
 	}
-	mf.Namespace, err = manifests.Namespace(manifests.ComponentSchedulerPlugin)
+	ns, err = manifests.Namespace(manifests.ComponentSchedulerPlugin)
+	if err != nil {
+		return mf, err
+	}
+	mf.Namespace = ns
+	return mf, nil
+}
+
+func GetManifestsForNamespace(plat platform.Platform, namespace string) (Manifests, error) {
+	var err error
+	mf := Manifests{
+		plat:      plat,
+		namespace: namespace,
+	}
+	mf.Crd, err = manifests.SchedulerCRD()
 	if err != nil {
 		return mf, err
 	}
