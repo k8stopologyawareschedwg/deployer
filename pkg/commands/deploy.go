@@ -18,7 +18,6 @@ package commands
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
@@ -73,7 +72,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
-				log.Printf("error removing: %v", err)
+				la.Printf("error removing: %v", err)
 			}
 			err = rte.Remove(la, rte.Options{
 				Platform:         opts.clusterPlatform,
@@ -83,14 +82,14 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
-				log.Printf("error removing: %v", err)
+				la.Printf("error removing: %v", err)
 			}
 			err = api.Remove(la, api.Options{
 				Platform: opts.clusterPlatform,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
-				log.Printf("error removing: %v", err)
+				la.Printf("error removing: %v", err)
 			}
 			return nil
 		},
