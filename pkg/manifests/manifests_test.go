@@ -101,6 +101,102 @@ func TestGetServiceAccount(t *testing.T) {
 	}
 }
 
+func TestGetRole(t *testing.T) {
+	type testCase struct {
+		component    string
+		subComponent string
+		expectError  bool
+	}
+
+	testCases := []testCase{
+		{
+			component:   "unknown-wrong",
+			expectError: true,
+		},
+		{
+			component:   ComponentAPI,
+			expectError: true,
+		},
+		{
+			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginScheduler,
+			expectError:  true,
+		},
+		{
+			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginController,
+			expectError:  true,
+		},
+		{
+			component:   ComponentResourceTopologyExporter,
+			expectError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.component, func(t *testing.T) {
+			obj, err := Role(tc.component, tc.subComponent)
+			if tc.expectError {
+				if err == nil || obj != nil {
+					t.Fatalf("nil err or non-nil obj=%v", obj)
+				}
+			} else {
+				if err != nil || obj == nil {
+					t.Fatalf("nil obj or non-nil err=%v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestGetRoleBinding(t *testing.T) {
+	type testCase struct {
+		component    string
+		subComponent string
+		expectError  bool
+	}
+
+	testCases := []testCase{
+		{
+			component:   "unknown-wrong",
+			expectError: true,
+		},
+		{
+			component:   ComponentAPI,
+			expectError: true,
+		},
+		{
+			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginScheduler,
+			expectError:  true,
+		},
+		{
+			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginController,
+			expectError:  true,
+		},
+		{
+			component:   ComponentResourceTopologyExporter,
+			expectError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.component, func(t *testing.T) {
+			obj, err := RoleBinding(tc.component, tc.subComponent)
+			if tc.expectError {
+				if err == nil || obj != nil {
+					t.Fatalf("nil err or non-nil obj=%v", obj)
+				}
+			} else {
+				if err != nil || obj == nil {
+					t.Fatalf("nil obj or non-nil err=%v", err)
+				}
+			}
+		})
+	}
+}
+
 func TestGetClusterRole(t *testing.T) {
 	type testCase struct {
 		component    string
@@ -129,7 +225,7 @@ func TestGetClusterRole(t *testing.T) {
 		},
 		{
 			component:   ComponentResourceTopologyExporter,
-			expectError: false,
+			expectError: true,
 		},
 	}
 
@@ -177,7 +273,7 @@ func TestGetClusterRoleBinding(t *testing.T) {
 		},
 		{
 			component:   ComponentResourceTopologyExporter,
-			expectError: false,
+			expectError: true,
 		},
 	}
 
