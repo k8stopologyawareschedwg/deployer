@@ -20,7 +20,10 @@ import (
 	"context"
 	"regexp"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
@@ -95,4 +98,43 @@ func (hp *Helper) GetPodsByPattern(namespace, pattern string) ([]*corev1.Pod, er
 		}
 	}
 	return ret, nil
+}
+
+func (hp *Helper) GetDaemonSetByName(namespace, name string) (*appsv1.DaemonSet, error) {
+	key := client.ObjectKey{
+		Namespace: namespace,
+		Name:      name,
+	}
+	var ds appsv1.DaemonSet
+	err := hp.GetObject(key, &ds)
+	if err != nil {
+		return nil, err
+	}
+	return &ds, nil
+}
+
+func (hp *Helper) IsDaemonSetRunning(namespace, name string) (bool, error) {
+	ds, err := hp.GetDaemonSetByName(namespace, name)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			hp.log.Printf("daemonset %q %q not found - retrying", namespace, name)
+			return false, nil
+		}
+		return false, err
+	}
+	hp.log.Printf("daemonset %q %q running count %d desired %d", namespace, name, ds.Status.CurrentNumberScheduled, ds.Status.DesiredNumberScheduled)
+	return (ds.Status.DesiredNumberScheduled == ds.Status.CurrentNumberScheduled), nil
+}
+
+func (hp *Helper) IsDaemonSetGone(namespace, name string) (bool, error) {
+	ds, err := hp.GetDaemonSetByName(namespace, name)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			hp.log.Printf("daemonset %q %q not found - gone away!", namespace, name)
+			return true, nil
+		}
+		return true, err
+	}
+	hp.log.Printf("daemonset %q %q running count %d", namespace, name, ds.Status.CurrentNumberScheduled)
+	return false, nil
 }
