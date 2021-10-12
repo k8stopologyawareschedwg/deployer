@@ -122,8 +122,8 @@ func (hp *Helper) IsDaemonSetRunning(namespace, name string) (bool, error) {
 		}
 		return false, err
 	}
-	hp.log.Printf("daemonset %q %q running count %d desired %d", namespace, name, ds.Status.CurrentNumberScheduled, ds.Status.DesiredNumberScheduled)
-	return (ds.Status.DesiredNumberScheduled == ds.Status.CurrentNumberScheduled), nil
+	hp.log.Printf("daemonset %q %q desired %d scheduled %d ready %d", namespace, name, ds.Status.DesiredNumberScheduled, ds.Status.CurrentNumberScheduled, ds.Status.NumberReady)
+	return (ds.Status.DesiredNumberScheduled > 0 && ds.Status.DesiredNumberScheduled == ds.Status.NumberReady), nil
 }
 
 func (hp *Helper) IsDaemonSetGone(namespace, name string) (bool, error) {

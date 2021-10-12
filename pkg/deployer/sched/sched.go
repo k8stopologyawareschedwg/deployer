@@ -19,6 +19,8 @@ package sched
 import (
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	rtemanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
@@ -32,6 +34,10 @@ type Options struct {
 	Replicas         int32
 	RTEConfigData    string
 	PullIfNotPresent bool
+}
+
+func SetupNamespace(plat platform.Platform) (*corev1.Namespace, string, error) {
+	return nil, "", fmt.Errorf("not yet implemented")
 }
 
 func Deploy(log tlog.Logger, opts Options) error {
