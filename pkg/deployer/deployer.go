@@ -21,8 +21,6 @@ import (
 	"regexp"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
@@ -35,10 +33,9 @@ type WaitableObject struct {
 }
 
 type Helper struct {
-	tag    string
-	cli    client.Client
-	k8sCli *kubernetes.Clientset
-	log    tlog.Logger
+	tag string
+	cli client.Client
+	log tlog.Logger
 }
 
 func NewHelper(tag string, log tlog.Logger) (*Helper, error) {
@@ -46,16 +43,10 @@ func NewHelper(tag string, log tlog.Logger) (*Helper, error) {
 	if err != nil {
 		return nil, err
 	}
-	k8sCli, err := clientutil.NewK8s()
-	if err != nil {
-		return nil, err
-	}
-
 	return &Helper{
-		tag:    tag,
-		cli:    cli,
-		k8sCli: k8sCli,
-		log:    log,
+		tag: tag,
+		cli: cli,
+		log: log,
 	}, nil
 }
 
@@ -84,17 +75,17 @@ func (hp *Helper) GetObject(key client.ObjectKey, obj client.Object) error {
 }
 
 func (hp *Helper) GetPodsByPattern(namespace, pattern string) ([]*corev1.Pod, error) {
-	podNameRgx, err := regexp.Compile(pattern)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: refine further
-	podList, err := hp.k8sCli.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+	var podList corev1.PodList
+	err := hp.cli.List(context.TODO(), &podList)
 	if err != nil {
 		return nil, err
 	}
 	hp.log.Debugf("found %d pods in namespace %q matching pattern %q", len(podList.Items), namespace, pattern)
+
+	podNameRgx, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
 
 	ret := []*corev1.Pod{}
 	for _, pod := range podList.Items {
