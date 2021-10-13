@@ -1,5 +1,9 @@
 all: deployer
 
+.PHONY: vet
+vet:
+	go vet ./...
+
 .PHONY: clan
 clean:
 	rm -rf _out
