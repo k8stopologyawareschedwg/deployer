@@ -23,6 +23,12 @@ jobs:
     - name: format
       run: ./hack/check-format.sh
 
+    - name: fix the version
+      run: make update-version
+
+    - name: go vetting
+      run: make vet
+
     - name: build
       run: make all
 
