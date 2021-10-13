@@ -42,8 +42,8 @@ func New() (client.Client, error) {
 		return nil, err
 	}
 
-	c, err := client.New(cfg, client.Options{})
-	return c, err
+	cli, err := client.New(cfg, client.Options{})
+	return cli, err
 }
 
 // NewK8s returns a kubernetes clientset

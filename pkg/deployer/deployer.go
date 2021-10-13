@@ -46,11 +46,15 @@ func NewHelper(tag string, log tlog.Logger) (*Helper, error) {
 	if err != nil {
 		return nil, err
 	}
+	return NewHelperWithClient(cli, tag, log), nil
+}
+
+func NewHelperWithClient(cli client.Client, tag string, log tlog.Logger) *Helper {
 	return &Helper{
 		tag: tag,
 		cli: cli,
 		log: log,
-	}, nil
+	}
 }
 
 func (hp *Helper) CreateObject(obj client.Object) error {
