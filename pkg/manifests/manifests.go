@@ -28,10 +28,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 
 	kubeschedulerconfigv1beta1 "k8s.io/kube-scheduler/config/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	apiconfig "sigs.k8s.io/scheduler-plugins/pkg/apis/config"
 
 	"k8s.io/client-go/kubernetes/scheme"
@@ -55,6 +57,18 @@ func init() {
 	apiextensionv1.AddToScheme(scheme.Scheme)
 	apiconfig.AddToScheme(scheme.Scheme)
 	kubeschedulerconfigv1beta1.AddToScheme(scheme.Scheme)
+}
+
+type ObjectState struct {
+	Existing client.Object
+	Desired  client.Object
+	Error    error
+	Compare  func(existing, desired client.Object) (bool, error)
+	Merge    func(existing, desired client.Object) (client.Object, error)
+}
+
+func (obst ObjectState) IsNotFoundError() bool {
+	return obst.Error != nil && apierrors.IsNotFound(obst.Error)
 }
 
 func Namespace(component string) (*corev1.Namespace, error) {

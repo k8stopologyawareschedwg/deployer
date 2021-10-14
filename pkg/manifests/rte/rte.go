@@ -30,6 +30,8 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/compare"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/merge"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
@@ -204,6 +206,55 @@ type ExistingManifests struct {
 	RoleBindingError    error
 	ConfigMapError      error
 	DaemonSetError      error
+}
+
+func (em ExistingManifests) State(mf Manifests) []manifests.ObjectState {
+	ret := []manifests.ObjectState{}
+	if mf.ServiceAccount != nil {
+		ret = append(ret,
+			manifests.ObjectState{
+				Existing: em.Existing.ServiceAccount,
+				Error:    em.ServiceAccountError,
+				Desired:  mf.ServiceAccount.DeepCopy(),
+				Compare:  compare.Object,
+				Merge:    merge.ServiceAccountForUpdate,
+			},
+		)
+	}
+	if mf.ConfigMap != nil {
+		ret = append(ret,
+			manifests.ObjectState{
+				Existing: em.Existing.ConfigMap,
+				Error:    em.ConfigMapError,
+				Desired:  mf.ConfigMap.DeepCopy(),
+				Compare:  compare.Object,
+				Merge:    merge.ObjectForUpdate,
+			},
+		)
+	}
+	return append(ret,
+		manifests.ObjectState{
+			Existing: em.Existing.Role,
+			Error:    em.RoleError,
+			Desired:  mf.Role.DeepCopy(),
+			Compare:  compare.Object,
+			Merge:    merge.ObjectForUpdate,
+		},
+		manifests.ObjectState{
+			Existing: em.Existing.RoleBinding,
+			Error:    em.RoleBindingError,
+			Desired:  mf.RoleBinding.DeepCopy(),
+			Compare:  compare.Object,
+			Merge:    merge.ObjectForUpdate,
+		},
+		manifests.ObjectState{
+			Existing: em.Existing.DaemonSet,
+			Error:    em.DaemonSetError,
+			Desired:  mf.DaemonSet.DeepCopy(),
+			Compare:  compare.Object,
+			Merge:    merge.ObjectForUpdate,
+		},
+	)
 }
 
 func (mf Manifests) FromClient(ctx context.Context, cli client.Client) ExistingManifests {

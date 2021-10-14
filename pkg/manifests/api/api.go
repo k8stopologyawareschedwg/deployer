@@ -26,6 +26,8 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/compare"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/merge"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
@@ -84,6 +86,18 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 type ExistingManifests struct {
 	Existing Manifests
 	CrdError error
+}
+
+func (em ExistingManifests) State(mf Manifests) []manifests.ObjectState {
+	return []manifests.ObjectState{
+		{
+			Existing: em.Existing.Crd,
+			Error:    em.CrdError,
+			Desired:  mf.Crd.DeepCopy(),
+			Compare:  compare.Object,
+			Merge:    merge.MetadataForUpdate,
+		},
+	}
 }
 
 func (mf Manifests) FromClient(ctx context.Context, cli client.Client) ExistingManifests {

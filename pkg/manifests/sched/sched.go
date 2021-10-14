@@ -226,6 +226,10 @@ type ExistingManifests struct {
 	Existing Manifests
 }
 
+func (em ExistingManifests) State(mf Manifests) []manifests.ObjectState {
+	return nil
+}
+
 func (mf Manifests) FromClient(ctx context.Context, cli client.Client) ExistingManifests {
 	// TODO
 	return ExistingManifests{}
