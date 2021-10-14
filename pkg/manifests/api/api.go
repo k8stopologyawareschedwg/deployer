@@ -17,6 +17,8 @@
 package api
 
 import (
+	"context"
+
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -77,4 +79,22 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 	}
 
 	return mf, nil
+}
+
+type ExistingManifests struct {
+	Existing Manifests
+	CrdError error
+}
+
+func (mf Manifests) FromClient(ctx context.Context, cli client.Client) ExistingManifests {
+	ret := ExistingManifests{
+		Existing: Manifests{
+			plat: mf.plat,
+		},
+	}
+	crd := apiextensionv1.CustomResourceDefinition{}
+	if ret.CrdError = cli.Get(ctx, client.ObjectKeyFromObject(mf.Crd), &crd); ret.CrdError == nil {
+		ret.Existing.Crd = &crd
+	}
+	return ret
 }

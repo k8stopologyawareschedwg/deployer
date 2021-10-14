@@ -17,13 +17,21 @@
 package e2e
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
 	"path/filepath"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
+	rtedeploy "github.com/k8stopologyawareschedwg/deployer/pkg/deployer/rte"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 var _ = ginkgo.Describe("[NegativeFlow] Deployer validation", func() {
@@ -49,5 +57,55 @@ var _ = ginkgo.Describe("[NegativeFlow] Deployer validation", func() {
 			gomega.Expect(vo.Success).To(gomega.BeFalse())
 			gomega.Expect(vo.Errors).ToNot(gomega.BeEmpty())
 		})
+
+		ginkgo.It("it should not have any manifest", func() {
+			dp, err := detect.Detect()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			cli, err := clientutil.New()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			apiMf, err := api.GetManifests(dp)
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			exApiMf := apiMf.FromClient(context.TODO(), cli)
+			gomega.Expect(exApiMf.Existing.Crd).To(gomega.BeNil())
+			gomega.Expect(checkError(exApiMf.CrdError)).ToNot(gomega.HaveOccurred(), "unexpected err: %v", err)
+
+			rteMf, err := rte.GetManifests(dp)
+			_, ns, err := rtedeploy.SetupNamespace(dp)
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			rteMf = rteMf.Update(rte.UpdateOptions{Namespace: ns})
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			exRteMf := rteMf.FromClient(context.TODO(), cli)
+
+			gomega.Expect(exRteMf.Existing.DaemonSet).To(gomega.BeNil())
+			gomega.Expect(exRteMf.Existing.ServiceAccount).To(gomega.BeNil())
+			gomega.Expect(exRteMf.Existing.Role).To(gomega.BeNil())
+			gomega.Expect(exRteMf.Existing.RoleBinding).To(gomega.BeNil())
+			// ConfigMap can be missing, and it's ok
+
+			gomega.Expect(checkError(exRteMf.DaemonSetError)).ToNot(gomega.HaveOccurred(), "unexpected err: %v", err)
+			gomega.Expect(checkError(exRteMf.ServiceAccountError)).ToNot(gomega.HaveOccurred(), "unexpected err: %v", err)
+			gomega.Expect(checkError(exRteMf.RoleError)).ToNot(gomega.HaveOccurred(), "unexpected err: %v", err)
+			gomega.Expect(checkError(exRteMf.RoleBindingError)).ToNot(gomega.HaveOccurred(), "unexpected err: %v", err)
+			// ConfigMap can be missing, and it's ok
+
+			// TODO: add sched
+		})
 	})
 })
+
+func checkError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if apierrors.IsNotFound(err) {
+		fmt.Fprintf(ginkgo.GinkgoWriter, "isNotFound!\n")
+		return nil
+	}
+	// TODO: better to use wrap
+	return fmt.Errorf("error is not nil nor IsNotFound: %v", err)
+}

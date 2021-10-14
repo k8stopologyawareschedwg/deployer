@@ -38,7 +38,10 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil/nodes"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
+	rtedeploy "github.com/k8stopologyawareschedwg/deployer/pkg/deployer/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
@@ -275,6 +278,44 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 			ginkgo.By("checking the pod goes running")
 			e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name)
 		})
+
+		ginkgo.It("should verify the manifests can be retrieved back", func() {
+			dp, err := detect.Detect()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			cli, err := clientutil.New()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			apiMf, err := api.GetManifests(dp)
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			exApiMf := apiMf.FromClient(context.TODO(), cli)
+			gomega.Expect(exApiMf.Existing.Crd).ToNot(gomega.BeNil())
+
+			gomega.Expect(exApiMf.CrdError).ToNot(gomega.HaveOccurred())
+
+			rteMf, err := rte.GetManifests(dp)
+			_, ns, err := rtedeploy.SetupNamespace(dp)
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			rteMf = rteMf.Update(rte.UpdateOptions{Namespace: ns})
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			exRteMf := rteMf.FromClient(context.TODO(), cli)
+			gomega.Expect(exRteMf.Existing.ServiceAccount).ToNot(gomega.BeNil())
+			gomega.Expect(exRteMf.Existing.Role).ToNot(gomega.BeNil())
+			gomega.Expect(exRteMf.Existing.RoleBinding).ToNot(gomega.BeNil())
+			// ConfigMap can be missing, and it's ok
+			gomega.Expect(exRteMf.Existing.DaemonSet).ToNot(gomega.BeNil())
+
+			gomega.Expect(exRteMf.ServiceAccountError).ToNot(gomega.HaveOccurred())
+			gomega.Expect(exRteMf.RoleError).ToNot(gomega.HaveOccurred())
+			gomega.Expect(exRteMf.RoleBindingError).ToNot(gomega.HaveOccurred())
+			// ConfigMap can be missing, and it's ok
+			gomega.Expect(exRteMf.DaemonSetError).ToNot(gomega.HaveOccurred())
+
+			// TODO: add sched
+		})
 	})
 })
 
@@ -318,6 +359,7 @@ func remove() error {
 		filepath.Join(binariesPath, "deployer"),
 		"--debug",
 		"remove",
+		"--wait",
 	}
 	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
 

@@ -17,6 +17,8 @@
 package sched
 
 import (
+	"context"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -218,6 +220,15 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 	}
 
 	return mf, nil
+}
+
+type ExistingManifests struct {
+	Existing Manifests
+}
+
+func (mf Manifests) FromClient(ctx context.Context, cli client.Client) ExistingManifests {
+	// TODO
+	return ExistingManifests{}
 }
 
 func newInt32(value int32) *int32 {

@@ -17,6 +17,8 @@
 package rte
 
 import (
+	"context"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -193,4 +195,49 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 		return mf, err
 	}
 	return mf, nil
+}
+
+type ExistingManifests struct {
+	Existing            Manifests
+	ServiceAccountError error
+	RoleError           error
+	RoleBindingError    error
+	ConfigMapError      error
+	DaemonSetError      error
+}
+
+func (mf Manifests) FromClient(ctx context.Context, cli client.Client) ExistingManifests {
+	ret := ExistingManifests{
+		Existing: Manifests{
+			plat:           mf.plat,
+			namespace:      mf.namespace,
+			serviceAccount: mf.serviceAccount,
+		},
+	}
+
+	ro := rbacv1.Role{}
+	if ret.RoleError = cli.Get(ctx, client.ObjectKeyFromObject(mf.Role), &ro); ret.RoleError == nil {
+		ret.Existing.Role = &ro
+	}
+	rb := rbacv1.RoleBinding{}
+	if ret.RoleBindingError = cli.Get(ctx, client.ObjectKeyFromObject(mf.RoleBinding), &rb); ret.RoleBindingError == nil {
+		ret.Existing.RoleBinding = &rb
+	}
+	ds := appsv1.DaemonSet{}
+	if ret.DaemonSetError = cli.Get(ctx, client.ObjectKeyFromObject(mf.DaemonSet), &ds); ret.DaemonSetError == nil {
+		ret.Existing.DaemonSet = &ds
+	}
+	if mf.ServiceAccount != nil {
+		sa := corev1.ServiceAccount{}
+		if ret.ServiceAccountError = cli.Get(ctx, client.ObjectKeyFromObject(mf.ServiceAccount), &sa); ret.ServiceAccountError == nil {
+			ret.Existing.ServiceAccount = &sa
+		}
+	}
+	if mf.ConfigMap != nil {
+		cm := corev1.ConfigMap{}
+		if ret.ConfigMapError = cli.Get(ctx, client.ObjectKeyFromObject(mf.ConfigMap), &cm); ret.ConfigMapError == nil {
+			ret.Existing.ConfigMap = &cm
+		}
+	}
+	return ret
 }
