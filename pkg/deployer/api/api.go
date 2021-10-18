@@ -17,6 +17,10 @@
 package api
 
 import (
+	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	apimanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
@@ -25,6 +29,10 @@ import (
 
 type Options struct {
 	Platform platform.Platform
+}
+
+func SetupNamespace(plat platform.Platform) (*corev1.Namespace, string, error) {
+	return nil, "", fmt.Errorf("the API is a cluster scoped resource")
 }
 
 func Deploy(log tlog.Logger, opts Options) error {

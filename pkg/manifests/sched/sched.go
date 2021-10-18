@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	namespaceOCP = "openshift-topology-aware-scheduler"
+	NamespaceOpenShift = "openshift-topology-aware-scheduler"
 )
 
 type Manifests struct {
@@ -90,7 +90,7 @@ func (mf Manifests) Update(logger tlog.Logger, options UpdateOptions) Manifests 
 	manifests.UpdateSchedulerPluginSchedulerDeployment(ret.DPScheduler, options.PullIfNotPresent)
 	manifests.UpdateSchedulerPluginControllerDeployment(ret.DPController, options.PullIfNotPresent)
 	if mf.plat == platform.OpenShift {
-		ret.Namespace.Name = namespaceOCP
+		ret.Namespace.Name = NamespaceOpenShift
 	}
 
 	ret.SAController.Namespace = ret.Namespace.Name

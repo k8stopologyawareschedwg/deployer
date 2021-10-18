@@ -24,9 +24,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	rtedeploy "github.com/k8stopologyawareschedwg/deployer/pkg/deployer/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
+	rtemanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
@@ -79,19 +80,20 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOpti
 			if commonOpts.UserPlatform == platform.Unknown {
 				return fmt.Errorf("must explicitely select a cluster platform")
 			}
+
+			_, rteNamespace, err := rtedeploy.SetupNamespace(commonOpts.UserPlatform)
+			if err != nil {
+				return err
+			}
+
 			schedManifests, err := sched.GetManifests(commonOpts.UserPlatform)
 			if err != nil {
 				return err
 			}
-			rteManifests, err := rte.GetManifests(commonOpts.UserPlatform)
-			if err != nil {
-				return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
-			}
-			// no Options needed!
-			rteManifests = rteManifests.Update(rte.UpdateOptions{})
+
 			updateOpts := sched.UpdateOptions{
 				Replicas:               int32(commonOpts.Replicas),
-				NodeResourcesNamespace: rteManifests.DaemonSet.Namespace,
+				NodeResourcesNamespace: rteNamespace,
 				PullIfNotPresent:       commonOpts.PullIfNotPresent,
 			}
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
@@ -110,19 +112,38 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOpti
 			if commonOpts.UserPlatform == platform.Unknown {
 				return fmt.Errorf("must explicitely select a cluster platform")
 			}
-			rteManifests, err := rte.GetManifests(commonOpts.UserPlatform)
+			objs, _, err := makeRTEObjects(commonOpts)
 			if err != nil {
 				return err
 			}
-			updateOpts := rte.UpdateOptions{
-				ConfigData:       commonOpts.RTEConfigData,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
-			}
-			return renderObjects(rteManifests.Update(updateOpts).ToObjects())
+			return renderObjects(objs)
 		},
 		Args: cobra.NoArgs,
 	}
 	return render
+}
+
+func makeRTEObjects(commonOpts *CommonOptions) ([]client.Object, string, error) {
+	ns, namespace, err := rtedeploy.SetupNamespace(commonOpts.UserPlatform)
+	if err != nil {
+		return nil, namespace, err
+	}
+
+	mf, err := rtemanifests.GetManifests(commonOpts.UserPlatform)
+	if err != nil {
+		return nil, namespace, err
+	}
+	mf = mf.Update(rtemanifests.UpdateOptions{
+		ConfigData:       commonOpts.RTEConfigData,
+		PullIfNotPresent: commonOpts.PullIfNotPresent,
+		Namespace:        namespace,
+	})
+
+	rteObjs := mf.ToObjects()
+	if commonOpts.UserPlatform == platform.Kubernetes {
+		return append([]client.Object{ns}, rteObjs...), namespace, nil
+	}
+	return rteObjs, namespace, nil
 }
 
 func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *renderOptions, args []string) error {
@@ -134,15 +155,11 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	}
 	objs = append(objs, apiManifests.Update().ToObjects()...)
 
-	rteManifests, err := rte.GetManifests(commonOpts.UserPlatform)
+	rteObjs, rteNs, err := makeRTEObjects(commonOpts)
 	if err != nil {
 		return err
 	}
-	rteUpdateOpts := rte.UpdateOptions{
-		ConfigData:       commonOpts.RTEConfigData,
-		PullIfNotPresent: commonOpts.PullIfNotPresent,
-	}
-	objs = append(objs, rteManifests.Update(rteUpdateOpts).ToObjects()...)
+	objs = append(objs, rteObjs...)
 
 	schedManifests, err := sched.GetManifests(commonOpts.UserPlatform)
 	if err != nil {
@@ -151,7 +168,7 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 
 	schedUpdateOpts := sched.UpdateOptions{
 		Replicas:               int32(commonOpts.Replicas),
-		NodeResourcesNamespace: rteManifests.DaemonSet.Namespace,
+		NodeResourcesNamespace: rteNs,
 		PullIfNotPresent:       commonOpts.PullIfNotPresent,
 	}
 

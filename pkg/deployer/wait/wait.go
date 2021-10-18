@@ -86,3 +86,17 @@ func NamespaceToBeGone(hp *deployer.Helper, log tlog.Logger, namespace string) e
 		return true, nil
 	})
 }
+
+func DaemonSetToBeRunning(hp *deployer.Helper, log tlog.Logger, namespace, name string) error {
+	log.Printf("wait for the daemonset %q %q to be running", namespace, name)
+	return wait.PollImmediate(3*time.Second, 3*time.Minute, func() (bool, error) {
+		return hp.IsDaemonSetRunning(namespace, name)
+	})
+}
+
+func DaemonSetToBeGone(hp *deployer.Helper, log tlog.Logger, namespace, name string) error {
+	log.Printf("wait for the daemonset %q %q to be gone", namespace, name)
+	return wait.PollImmediate(3*time.Second, 3*time.Minute, func() (bool, error) {
+		return hp.IsDaemonSetGone(namespace, name)
+	})
+}

@@ -32,12 +32,11 @@ import (
 )
 
 const (
-	namespaceOCP      = "openshift-monitoring"
-	serviceAccountOCP = "node-exporter"
+	NamespaceOpenShift      = "openshift-monitoring"
+	ServiceAccountOpenShift = "node-exporter"
 )
 
 type Manifests struct {
-	Namespace      *corev1.Namespace
 	ServiceAccount *corev1.ServiceAccount
 	Role           *rbacv1.Role
 	RoleBinding    *rbacv1.RoleBinding
@@ -60,7 +59,6 @@ func (mf Manifests) Clone() Manifests {
 		DaemonSet:   mf.DaemonSet.DeepCopy(),
 	}
 	if mf.plat == platform.Kubernetes {
-		ret.Namespace = mf.Namespace.DeepCopy()
 		ret.ServiceAccount = mf.ServiceAccount.DeepCopy()
 	}
 	return ret
@@ -69,9 +67,14 @@ func (mf Manifests) Clone() Manifests {
 type UpdateOptions struct {
 	ConfigData       string
 	PullIfNotPresent bool
+	Namespace        string
 }
 
 func (mf Manifests) Update(options UpdateOptions) Manifests {
+	if options.Namespace != "" {
+		mf.namespace = options.Namespace
+	}
+
 	ret := mf.Clone()
 	if ret.plat == platform.Kubernetes {
 		ret.ServiceAccount.Namespace = mf.namespace
@@ -107,69 +110,58 @@ func createConfigMap(namespace string, configData string) *corev1.ConfigMap {
 }
 
 func (mf Manifests) ToObjects() []client.Object {
-	objs := []client.Object{
-		mf.Role,
-		mf.RoleBinding,
+	var objs []client.Object
+	if mf.ServiceAccount != nil {
+		objs = append(objs, mf.ServiceAccount)
 	}
 	if mf.ConfigMap != nil {
 		objs = append(objs, mf.ConfigMap)
 	}
-	objs = append(objs, mf.DaemonSet)
-	if mf.plat == platform.Kubernetes {
-		kubeObjs := []client.Object{
-			mf.Namespace,
-			mf.ServiceAccount,
-		}
-		return append(kubeObjs, objs...)
-	}
-	return objs
+	return append(objs,
+		mf.Role,
+		mf.RoleBinding,
+		mf.DaemonSet,
+	)
 }
 
 func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
-	objs := []deployer.WaitableObject{
-		{Obj: mf.Role},
-		{Obj: mf.RoleBinding},
-		{
-			Obj:  mf.DaemonSet,
-			Wait: func() error { return wait.PodsToBeRunningByRegex(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
-		},
+	var objs []deployer.WaitableObject
+	if mf.ServiceAccount != nil {
+		objs = append(objs, deployer.WaitableObject{
+			Obj: mf.ServiceAccount,
+		})
 	}
 	if mf.ConfigMap != nil {
-		objs = append([]deployer.WaitableObject{{Obj: mf.ConfigMap}}, objs...)
+		objs = append(objs, deployer.WaitableObject{
+			Obj: mf.ConfigMap,
+		})
 	}
-	if mf.plat == platform.Kubernetes {
-		kubeObjs := []deployer.WaitableObject{
-			{Obj: mf.Namespace},
-			{Obj: mf.ServiceAccount},
-		}
-		return append(kubeObjs, objs...)
-	}
-	return objs
+	return append(objs,
+		deployer.WaitableObject{Obj: mf.Role},
+		deployer.WaitableObject{Obj: mf.RoleBinding},
+		deployer.WaitableObject{
+			Obj:  mf.DaemonSet,
+			Wait: func() error { return wait.DaemonSetToBeRunning(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
+		},
+	)
 }
 
 func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
-	if mf.plat == platform.Kubernetes {
-		return []deployer.WaitableObject{
-			{
-				Obj:  mf.Namespace,
-				Wait: func() error { return wait.NamespaceToBeGone(hp, log, mf.Namespace.Name) },
-			},
-			// no need to remove objects created inside the namespace we just removed
-			{Obj: mf.Role},
-			{Obj: mf.RoleBinding},
-			{Obj: mf.ServiceAccount},
-		}
-	}
 	objs := []deployer.WaitableObject{
 		{
 			Obj:  mf.DaemonSet,
-			Wait: func() error { return wait.PodsToBeGoneByRegex(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
+			Wait: func() error { return wait.DaemonSetToBeGone(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
 		},
-		{Obj: mf.Role},
 		{Obj: mf.RoleBinding},
+		{Obj: mf.Role},
 	}
 	if mf.ConfigMap != nil {
 		objs = append(objs, deployer.WaitableObject{Obj: mf.ConfigMap})
+	}
+	if mf.ServiceAccount != nil {
+		objs = append(objs, deployer.WaitableObject{
+			Obj: mf.ServiceAccount,
+		})
 	}
 	return objs
 }
@@ -180,20 +172,13 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 		plat: plat,
 	}
 	if plat == platform.Kubernetes {
-		mf.Namespace, err = manifests.Namespace(manifests.ComponentResourceTopologyExporter)
-		if err != nil {
-			return mf, err
-		}
-		mf.namespace = mf.Namespace.Name
-
 		mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentResourceTopologyExporter, "")
 		if err != nil {
 			return mf, err
 		}
 		mf.serviceAccount = mf.ServiceAccount.Name
 	} else {
-		mf.namespace = namespaceOCP
-		mf.serviceAccount = serviceAccountOCP
+		mf.serviceAccount = ServiceAccountOpenShift
 	}
 	mf.Role, err = manifests.Role(manifests.ComponentResourceTopologyExporter, "")
 	if err != nil {
