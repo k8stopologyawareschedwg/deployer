@@ -31,7 +31,7 @@ func init() {
 }
 
 var (
-	SchedulerPluginSchedulerImage  = SchedulerPluginSchedulerDefaultImage
-	SchedulerPluginControllerImage = SchedulerPluginSchedulerDefaultImage
-	ResourceTopologyExporterImage  = ResourceTopologyExporterDefaultImage
+	SchedulerPluginSchedulerImage  = SchedulerPluginSchedulerDefaultImageTag
+	SchedulerPluginControllerImage = SchedulerPluginSchedulerDefaultImageTag
+	ResourceTopologyExporterImage  = ResourceTopologyExporterDefaultImageTag
 )

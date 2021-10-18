@@ -94,6 +94,46 @@ func ServiceAccount(component, subComponent string) (*corev1.ServiceAccount, err
 	return sa, nil
 }
 
+func Role(component, subComponent string) (*rbacv1.Role, error) {
+	if err := validateComponent(component); err != nil {
+		return nil, err
+	}
+	if err := validateSubComponent(component, subComponent); err != nil {
+		return nil, err
+	}
+
+	obj, err := loadObject(filepath.Join("yaml", component, subComponent, "role.yaml"))
+	if err != nil {
+		return nil, err
+	}
+
+	role, ok := obj.(*rbacv1.Role)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type, got %t", obj)
+	}
+	return role, nil
+}
+
+func RoleBinding(component, subComponent string) (*rbacv1.RoleBinding, error) {
+	if err := validateComponent(component); err != nil {
+		return nil, err
+	}
+	if err := validateSubComponent(component, subComponent); err != nil {
+		return nil, err
+	}
+
+	obj, err := loadObject(filepath.Join("yaml", component, subComponent, "rolebinding.yaml"))
+	if err != nil {
+		return nil, err
+	}
+
+	rb, ok := obj.(*rbacv1.RoleBinding)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type, got %t", obj)
+	}
+	return rb, nil
+}
+
 func ClusterRole(component, subComponent string) (*rbacv1.ClusterRole, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err

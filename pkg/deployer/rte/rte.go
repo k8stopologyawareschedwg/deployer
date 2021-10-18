@@ -17,8 +17,14 @@
 package rte
 
 import (
+	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	rtemanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
@@ -30,9 +36,27 @@ type Options struct {
 	PullIfNotPresent bool
 }
 
+func SetupNamespace(plat platform.Platform) (*corev1.Namespace, string, error) {
+	if plat == platform.Kubernetes {
+		ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
+		if err != nil {
+			return nil, "", err
+		}
+		return ns, ns.Name, nil
+	}
+	if plat == platform.OpenShift {
+		return nil, rtemanifests.NamespaceOpenShift, nil
+	}
+	return nil, "", fmt.Errorf("unsupported platform: %q", plat)
+}
+
 func Deploy(log tlog.Logger, opts Options) error {
-	var err error
 	log.Printf("deploying topology-aware-scheduling topology updater...")
+
+	ns, namespace, err := SetupNamespace(opts.Platform)
+	if err != nil {
+		return err
+	}
 
 	mf, err := rtemanifests.GetManifests(opts.Platform)
 	if err != nil {
@@ -41,6 +65,7 @@ func Deploy(log tlog.Logger, opts Options) error {
 	mf = mf.Update(rtemanifests.UpdateOptions{
 		ConfigData:       opts.RTEConfigData,
 		PullIfNotPresent: opts.PullIfNotPresent,
+		Namespace:        namespace,
 	})
 	log.Debugf("RTE manifests loaded")
 
@@ -49,7 +74,11 @@ func Deploy(log tlog.Logger, opts Options) error {
 		return err
 	}
 
-	for _, wo := range mf.ToCreatableObjects(hp, log) {
+	objs := mf.ToCreatableObjects(hp, log)
+	if opts.Platform == platform.Kubernetes {
+		objs = append([]deployer.WaitableObject{{Obj: ns}}, objs...)
+	}
+	for _, wo := range objs {
 		if err := hp.CreateObject(wo.Obj); err != nil {
 			return err
 		}
@@ -74,6 +103,18 @@ func Remove(log tlog.Logger, opts Options) error {
 		return err
 	}
 
+	ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
+	if err != nil {
+		return err
+	}
+	namespace := ""
+	if opts.Platform == platform.Kubernetes {
+		namespace = ns.Name
+	}
+	if opts.Platform == platform.OpenShift {
+		namespace = rtemanifests.NamespaceOpenShift
+	}
+
 	mf, err := rtemanifests.GetManifests(opts.Platform)
 	if err != nil {
 		return err
@@ -81,10 +122,18 @@ func Remove(log tlog.Logger, opts Options) error {
 	mf = mf.Update(rtemanifests.UpdateOptions{
 		ConfigData:       opts.RTEConfigData,
 		PullIfNotPresent: opts.PullIfNotPresent,
+		Namespace:        namespace,
 	})
 	log.Debugf("RTE manifests loaded")
 
-	for _, wo := range mf.ToDeletableObjects(hp, log) {
+	objs := mf.ToDeletableObjects(hp, log)
+	if opts.Platform == platform.Kubernetes {
+		objs = append(objs, deployer.WaitableObject{
+			Obj:  ns,
+			Wait: func() error { return wait.NamespaceToBeGone(hp, log, ns.Name) },
+		})
+	}
+	for _, wo := range objs {
 		err = hp.DeleteObject(wo.Obj)
 		if err != nil {
 			log.Printf("failed to remove: %v", err)

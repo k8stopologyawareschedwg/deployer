@@ -94,17 +94,21 @@ func (kc *Kubectl) IsReady() (bool, error) {
 	return true, nil
 }
 
-func (kc *Kubectl) Command(args ...string) *exec.Cmd {
+func (kc *Kubectl) Arguments(args ...string) []string {
 	defaultArgs := []string{
 		fmt.Sprintf("--%s=%s", clientcmd.RecommendedConfigPathFlag, kc.kubeConfig),
 	}
 	if kc.apiserver != "" {
-		fmt.Sprintf("--%s=%s", clientcmd.FlagAPIServer, kc.apiserver)
+		defaultArgs = append(defaultArgs, fmt.Sprintf("--%s=%s", clientcmd.FlagAPIServer, kc.apiserver))
 	}
 	if kc.namespace != "" {
-		fmt.Sprintf("--namespace=%s", kc.namespace)
+		defaultArgs = append(defaultArgs, fmt.Sprintf("--namespace=%s", kc.namespace))
 	}
-	kubectlArgs := append(defaultArgs, args...)
+	return append(defaultArgs, args...)
+}
+
+func (kc *Kubectl) Command(args ...string) *exec.Cmd {
+	kubectlArgs := kc.Arguments(args...)
 	kc.logger.Printf("running: %s %v", kc.kubectlPath, kubectlArgs)
 	return exec.Command(kc.kubectlPath, kubectlArgs...)
 }

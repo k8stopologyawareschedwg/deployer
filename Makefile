@@ -1,5 +1,9 @@
 all: deployer
 
+.PHONY: vet
+vet:
+	go vet ./...
+
 .PHONY: clan
 clean:
 	rm -rf _out
@@ -48,8 +52,8 @@ gofmt:
 	gofmt -s -w `find . -path ./vendor -prune -o -type f -name '*.go' -print`
 
 .PHONY: build-e2e
-build-e2e: _out/rte-e2e.test
+build-e2e: _out/e2e.test
 
-_out/rte-e2e.test: outdir test/e2e/*.go
+_out/e2e.test: outdir test/e2e/*.go
 	go test -v -c -o _out/e2e.test ./test/e2e/
 

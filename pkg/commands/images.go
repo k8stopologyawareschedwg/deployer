@@ -71,9 +71,9 @@ type imageOutput struct {
 
 func newImageOutput() imageOutput {
 	return imageOutput{
-		TopologyUpdater:     images.ResourceTopologyExporterDefaultImage,
-		SchedulerPlugin:     images.SchedulerPluginSchedulerDefaultImage,
-		SchedulerController: images.SchedulerPluginControllerDefaultImage,
+		TopologyUpdater:     images.ResourceTopologyExporterDefaultImageTag,
+		SchedulerPlugin:     images.SchedulerPluginSchedulerDefaultImageTag,
+		SchedulerController: images.SchedulerPluginControllerDefaultImageTag,
 	}
 }
 
