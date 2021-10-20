@@ -165,11 +165,15 @@ func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []d
 	}
 }
 
-func GetManifests(plat platform.Platform) (Manifests, error) {
-	var err error
-	mf := Manifests{
+func New(plat platform.Platform) Manifests {
+	return Manifests{
 		plat: plat,
 	}
+}
+
+func GetManifests(plat platform.Platform) (Manifests, error) {
+	var err error
+	mf := New(plat)
 	mf.Crd, err = manifests.SchedulerCRD()
 	if err != nil {
 		return mf, err
