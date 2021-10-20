@@ -65,11 +65,15 @@ func (mf Manifests) Update() Manifests {
 	return ret
 }
 
-func GetManifests(plat platform.Platform) (Manifests, error) {
-	var err error
-	mf := Manifests{
+func New(plat platform.Platform) Manifests {
+	return Manifests{
 		plat: plat,
 	}
+}
+
+func GetManifests(plat platform.Platform) (Manifests, error) {
+	var err error
+	mf := New(plat)
 
 	mf.Crd, err = manifests.APICRD()
 	if err != nil {

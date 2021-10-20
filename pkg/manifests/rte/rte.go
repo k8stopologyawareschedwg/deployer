@@ -166,19 +166,25 @@ func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []d
 	return objs
 }
 
-func GetManifests(plat platform.Platform) (Manifests, error) {
-	var err error
+func New(plat platform.Platform) Manifests {
 	mf := Manifests{
 		plat: plat,
 	}
+	if plat == platform.OpenShift {
+		mf.serviceAccount = ServiceAccountOpenShift
+	}
+	return mf
+}
+
+func GetManifests(plat platform.Platform) (Manifests, error) {
+	var err error
+	mf := New(plat)
 	if plat == platform.Kubernetes {
 		mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentResourceTopologyExporter, "")
 		if err != nil {
 			return mf, err
 		}
 		mf.serviceAccount = mf.ServiceAccount.Name
-	} else {
-		mf.serviceAccount = ServiceAccountOpenShift
 	}
 	mf.Role, err = manifests.Role(manifests.ComponentResourceTopologyExporter, "")
 	if err != nil {
