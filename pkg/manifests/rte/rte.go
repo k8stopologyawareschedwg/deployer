@@ -44,14 +44,12 @@ type Manifests struct {
 	DaemonSet      *appsv1.DaemonSet
 	// internal fields
 	plat           platform.Platform
-	namespace      string
 	serviceAccount string
 }
 
 func (mf Manifests) Clone() Manifests {
 	ret := Manifests{
 		plat:           mf.plat,
-		namespace:      mf.namespace,
 		serviceAccount: mf.serviceAccount,
 		// objects
 		Role:        mf.Role.DeepCopy(),
@@ -71,22 +69,23 @@ type UpdateOptions struct {
 }
 
 func (mf Manifests) Update(options UpdateOptions) Manifests {
-	if options.Namespace != "" {
-		mf.namespace = options.Namespace
-	}
-
 	ret := mf.Clone()
 	if ret.plat == platform.Kubernetes {
-		ret.ServiceAccount.Namespace = mf.namespace
-	}
-	if len(options.ConfigData) > 0 {
-		ret.ConfigMap = createConfigMap(mf.namespace, options.ConfigData)
+		if options.Namespace != "" {
+			ret.ServiceAccount.Namespace = options.Namespace
+		}
 	}
 
-	ret.DaemonSet.Namespace = mf.namespace
 	ret.DaemonSet.Spec.Template.Spec.ServiceAccountName = mf.serviceAccount
-	ret.Role.Namespace = mf.namespace
-	manifests.UpdateRoleBinding(ret.RoleBinding, mf.serviceAccount, mf.namespace)
+	if options.Namespace != "" {
+		ret.Role.Namespace = options.Namespace
+		ret.DaemonSet.Namespace = options.Namespace
+	}
+	manifests.UpdateRoleBinding(ret.RoleBinding, mf.serviceAccount, ret.Role.Namespace)
+
+	if len(options.ConfigData) > 0 {
+		ret.ConfigMap = createConfigMap(ret.DaemonSet.Namespace, options.ConfigData)
+	}
 	manifests.UpdateResourceTopologyExporterDaemonSet(ret.plat, ret.DaemonSet, ret.ConfigMap, options.PullIfNotPresent)
 	return ret
 }
