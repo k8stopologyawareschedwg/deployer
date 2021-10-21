@@ -168,12 +168,12 @@ func TestGetRoleBinding(t *testing.T) {
 		{
 			component:    ComponentSchedulerPlugin,
 			subComponent: SubComponentSchedulerPluginScheduler,
-			expectError:  true,
+			expectError:  false,
 		},
 		{
 			component:    ComponentSchedulerPlugin,
 			subComponent: SubComponentSchedulerPluginController,
-			expectError:  true,
+			expectError:  false,
 		},
 		{
 			component:   ComponentResourceTopologyExporter,
