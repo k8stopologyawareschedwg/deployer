@@ -144,10 +144,10 @@ func UpdateResourceTopologyExporterCommand(args []string, vars map[string]string
 		}
 		res = append(res, newArg)
 	}
-	if plat == platform.Kubernetes {
+	if plat == platform.Kubernetes && !contains(res, "--kubelet-config-file=/host-var/lib/kubelet/config.yaml") {
 		res = append(res, "--kubelet-config-file=/host-var/lib/kubelet/config.yaml")
 	}
-	if plat == platform.OpenShift {
+	if plat == platform.OpenShift && !contains(res, "--topology-manager-policy=single-numa-node") {
 		// TODO
 		res = append(res, "--topology-manager-policy=single-numa-node")
 	}
@@ -163,4 +163,13 @@ func pullPolicy(pullIfNotPresent bool) corev1.PullPolicy {
 
 func newBool(val bool) *bool {
 	return &val
+}
+
+func contains(ss []string, s string) bool {
+	for _, v := range ss {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }
