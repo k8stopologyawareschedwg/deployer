@@ -81,7 +81,7 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOpti
 				return fmt.Errorf("must explicitely select a cluster platform")
 			}
 
-			_, rteNamespace, err := rtedeploy.SetupNamespace(commonOpts.UserPlatform)
+			_, rteNamespace, err := rtedeploy.SetupNamespace()
 			if err != nil {
 				return err
 			}
@@ -124,7 +124,7 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOpti
 }
 
 func makeRTEObjects(commonOpts *CommonOptions) ([]client.Object, string, error) {
-	ns, namespace, err := rtedeploy.SetupNamespace(commonOpts.UserPlatform)
+	ns, namespace, err := rtedeploy.SetupNamespace()
 	if err != nil {
 		return nil, namespace, err
 	}
