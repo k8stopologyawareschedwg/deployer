@@ -45,6 +45,8 @@ type Manifests struct {
 	// internal fields
 	plat           platform.Platform
 	serviceAccount string
+	// DaemonSet which not processed by Manifests.Update()
+	initialDaemonSet *appsv1.DaemonSet
 }
 
 func (mf Manifests) Clone() Manifests {
@@ -52,9 +54,10 @@ func (mf Manifests) Clone() Manifests {
 		plat:           mf.plat,
 		serviceAccount: mf.serviceAccount,
 		// objects
-		Role:        mf.Role.DeepCopy(),
-		RoleBinding: mf.RoleBinding.DeepCopy(),
-		DaemonSet:   mf.DaemonSet.DeepCopy(),
+		Role:             mf.Role.DeepCopy(),
+		RoleBinding:      mf.RoleBinding.DeepCopy(),
+		DaemonSet:        mf.DaemonSet.DeepCopy(),
+		initialDaemonSet: mf.initialDaemonSet.DeepCopy(),
 	}
 	if mf.plat == platform.Kubernetes {
 		ret.ServiceAccount = mf.ServiceAccount.DeepCopy()
@@ -70,6 +73,8 @@ type UpdateOptions struct {
 
 func (mf Manifests) Update(options UpdateOptions) Manifests {
 	ret := mf.Clone()
+	// work on a fresh (not dirty) clone of DaemonSet
+	ret.DaemonSet = ret.initialDaemonSet.DeepCopy()
 	if ret.plat == platform.Kubernetes {
 		if options.Namespace != "" {
 			ret.ServiceAccount.Namespace = options.Namespace
@@ -197,5 +202,7 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
+
+	mf.initialDaemonSet = mf.DaemonSet.DeepCopy()
 	return mf, nil
 }

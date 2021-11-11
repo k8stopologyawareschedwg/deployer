@@ -45,6 +45,16 @@ func TestUpdateResourceTopologyExporterCommandMultipleCalls(t *testing.T) {
 			plat:     platform.OpenShift,
 			expected: []string{"/bin/ocpfoo", "-v=3", "--baz=42", "--topology-manager-policy=single-numa-node"},
 		},
+		{
+			name: "kubernetes, with vars",
+			args: []string{"/bin/k8sfoo", "FOO=${PLACEHOLDER1}", "BAR=${PLACEHOLDER2}"},
+			vars: map[string]string{
+				"PLACEHOLDER1": "VALUE1",
+				"PLACEHOLDER2": "VALUE2",
+			},
+			plat:     platform.Kubernetes,
+			expected: []string{"/bin/k8sfoo", "FOO=VALUE1", "BAR=VALUE2", "--kubelet-config-file=/host-var/lib/kubelet/config.yaml"},
+		},
 	}
 
 	for _, tc := range testCases {
