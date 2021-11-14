@@ -3,14 +3,16 @@ module github.com/k8stopologyawareschedwg/deployer
 go 1.16
 
 require (
+	github.com/coreos/ignition/v2 v2.7.0
 	github.com/drone/envsubst v1.0.3
 	github.com/hashicorp/go-version v1.2.0
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.10
 	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.13.0
-	github.com/openshift/api v0.0.0-20210713130143-be21c6cb1bea // indirect
-	github.com/openshift/client-go v0.0.0-20200320143156-e7fa42a1261e
-	github.com/spf13/cobra v1.1.3
+	github.com/onsi/gomega v1.14.0
+	github.com/openshift/api v0.0.0-20210924154557-a4f696157341
+	github.com/openshift/client-go v0.0.0-20210916133943-9acee1a0fb83
+	github.com/openshift/machine-config-operator v0.0.0-00010101000000-000000000000
+	github.com/spf13/cobra v1.2.1
 	k8s.io/api v0.22.3
 	k8s.io/apiextensions-apiserver v0.22.3
 	k8s.io/apimachinery v0.22.3
@@ -18,7 +20,8 @@ require (
 	k8s.io/kube-scheduler v0.22.3
 	k8s.io/kubelet v0.22.3
 	k8s.io/kubernetes v1.22.3 // indirect
-	sigs.k8s.io/controller-runtime v0.9.2
+	k8s.io/utils v0.0.0-20210819203725-bdf08cb9a70a
+	sigs.k8s.io/controller-runtime v0.9.6
 	sigs.k8s.io/scheduler-plugins v0.19.9
 )
 
@@ -48,4 +51,9 @@ replace (
 	k8s.io/mount-utils => k8s.io/mount-utils v0.22.3
 	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.22.3
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.22.3
+)
+
+replace (
+	github.com/openshift/api => github.com/openshift/api v0.0.0-20211105154855-cb9596dd5fba // release-4.10
+	github.com/openshift/machine-config-operator => github.com/openshift/machine-config-operator v0.0.1-0.20211105081319-76d6155c1dab // release-4.10
 )

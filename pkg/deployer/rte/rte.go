@@ -17,8 +17,6 @@
 package rte
 
 import (
-	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
@@ -36,24 +34,18 @@ type Options struct {
 	PullIfNotPresent bool
 }
 
-func SetupNamespace(plat platform.Platform) (*corev1.Namespace, string, error) {
-	if plat == platform.Kubernetes {
-		ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
-		if err != nil {
-			return nil, "", err
-		}
-		return ns, ns.Name, nil
+func SetupNamespace() (*corev1.Namespace, string, error) {
+	ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
+	if err != nil {
+		return nil, "", err
 	}
-	if plat == platform.OpenShift {
-		return nil, rtemanifests.NamespaceOpenShift, nil
-	}
-	return nil, "", fmt.Errorf("unsupported platform: %q", plat)
+	return ns, ns.Name, nil
 }
 
 func Deploy(log tlog.Logger, opts Options) error {
 	log.Printf("deploying topology-aware-scheduling topology updater...")
 
-	ns, namespace, err := SetupNamespace(opts.Platform)
+	ns, namespace, err := SetupNamespace()
 	if err != nil {
 		return err
 	}
@@ -107,13 +99,7 @@ func Remove(log tlog.Logger, opts Options) error {
 	if err != nil {
 		return err
 	}
-	namespace := ""
-	if opts.Platform == platform.Kubernetes {
-		namespace = ns.Name
-	}
-	if opts.Platform == platform.OpenShift {
-		namespace = rtemanifests.NamespaceOpenShift
-	}
+	namespace := ns.Name
 
 	mf, err := rtemanifests.GetManifests(opts.Platform)
 	if err != nil {
