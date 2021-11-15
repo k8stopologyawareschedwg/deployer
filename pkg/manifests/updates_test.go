@@ -26,7 +26,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 )
 
-func TestUpdateResourceTopologyExporterCommandMultipleCalls(t *testing.T) {
+func TestProcessResourceTopologyExporterCommandMultipleCalls(t *testing.T) {
 	type testCase struct {
 		name     string
 		args     []string
@@ -60,7 +60,7 @@ func TestUpdateResourceTopologyExporterCommandMultipleCalls(t *testing.T) {
 				args := append([]string{}, tc.args...)
 				var retArgs []string
 				for idx := 0; idx < its; idx++ {
-					retArgs = UpdateResourceTopologyExporterCommand(args, tc.vars, tc.plat)
+					retArgs = ProcessResourceTopologyExporterCommand(args, tc.vars, tc.plat)
 					args = retArgs
 				}
 

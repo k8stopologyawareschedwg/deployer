@@ -31,48 +31,44 @@ const (
 	metricsPort = 2112
 )
 
-func UpdateRoleBinding(rb *rbacv1.RoleBinding, serviceAccount, namespace string) *rbacv1.RoleBinding {
+func UpdateRoleBinding(rb *rbacv1.RoleBinding, serviceAccount, namespace string) {
 	for idx := 0; idx < len(rb.Subjects); idx++ {
 		if serviceAccount != "" {
 			rb.Subjects[idx].Name = serviceAccount
 		}
 		rb.Subjects[idx].Namespace = namespace
 	}
-	return rb
 }
 
-func UpdateClusterRoleBinding(crb *rbacv1.ClusterRoleBinding, serviceAccount, namespace string) *rbacv1.ClusterRoleBinding {
+func UpdateClusterRoleBinding(crb *rbacv1.ClusterRoleBinding, serviceAccount, namespace string) {
 	for idx := 0; idx < len(crb.Subjects); idx++ {
 		if serviceAccount != "" {
 			crb.Subjects[idx].Name = serviceAccount
 		}
 		crb.Subjects[idx].Namespace = namespace
 	}
-	return crb
 }
 
-func UpdateSchedulerPluginSchedulerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool) *appsv1.Deployment {
+func UpdateSchedulerPluginSchedulerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool) {
 	dp.Spec.Template.Spec.Containers[0].Image = images.SchedulerPluginSchedulerImage
 	dp.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
-	return dp
 }
 
-func UpdateSchedulerPluginControllerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool) *appsv1.Deployment {
+func UpdateSchedulerPluginControllerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool) {
 	dp.Spec.Template.Spec.Containers[0].Image = images.SchedulerPluginControllerImage
 	dp.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
-	return dp
 }
 
-func UpdateSchedulerConfigNamespaces(logger tlog.Logger, cm *corev1.ConfigMap, NodeResourcesNamespace string) *corev1.ConfigMap {
+func UpdateSchedulerConfigNamespaces(logger tlog.Logger, cm *corev1.ConfigMap, NodeResourcesNamespace string) {
 	confData, ok := cm.Data["scheduler-config.yaml"]
 	if !ok {
 		logger.Debugf("missing data for scheduler-config.yaml")
-		return cm
+		return
 	}
 	kc, err := KubeSchedulerConfigurationFromData([]byte(confData))
 	if err != nil {
 		logger.Debugf("cannot decode the KubeSchedulerConfiguration: %v", err)
-		return cm
+		return
 	}
 
 	for idx := 0; idx < len(kc.Profiles[0].PluginConfig); idx++ {
@@ -100,13 +96,12 @@ func UpdateSchedulerConfigNamespaces(logger tlog.Logger, cm *corev1.ConfigMap, N
 	binData, err := KubeSchedulerConfigurationToData(kc)
 	if err != nil {
 		logger.Debugf("cannot encode the KubeSchedulerConfiguration: %v", err)
-		return cm
+		return
 	}
 	cm.Data["scheduler-config.yaml"] = string(binData)
-	return cm
 }
 
-func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.DaemonSet, cm *corev1.ConfigMap, pullIfNotPresent bool, nodeSelector *metav1.LabelSelector) *appsv1.DaemonSet {
+func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.DaemonSet, cm *corev1.ConfigMap, pullIfNotPresent bool, nodeSelector *metav1.LabelSelector) {
 	// TODO: better match by name than assume container#0 is RTE proper (not minion)
 	ds.Spec.Template.Spec.Containers[0].Image = images.ResourceTopologyExporterImage
 	ds.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
@@ -118,7 +113,7 @@ func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.
 		"RTE_POLL_INTERVAL": "10s",
 		"EXPORT_NAMESPACE":  ds.Namespace,
 	}
-	ds.Spec.Template.Spec.Containers[0].Command = UpdateResourceTopologyExporterCommand(ds.Spec.Template.Spec.Containers[0].Command, vars, plat)
+	ds.Spec.Template.Spec.Containers[0].Command = ProcessResourceTopologyExporterCommand(ds.Spec.Template.Spec.Containers[0].Command, vars, plat)
 	if plat == platform.OpenShift {
 		// this is needed to put watches in the kubelet state dirs AND
 		// to open the podresources socket in R/W mode
@@ -157,11 +152,9 @@ func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.
 	}
 
 	UpdateMetricsPort(ds, metricsPort)
-
-	return ds
 }
 
-func UpdateResourceTopologyExporterCommand(args []string, vars map[string]string, plat platform.Platform) []string {
+func ProcessResourceTopologyExporterCommand(args []string, vars map[string]string, plat platform.Platform) []string {
 	res := []string{}
 	for _, arg := range args {
 		newArg, err := envsubst.Eval(arg, func(key string) string { return vars[key] })

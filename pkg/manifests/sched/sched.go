@@ -109,7 +109,7 @@ func (mf Manifests) Update(logger tlog.Logger, options UpdateOptions) Manifests 
 	ret.ConfigMap.Namespace = ret.Namespace.Name
 
 	if options.NodeResourcesNamespace != "" {
-		ret.ConfigMap = manifests.UpdateSchedulerConfigNamespaces(logger, ret.ConfigMap, options.NodeResourcesNamespace)
+		manifests.UpdateSchedulerConfigNamespaces(logger, ret.ConfigMap, options.NodeResourcesNamespace)
 	}
 	return ret
 }
