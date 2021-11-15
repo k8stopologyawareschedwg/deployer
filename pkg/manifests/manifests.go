@@ -59,12 +59,14 @@ const (
 const (
 	defaultIgnitionVersion       = "3.2.0"
 	defaultIgnitionContentSource = "data:text/plain;charset=utf-8;base64"
-
-	seLinuxRTEPolicyDst    = "/etc/selinux/rte.cil"
-	seLinuxRTEContextType  = "rte.process"
-	seLinuxRTEContextLevel = "s0"
-
-	templateSELinuxPolicyDst = "selinuxPolicyDst"
+	defaultOCIHooksDir           = "/etc/containers/oci/hooks.d"
+	defaultScriptsDir            = "/usr/bin"
+	seLinuxRTEPolicyDst          = "/etc/selinux/rte.cil"
+	seLinuxRTEContextType        = "rte.process"
+	seLinuxRTEContextLevel       = "s0"
+	templateSELinuxPolicyDst     = "selinuxPolicyDst"
+	templateNotifierBinaryDst    = "notifierScriptPath"
+	templateNotifierFilePath     = "notifierFilePath"
 )
 
 const (
@@ -351,11 +353,47 @@ func MachineConfig(component string) (*machineconfigv1.MachineConfig, error) {
 }
 
 func getIgnitionConfig() ([]byte, error) {
+	var files []igntypes.File
+
 	// load SELinux policy
-	seLinuxPolicyContent := base64.StdEncoding.EncodeToString(rteassets.SELinuxPolicy)
+	files = addFileToIgnitionConfig(files, rteassets.SELinuxPolicy, 644, seLinuxRTEPolicyDst)
+
+	// load RTE notifier OCI hook config
+	notifierHookConfigContent, err := getTemplateContent(rteassets.HookConfigRTENotifier, map[string]string{
+		templateNotifierBinaryDst: filepath.Join(defaultScriptsDir, "rte-notifier.sh"),
+	})
+	if err != nil {
+		return nil, err
+	}
+	files = addFileToIgnitionConfig(
+		files,
+		notifierHookConfigContent,
+		644,
+		filepath.Join(defaultOCIHooksDir, "rte-notifier.json"),
+	)
+
+	// load RTE notifier script
+	notifierScript, err := getTemplateContent(rteassets.RTENotifierScript, map[string]string{
+		// TODO: we should use the variable passed from the deployer or operator
+		templateNotifierFilePath: "/run/rte/notify",
+	})
+	if err != nil {
+		return nil, err
+	}
+	files = addFileToIgnitionConfig(
+		files,
+		notifierScript,
+		755,
+		filepath.Join(defaultScriptsDir, "rte-notifier.sh"),
+	)
 
 	// load systemd service to install SELinux policy
-	systemdServiceContent, err := getSELinuxInstallSystemdServiceContent()
+	systemdServiceContent, err := getTemplateContent(
+		rteassets.SELinuxInstallSystemdServiceTemplate,
+		map[string]string{
+			templateSELinuxPolicyDst: seLinuxRTEPolicyDst,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -364,25 +402,11 @@ func getIgnitionConfig() ([]byte, error) {
 		Ignition: igntypes.Ignition{
 			Version: defaultIgnitionVersion,
 		},
-		Storage: igntypes.Storage{
-			Files: []igntypes.File{
-				{
-					Node: igntypes.Node{
-						Path: seLinuxRTEPolicyDst,
-					},
-					FileEmbedded1: igntypes.FileEmbedded1{
-						Contents: igntypes.Resource{
-							Source: pointer.StringPtr(fmt.Sprintf("%s,%s", defaultIgnitionContentSource, seLinuxPolicyContent)),
-						},
-						Mode: pointer.IntPtr(644),
-					},
-				},
-			},
-		},
+		Storage: igntypes.Storage{Files: files},
 		Systemd: igntypes.Systemd{
 			Units: []igntypes.Unit{
 				{
-					Contents: systemdServiceContent,
+					Contents: pointer.StringPtr(string(systemdServiceContent)),
 					Enabled:  pointer.BoolPtr(true),
 					Name:     "rte-selinux-policy-install.service",
 				},
@@ -398,22 +422,36 @@ func getIgnitionConfig() ([]byte, error) {
 	return rawIgnition, nil
 }
 
-// getSELinuxInstallSystemdServiceContent returns the content of the systemd service that installs the SELinux policy.
-// It returns the string pointer, because the ignition config is expecting to get the string pointer.
-func getSELinuxInstallSystemdServiceContent() (*string, error) {
-	// load systemd service to install SELinux policy
-	templateArgs := map[string]string{templateSELinuxPolicyDst: seLinuxRTEPolicyDst}
-	systemdServiceContent := &bytes.Buffer{}
-	systemdServiceTemplate, err := template.New("selinuxinstall.service").Parse(string(rteassets.SELinuxInstallSystemdServiceTemplate))
+func addFileToIgnitionConfig(files []igntypes.File, fileContent []byte, mode int, fileDst string) []igntypes.File {
+	base64FileContent := base64.StdEncoding.EncodeToString(fileContent)
+	files = append(files, igntypes.File{
+		Node: igntypes.Node{
+			Path: fileDst,
+		},
+		FileEmbedded1: igntypes.FileEmbedded1{
+			Contents: igntypes.Resource{
+				Source: pointer.StringPtr(fmt.Sprintf("%s,%s", defaultIgnitionContentSource, base64FileContent)),
+			},
+			Mode: pointer.IntPtr(mode),
+		},
+	})
+
+	return files
+}
+
+// getTemplateContent returns the content of the template after the parsing.
+func getTemplateContent(templateContent []byte, templateArgs map[string]string) ([]byte, error) {
+	fileContent := &bytes.Buffer{}
+	newTemplate, err := template.New("template").Parse(string(templateContent))
 	if err != nil {
 		return nil, err
 	}
 
-	if err := systemdServiceTemplate.Execute(systemdServiceContent, templateArgs); err != nil {
+	if err := newTemplate.Execute(fileContent, templateArgs); err != nil {
 		return nil, err
 	}
 
-	return pointer.StringPtr(systemdServiceContent.String()), nil
+	return fileContent.Bytes(), nil
 }
 
 func SecurityContextConstraint(component string) (*securityv1.SecurityContextConstraints, error) {
