@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/flagcodec"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
@@ -108,7 +109,9 @@ func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.
 		// TODO: more polite/proper iteration
 		ds.Spec.Template.Spec.Containers[1].ImagePullPolicy = pullPolicy(pullIfNotPresent)
 	}
+
 	ds.Spec.Template.Spec.Containers[0].Command = ProcessResourceTopologyExporterCommand(ds.Spec.Template.Spec.Containers[0].Command, plat)
+
 	if plat == platform.OpenShift {
 		// this is needed to put watches in the kubelet state dirs AND
 		// to open the podresources socket in R/W mode
@@ -150,15 +153,19 @@ func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.
 }
 
 func ProcessResourceTopologyExporterCommand(args []string, plat platform.Platform) []string {
-	res := append([]string{}, args...)
-	if plat == platform.Kubernetes && !contains(res, "--kubelet-config-file=/host-var/lib/kubelet/config.yaml") {
-		res = append(res, "--kubelet-config-file=/host-var/lib/kubelet/config.yaml")
-	}
-	if plat == platform.OpenShift && !contains(res, "--topology-manager-policy=single-numa-node") {
+	fl := flagcodec.ParseArgvKeyValue(args)
+	if fl == nil {
 		// TODO
-		res = append(res, "--topology-manager-policy=single-numa-node")
+		return args
 	}
-	return res
+
+	if plat == platform.Kubernetes {
+		fl.SetOption("--kubelet-config-file", "/host-var/lib/kubelet/config.yaml")
+	}
+	if plat == platform.OpenShift {
+		fl.SetOption("--topology-manager-policy", "single-numa-node")
+	}
+	return fl.Argv()
 }
 
 func UpdateMachineConfig(mc *machineconfigv1.MachineConfig, name string, mcpSelector *metav1.LabelSelector) {

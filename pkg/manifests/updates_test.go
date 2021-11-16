@@ -37,15 +37,15 @@ func TestProcessResourceTopologyExporterCommandMultipleCalls(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:     "kubernetes, no vars",
-			args:     []string{"/bin/k8sfoo", "-v=2", "--bar=42"},
+			args:     []string{"/bin/k8sfoo", "--bar=42", "-v=2"},
 			plat:     platform.Kubernetes,
-			expected: []string{"/bin/k8sfoo", "-v=2", "--bar=42", "--kubelet-config-file=/host-var/lib/kubelet/config.yaml"},
+			expected: []string{"/bin/k8sfoo", "--bar=42", "--kubelet-config-file=/host-var/lib/kubelet/config.yaml", "-v=2"},
 		},
 		{
 			name:     "openshift, no vars",
-			args:     []string{"/bin/ocpfoo", "-v=3", "--baz=42"},
+			args:     []string{"/bin/ocpfoo", "--baz=42", "-v=3"},
 			plat:     platform.OpenShift,
-			expected: []string{"/bin/ocpfoo", "-v=3", "--baz=42", "--topology-manager-policy=single-numa-node"},
+			expected: []string{"/bin/ocpfoo", "--baz=42", "--topology-manager-policy=single-numa-node", "-v=3"},
 		},
 	}
 
