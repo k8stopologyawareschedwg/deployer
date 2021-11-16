@@ -199,7 +199,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 
 			mf, err := rte.GetManifests(platform.Kubernetes)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			mf = mf.Update(rte.UpdateOptions{
+			mf = mf.Render(rte.RenderOptions{
 				Namespace: ns.Name,
 			})
 			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DaemonSet.Name))
@@ -208,7 +208,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 			mfs, err := sched.GetManifests(platform.Kubernetes)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			// no need for options!
-			mfs = mfs.Update(tlog.NewNullLogAdapter(), sched.UpdateOptions{})
+			mfs = mfs.Render(tlog.NewNullLogAdapter(), sched.RenderOptions{})
 			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
 
 			ginkgo.By("checking that noderesourcetopolgy has some information in it")

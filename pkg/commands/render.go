@@ -65,7 +65,7 @@ func NewRenderAPICommand(commonOpts *CommonOptions, opts *renderOptions) *cobra.
 			if err != nil {
 				return err
 			}
-			return renderObjects(apiManifests.Update().ToObjects())
+			return renderObjects(apiManifests.Render().ToObjects())
 		},
 		Args: cobra.NoArgs,
 	}
@@ -91,13 +91,13 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOpti
 				return err
 			}
 
-			updateOpts := sched.UpdateOptions{
+			renderOpts := sched.RenderOptions{
 				Replicas:               int32(commonOpts.Replicas),
 				NodeResourcesNamespace: rteNamespace,
 				PullIfNotPresent:       commonOpts.PullIfNotPresent,
 			}
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
-			return renderObjects(schedManifests.Update(la, updateOpts).ToObjects())
+			return renderObjects(schedManifests.Render(la, renderOpts).ToObjects())
 		},
 		Args: cobra.NoArgs,
 	}
@@ -133,7 +133,7 @@ func makeRTEObjects(commonOpts *CommonOptions) ([]client.Object, string, error) 
 	if err != nil {
 		return nil, namespace, err
 	}
-	mf = mf.Update(rtemanifests.UpdateOptions{
+	mf = mf.Render(rtemanifests.RenderOptions{
 		ConfigData:       commonOpts.RTEConfigData,
 		PullIfNotPresent: commonOpts.PullIfNotPresent,
 		Namespace:        namespace,
@@ -153,7 +153,7 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	if err != nil {
 		return err
 	}
-	objs = append(objs, apiManifests.Update().ToObjects()...)
+	objs = append(objs, apiManifests.Render().ToObjects()...)
 
 	rteObjs, rteNs, err := makeRTEObjects(commonOpts)
 	if err != nil {
@@ -166,14 +166,14 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 		return err
 	}
 
-	schedUpdateOpts := sched.UpdateOptions{
+	schedRenderOpts := sched.RenderOptions{
 		Replicas:               int32(commonOpts.Replicas),
 		NodeResourcesNamespace: rteNs,
 		PullIfNotPresent:       commonOpts.PullIfNotPresent,
 	}
 
 	la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
-	objs = append(objs, schedManifests.Update(la, schedUpdateOpts).ToObjects()...)
+	objs = append(objs, schedManifests.Render(la, schedRenderOpts).ToObjects()...)
 
 	return renderObjects(objs)
 }

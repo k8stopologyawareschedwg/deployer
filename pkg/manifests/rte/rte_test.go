@@ -1,9 +1,10 @@
 package rte
 
 import (
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"reflect"
 	"testing"
+
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 )
 
 func TestClone(t *testing.T) {
@@ -34,7 +35,7 @@ func TestClone(t *testing.T) {
 	}
 }
 
-func TestUpdate(t *testing.T) {
+func TestRender(t *testing.T) {
 	type testCase struct {
 		name string
 		mf   Manifests
@@ -55,7 +56,7 @@ func TestUpdate(t *testing.T) {
 	for _, tc := range testCases {
 		tc.mf, _ = GetManifests(tc.plat)
 		mfBeforeUpdate := tc.mf.Clone()
-		uMf := tc.mf.Update(UpdateOptions{})
+		uMf := tc.mf.Render(RenderOptions{})
 
 		if &uMf == &tc.mf {
 			t.Errorf("testcase %q, Update() should return a pristine copy of Manifests object, thus should have different addresses", tc.name)

@@ -54,8 +54,8 @@ func Deploy(log tlog.Logger, opts Options) error {
 		return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
 	}
 
-	rteMf = rteMf.Update(rtemanifests.UpdateOptions{ConfigData: opts.RTEConfigData})
-	mf = mf.Update(log, schedmanifests.UpdateOptions{
+	rteMf = rteMf.Render(rtemanifests.RenderOptions{ConfigData: opts.RTEConfigData})
+	mf = mf.Render(log, schedmanifests.RenderOptions{
 		Replicas:               opts.Replicas,
 		NodeResourcesNamespace: rteMf.DaemonSet.Name,
 		PullIfNotPresent:       opts.PullIfNotPresent,
@@ -97,8 +97,8 @@ func Remove(log tlog.Logger, opts Options) error {
 		return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
 	}
 
-	rteMf = rteMf.Update(rtemanifests.UpdateOptions{ConfigData: opts.RTEConfigData})
-	mf = mf.Update(log, schedmanifests.UpdateOptions{
+	rteMf = rteMf.Render(rtemanifests.RenderOptions{ConfigData: opts.RTEConfigData})
+	mf = mf.Render(log, schedmanifests.RenderOptions{
 		Replicas:               opts.Replicas,
 		NodeResourcesNamespace: rteMf.DaemonSet.Namespace,
 		PullIfNotPresent:       opts.PullIfNotPresent,

@@ -66,7 +66,7 @@ func (mf Manifests) Clone() Manifests {
 	return ret
 }
 
-type UpdateOptions struct {
+type RenderOptions struct {
 	// DaemonSet options
 	PullIfNotPresent bool
 	NodeSelector     *metav1.LabelSelector
@@ -82,7 +82,7 @@ type UpdateOptions struct {
 	Name      string
 }
 
-func (mf Manifests) Update(options UpdateOptions) Manifests {
+func (mf Manifests) Render(options RenderOptions) Manifests {
 	ret := mf.Clone()
 	if ret.plat == platform.Kubernetes {
 		if options.Namespace != "" {
