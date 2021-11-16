@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	github.com/coreos/ignition/v2 v2.7.0
-	github.com/drone/envsubst v1.0.3
 	github.com/hashicorp/go-version v1.2.0
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.10
 	github.com/onsi/ginkgo v1.16.4

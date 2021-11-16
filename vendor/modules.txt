@@ -14,11 +14,6 @@ github.com/coreos/vcontext/report
 github.com/coreos/vcontext/tree
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/drone/envsubst v1.0.3
-## explicit
-github.com/drone/envsubst
-github.com/drone/envsubst/parse
-github.com/drone/envsubst/path
 # github.com/evanphx/json-patch v4.11.0+incompatible
 github.com/evanphx/json-patch
 # github.com/fsnotify/fsnotify v1.4.9
