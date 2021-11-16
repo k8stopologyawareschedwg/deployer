@@ -11,7 +11,7 @@ require (
 	github.com/onsi/gomega v1.14.0
 	github.com/openshift/api v0.0.0-20210924154557-a4f696157341
 	github.com/openshift/client-go v0.0.0-20210916133943-9acee1a0fb83
-	github.com/openshift/machine-config-operator v0.0.0-00010101000000-000000000000
+	github.com/openshift/machine-config-operator v0.0.1-0.20211105081319-76d6155c1dab
 	github.com/spf13/cobra v1.2.1
 	k8s.io/api v0.22.3
 	k8s.io/apiextensions-apiserver v0.22.3
