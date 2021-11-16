@@ -76,12 +76,12 @@ func (mf Manifests) Clone() Manifests {
 	}
 }
 
-type UpdateOptions struct {
+type RenderOptions struct {
 	Replicas         int32
 	PullIfNotPresent bool
 }
 
-func (mf Manifests) Update(logger tlog.Logger, options UpdateOptions) Manifests {
+func (mf Manifests) Render(logger tlog.Logger, options RenderOptions) Manifests {
 	ret := mf.Clone()
 	replicas := options.Replicas
 	if replicas <= 0 {

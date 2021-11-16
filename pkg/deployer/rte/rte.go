@@ -54,7 +54,7 @@ func Deploy(log tlog.Logger, opts Options) error {
 	if err != nil {
 		return err
 	}
-	mf = mf.Update(rtemanifests.UpdateOptions{
+	mf = mf.Render(rtemanifests.RenderOptions{
 		ConfigData:       opts.RTEConfigData,
 		PullIfNotPresent: opts.PullIfNotPresent,
 		Namespace:        namespace,
@@ -104,7 +104,7 @@ func Remove(log tlog.Logger, opts Options) error {
 	if err != nil {
 		return err
 	}
-	mf = mf.Update(rtemanifests.UpdateOptions{
+	mf = mf.Render(rtemanifests.RenderOptions{
 		ConfigData:       opts.RTEConfigData,
 		PullIfNotPresent: opts.PullIfNotPresent,
 		Namespace:        namespace,

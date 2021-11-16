@@ -48,7 +48,7 @@ func Deploy(log tlog.Logger, opts Options) error {
 		return err
 	}
 
-	mf = mf.Update(log, schedmanifests.UpdateOptions{
+	mf = mf.Render(log, schedmanifests.RenderOptions{
 		Replicas:         opts.Replicas,
 		PullIfNotPresent: opts.PullIfNotPresent,
 	})
@@ -84,7 +84,7 @@ func Remove(log tlog.Logger, opts Options) error {
 		return err
 	}
 
-	mf = mf.Update(log, schedmanifests.UpdateOptions{
+	mf = mf.Render(log, schedmanifests.RenderOptions{
 		Replicas:         opts.Replicas,
 		PullIfNotPresent: opts.PullIfNotPresent,
 	})
