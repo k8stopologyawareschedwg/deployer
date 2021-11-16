@@ -30,7 +30,6 @@ func TestProcessResourceTopologyExporterCommandMultipleCalls(t *testing.T) {
 	type testCase struct {
 		name     string
 		args     []string
-		vars     map[string]string
 		plat     platform.Platform
 		expected []string
 	}
@@ -60,7 +59,7 @@ func TestProcessResourceTopologyExporterCommandMultipleCalls(t *testing.T) {
 				args := append([]string{}, tc.args...)
 				var retArgs []string
 				for idx := 0; idx < its; idx++ {
-					retArgs = ProcessResourceTopologyExporterCommand(args, tc.vars, tc.plat)
+					retArgs = ProcessResourceTopologyExporterCommand(args, tc.plat)
 					args = retArgs
 				}
 

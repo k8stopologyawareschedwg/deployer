@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/drone/envsubst"
 	securityv1 "github.com/openshift/api/security/v1"
 	machineconfigv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -109,11 +108,7 @@ func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.
 		// TODO: more polite/proper iteration
 		ds.Spec.Template.Spec.Containers[1].ImagePullPolicy = pullPolicy(pullIfNotPresent)
 	}
-	vars := map[string]string{
-		"RTE_POLL_INTERVAL": "10s",
-		"EXPORT_NAMESPACE":  ds.Namespace,
-	}
-	ds.Spec.Template.Spec.Containers[0].Command = ProcessResourceTopologyExporterCommand(ds.Spec.Template.Spec.Containers[0].Command, vars, plat)
+	ds.Spec.Template.Spec.Containers[0].Command = ProcessResourceTopologyExporterCommand(ds.Spec.Template.Spec.Containers[0].Command, plat)
 	if plat == platform.OpenShift {
 		// this is needed to put watches in the kubelet state dirs AND
 		// to open the podresources socket in R/W mode
@@ -154,16 +149,8 @@ func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.
 	UpdateMetricsPort(ds, metricsPort)
 }
 
-func ProcessResourceTopologyExporterCommand(args []string, vars map[string]string, plat platform.Platform) []string {
-	res := []string{}
-	for _, arg := range args {
-		newArg, err := envsubst.Eval(arg, func(key string) string { return vars[key] })
-		if err != nil {
-			// TODO log?
-			continue
-		}
-		res = append(res, newArg)
-	}
+func ProcessResourceTopologyExporterCommand(args []string, plat platform.Platform) []string {
+	res := append([]string{}, args...)
 	if plat == platform.Kubernetes && !contains(res, "--kubelet-config-file=/host-var/lib/kubelet/config.yaml") {
 		res = append(res, "--kubelet-config-file=/host-var/lib/kubelet/config.yaml")
 	}

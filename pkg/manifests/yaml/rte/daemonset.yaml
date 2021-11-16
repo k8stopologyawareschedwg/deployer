@@ -14,11 +14,10 @@ spec:
       serviceAccountName: rte
       containers:
       - name: resource-topology-exporter-container
-        image: ${RTE_CONTAINER_IMAGE}
+        image: quay.io/k8stopologyawareschedwg/resource-topology-exporter:latest
         command:
         - /bin/resource-topology-exporter
-        - --export-namespace=${EXPORT_NAMESPACE}
-        - --sleep-interval=${RTE_POLL_INTERVAL}
+        - --sleep-interval=10s
         - --sysfs=/host-sys
         - --kubelet-state-dir=/host-var/lib/kubelet
         - --podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock
@@ -38,7 +37,10 @@ spec:
         - name: REFERENCE_CONTAINER_NAME
           value: shared-pool-container
         - name: METRICS_PORT
-          value: "${METRICS_PORT}"
+          value: "2112"
+        ports:
+          - name: metrics-port
+            containerPort: 2112
         volumeMounts:
           - name: host-sys
             mountPath: "/host-sys"
