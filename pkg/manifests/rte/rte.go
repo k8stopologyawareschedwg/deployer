@@ -28,6 +28,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/flagcodec"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
@@ -241,5 +242,34 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
+
+	// customization which depends only on the platform, so they are not driven by RenderOptions
+
+	fl := flagcodec.ParseArgvKeyValue(mf.DaemonSet.Spec.Template.Spec.Containers[0].Command)
+
+	if plat == platform.Kubernetes {
+		if fl != nil {
+			fl.SetOption("--kubelet-config-file", "/host-var/lib/kubelet/config.yaml")
+			mf.DaemonSet.Spec.Template.Spec.Containers[0].Command = fl.Argv()
+		}
+	}
+
+	if plat == platform.OpenShift {
+		// this is needed to put watches in the kubelet state dirs AND
+		// to open the podresources socket in R/W mode
+		if mf.DaemonSet.Spec.Template.Spec.Containers[0].SecurityContext == nil {
+			mf.DaemonSet.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{}
+		}
+		mf.DaemonSet.Spec.Template.Spec.Containers[0].SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
+			Type:  manifests.SELinuxRTEContextType,
+			Level: manifests.SELinuxRTEContextLevel,
+		}
+
+		if fl != nil {
+			fl.SetOption("--topology-manager-policy", "single-numa-node")
+			mf.DaemonSet.Spec.Template.Spec.Containers[0].Command = fl.Argv()
+		}
+	}
+
 	return mf, nil
 }

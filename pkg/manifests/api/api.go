@@ -80,5 +80,7 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 		return mf, err
 	}
 
+	// customization which depends only on the platform, so they are not driven by RenderOptions
+
 	return mf, nil
 }

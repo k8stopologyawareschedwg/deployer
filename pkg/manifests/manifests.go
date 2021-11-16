@@ -54,6 +54,12 @@ const (
 	SubComponentSchedulerPluginController = "controller"
 )
 
+const (
+	SELinuxRTEPolicyDst    = "/etc/selinux/rte.cil"
+	SELinuxRTEContextType  = "rte.process"
+	SELinuxRTEContextLevel = "s0"
+)
+
 //go:embed yaml
 var src embed.FS
 
@@ -288,7 +294,7 @@ func MachineConfig(component string) (*machineconfigv1.MachineConfig, error) {
 
 func getIgnitionConfig() ([]byte, error) {
 	// load SELinux policy
-	seLinuxPolicyContent := base64.StdEncoding.EncodeToString(rteassets.SELinuxPolicy)
+	SELinuxPolicyContent := base64.StdEncoding.EncodeToString(rteassets.SELinuxPolicy)
 
 	// load systemd service to install SELinux policy
 	systemdServiceContent, err := getSELinuxInstallSystemdServiceContent()
@@ -304,11 +310,11 @@ func getIgnitionConfig() ([]byte, error) {
 			Files: []igntypes.File{
 				{
 					Node: igntypes.Node{
-						Path: seLinuxRTEPolicyDst,
+						Path: SELinuxRTEPolicyDst,
 					},
 					FileEmbedded1: igntypes.FileEmbedded1{
 						Contents: igntypes.Resource{
-							Source: pointer.StringPtr(fmt.Sprintf("%s,%s", defaultIgnitionContentSource, seLinuxPolicyContent)),
+							Source: pointer.StringPtr(fmt.Sprintf("%s,%s", defaultIgnitionContentSource, SELinuxPolicyContent)),
 						},
 						Mode: pointer.IntPtr(644),
 					},
@@ -338,7 +344,7 @@ func getIgnitionConfig() ([]byte, error) {
 // It returns the string pointer, because the ignition config is expecting to get the string pointer.
 func getSELinuxInstallSystemdServiceContent() (*string, error) {
 	// load systemd service to install SELinux policy
-	templateArgs := map[string]string{templateSELinuxPolicyDst: seLinuxRTEPolicyDst}
+	templateArgs := map[string]string{templateSELinuxPolicyDst: SELinuxRTEPolicyDst}
 	systemdServiceContent := &bytes.Buffer{}
 	systemdServiceTemplate, err := template.New("selinuxinstall.service").Parse(string(rteassets.SELinuxInstallSystemdServiceTemplate))
 	if err != nil {
@@ -370,8 +376,8 @@ func SecurityContextConstraint(component string) (*securityv1.SecurityContextCon
 	scc.SELinuxContext = securityv1.SELinuxContextStrategyOptions{
 		Type: securityv1.SELinuxStrategyMustRunAs,
 		SELinuxOptions: &corev1.SELinuxOptions{
-			Type:  seLinuxRTEContextType,
-			Level: seLinuxRTEContextLevel,
+			Type:  SELinuxRTEContextType,
+			Level: SELinuxRTEContextLevel,
 		},
 	}
 

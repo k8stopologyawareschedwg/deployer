@@ -17,59 +17,11 @@
 package manifests
 
 import (
-	"reflect"
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 )
-
-func TestProcessResourceTopologyExporterCommandMultipleCalls(t *testing.T) {
-	type testCase struct {
-		name     string
-		args     []string
-		plat     platform.Platform
-		expected []string
-	}
-
-	testCases := []testCase{
-		{
-			name:     "kubernetes, no vars",
-			args:     []string{"/bin/k8sfoo", "--bar=42", "-v=2"},
-			plat:     platform.Kubernetes,
-			expected: []string{"/bin/k8sfoo", "--bar=42", "--kubelet-config-file=/host-var/lib/kubelet/config.yaml", "-v=2"},
-		},
-		{
-			name:     "openshift, no vars",
-			args:     []string{"/bin/ocpfoo", "--baz=42", "-v=3"},
-			plat:     platform.OpenShift,
-			expected: []string{"/bin/ocpfoo", "--baz=42", "--topology-manager-policy=single-numa-node", "-v=3"},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// the most important magic numbers are: 0, 1, 2, ... N
-			// we avoid 0 for obvious reasons, we limit N=10 for practicalty.
-			// Hence: 1, 2, N=10
-			iterations := []int{1, 2, 10}
-			for _, its := range iterations {
-				args := append([]string{}, tc.args...)
-				var retArgs []string
-				for idx := 0; idx < its; idx++ {
-					retArgs = ProcessResourceTopologyExporterCommand(args, tc.plat)
-					args = retArgs
-				}
-
-				if !reflect.DeepEqual(tc.expected, retArgs) {
-					t.Errorf("testcase %q iterations %d expected %v got %v", tc.name, its, tc.expected, retArgs)
-				}
-			}
-		})
-	}
-}
 
 func TestUpdateMetricsPort(t *testing.T) {
 	ds := &appsv1.DaemonSet{

@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/flagcodec"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
@@ -21,10 +20,6 @@ import (
 const (
 	defaultIgnitionVersion       = "3.2.0"
 	defaultIgnitionContentSource = "data:text/plain;charset=utf-8;base64"
-
-	seLinuxRTEPolicyDst    = "/etc/selinux/rte.cil"
-	seLinuxRTEContextType  = "rte.process"
-	seLinuxRTEContextLevel = "s0"
 
 	templateSELinuxPolicyDst = "selinuxPolicyDst"
 
@@ -110,19 +105,6 @@ func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.
 		ds.Spec.Template.Spec.Containers[1].ImagePullPolicy = pullPolicy(pullIfNotPresent)
 	}
 
-	ds.Spec.Template.Spec.Containers[0].Command = ProcessResourceTopologyExporterCommand(ds.Spec.Template.Spec.Containers[0].Command, plat)
-
-	if plat == platform.OpenShift {
-		// this is needed to put watches in the kubelet state dirs AND
-		// to open the podresources socket in R/W mode
-		if ds.Spec.Template.Spec.Containers[0].SecurityContext == nil {
-			ds.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{}
-		}
-		ds.Spec.Template.Spec.Containers[0].SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
-			Type:  seLinuxRTEContextType,
-			Level: seLinuxRTEContextLevel,
-		}
-	}
 	if cm != nil {
 		ds.Spec.Template.Spec.Containers[0].VolumeMounts = append(ds.Spec.Template.Spec.Containers[0].VolumeMounts,
 			corev1.VolumeMount{
@@ -150,22 +132,6 @@ func UpdateResourceTopologyExporterDaemonSet(plat platform.Platform, ds *appsv1.
 	}
 
 	UpdateMetricsPort(ds, metricsPort)
-}
-
-func ProcessResourceTopologyExporterCommand(args []string, plat platform.Platform) []string {
-	fl := flagcodec.ParseArgvKeyValue(args)
-	if fl == nil {
-		// TODO
-		return args
-	}
-
-	if plat == platform.Kubernetes {
-		fl.SetOption("--kubelet-config-file", "/host-var/lib/kubelet/config.yaml")
-	}
-	if plat == platform.OpenShift {
-		fl.SetOption("--topology-manager-policy", "single-numa-node")
-	}
-	return fl.Argv()
 }
 
 func UpdateMachineConfig(mc *machineconfigv1.MachineConfig, name string, mcpSelector *metav1.LabelSelector) {
