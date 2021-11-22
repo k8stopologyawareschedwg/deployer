@@ -50,7 +50,7 @@ func Deploy(log tlog.Logger, opts Options) error {
 		return err
 	}
 
-	mf, err := rtemanifests.GetManifests(opts.Platform)
+	mf, err := rtemanifests.GetManifests(opts.Platform, namespace)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func Remove(log tlog.Logger, opts Options) error {
 	}
 	namespace := ns.Name
 
-	mf, err := rtemanifests.GetManifests(opts.Platform)
+	mf, err := rtemanifests.GetManifests(opts.Platform, namespace)
 	if err != nil {
 		return err
 	}

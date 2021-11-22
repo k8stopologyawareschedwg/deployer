@@ -86,7 +86,7 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOpti
 				return err
 			}
 
-			schedManifests, err := sched.GetManifests(commonOpts.UserPlatform)
+			schedManifests, err := sched.GetManifests(commonOpts.UserPlatform, rteNamespace)
 			if err != nil {
 				return err
 			}
@@ -129,7 +129,7 @@ func makeRTEObjects(commonOpts *CommonOptions) ([]client.Object, string, error) 
 		return nil, namespace, err
 	}
 
-	mf, err := rtemanifests.GetManifests(commonOpts.UserPlatform)
+	mf, err := rtemanifests.GetManifests(commonOpts.UserPlatform, namespace)
 	if err != nil {
 		return nil, namespace, err
 	}
@@ -161,7 +161,7 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	}
 	objs = append(objs, rteObjs...)
 
-	schedManifests, err := sched.GetManifests(commonOpts.UserPlatform)
+	schedManifests, err := sched.GetManifests(commonOpts.UserPlatform, rteNs)
 	if err != nil {
 		return err
 	}

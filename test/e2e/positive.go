@@ -197,7 +197,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 			ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-			mf, err := rte.GetManifests(platform.Kubernetes)
+			mf, err := rte.GetManifests(platform.Kubernetes, ns.Name)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			mf = mf.Update(rte.UpdateOptions{
 				Namespace: ns.Name,
@@ -205,7 +205,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DaemonSet.Name))
 
 			ginkgo.By("checking that topo-aware-scheduler pod is running")
-			mfs, err := sched.GetManifests(platform.Kubernetes)
+			mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			// no need for options!
 			mfs = mfs.Update(tlog.NewNullLogAdapter(), sched.UpdateOptions{})

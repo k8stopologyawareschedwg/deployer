@@ -18,6 +18,8 @@ package manifests
 
 import (
 	"testing"
+
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 )
 
 func TestGetNamespace(t *testing.T) {
@@ -91,7 +93,7 @@ func TestGetServiceAccount(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.component, func(t *testing.T) {
-			obj, err := ServiceAccount(tc.component, tc.subComponent)
+			obj, err := ServiceAccount(tc.component, tc.subComponent, "")
 			if tc.expectError {
 				if err == nil || obj != nil {
 					t.Fatalf("nil err or non-nil obj=%v", obj)
@@ -135,7 +137,7 @@ func TestGetRole(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.component, func(t *testing.T) {
-			obj, err := Role(tc.component, tc.subComponent)
+			obj, err := Role(tc.component, tc.subComponent, "")
 			if tc.expectError {
 				if err == nil || obj != nil {
 					t.Fatalf("nil err or non-nil obj=%v", obj)
@@ -183,7 +185,7 @@ func TestGetRoleBinding(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.component, func(t *testing.T) {
-			obj, err := RoleBinding(tc.component, tc.subComponent)
+			obj, err := RoleBinding(tc.component, tc.subComponent, "")
 			if tc.expectError {
 				if err == nil || obj != nil {
 					t.Fatalf("nil err or non-nil obj=%v", obj)
@@ -424,7 +426,7 @@ func TestGetDaemonSet(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.component, func(t *testing.T) {
-			obj, err := DaemonSet(tc.component)
+			obj, err := DaemonSet(tc.component, platform.Kubernetes, "")
 			if tc.expectError {
 				if err == nil || obj != nil {
 					t.Fatalf("nil err or non-nil obj=%v", obj)

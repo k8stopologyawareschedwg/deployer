@@ -1,9 +1,10 @@
 package rte
 
 import (
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"reflect"
 	"testing"
+
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 )
 
 func TestClone(t *testing.T) {
@@ -25,7 +26,7 @@ func TestClone(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc.mf, _ = GetManifests(tc.plat)
+		tc.mf, _ = GetManifests(tc.plat, "")
 		cMf := tc.mf.Clone()
 
 		if &cMf == &tc.mf {
@@ -53,7 +54,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc.mf, _ = GetManifests(tc.plat)
+		tc.mf, _ = GetManifests(tc.plat, "")
 		mfBeforeUpdate := tc.mf.Clone()
 		uMf := tc.mf.Update(UpdateOptions{})
 

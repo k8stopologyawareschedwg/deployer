@@ -13,7 +13,7 @@ spec:
     spec:
       serviceAccountName: rte
       containers:
-      - name: resource-topology-exporter-container
+      - name: resource-topology-exporter
         image: ${RTE_CONTAINER_IMAGE}
         command:
         - /bin/resource-topology-exporter

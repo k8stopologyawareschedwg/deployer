@@ -182,7 +182,7 @@ func New(plat platform.Platform) Manifests {
 	}
 }
 
-func GetManifests(plat platform.Platform) (Manifests, error) {
+func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 	var err error
 	mf := New(plat)
 	mf.Crd, err = manifests.SchedulerCRD()
@@ -198,7 +198,7 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
-	mf.SAScheduler, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler)
+	mf.SAScheduler, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, namespace)
 	if err != nil {
 		return mf, err
 	}
@@ -210,7 +210,7 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
-	mf.RBScheduler, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler)
+	mf.RBScheduler, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, namespace)
 	if err != nil {
 		return mf, err
 	}
@@ -219,7 +219,7 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 		return mf, err
 	}
 
-	mf.SAController, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController)
+	mf.SAController, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController, namespace)
 	if err != nil {
 		return mf, err
 	}
@@ -231,7 +231,7 @@ func GetManifests(plat platform.Platform) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
-	mf.RBController, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController)
+	mf.RBController, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController, namespace)
 	if err != nil {
 		return mf, err
 	}
