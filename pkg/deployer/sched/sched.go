@@ -44,12 +44,12 @@ func Deploy(log tlog.Logger, opts Options) error {
 	var err error
 	log.Printf("deploying topology-aware-scheduling scheduler plugin...")
 
-	mf, err := schedmanifests.GetManifests(opts.Platform)
+	mf, err := schedmanifests.GetManifests(opts.Platform, "")
 	if err != nil {
 		return err
 	}
 
-	rteMf, err := rtemanifests.GetManifests(opts.Platform)
+	rteMf, err := rtemanifests.GetManifests(opts.Platform, "")
 	if err != nil {
 		return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
 	}
@@ -87,12 +87,12 @@ func Remove(log tlog.Logger, opts Options) error {
 	var err error
 	log.Printf("removing topology-aware-scheduling scheduler plugin...")
 
-	mf, err := schedmanifests.GetManifests(opts.Platform)
+	mf, err := schedmanifests.GetManifests(opts.Platform, "")
 	if err != nil {
 		return err
 	}
 
-	rteMf, err := rtemanifests.GetManifests(opts.Platform)
+	rteMf, err := rtemanifests.GetManifests(opts.Platform, "")
 	if err != nil {
 		return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
 	}

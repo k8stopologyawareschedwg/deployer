@@ -41,6 +41,8 @@ import (
 	apiconfig "sigs.k8s.io/scheduler-plugins/pkg/apis/config"
 
 	rteassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/rte"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 )
 
 const (
@@ -52,6 +54,21 @@ const (
 const (
 	SubComponentSchedulerPluginScheduler  = "scheduler"
 	SubComponentSchedulerPluginController = "controller"
+)
+
+const (
+	defaultIgnitionVersion       = "3.2.0"
+	defaultIgnitionContentSource = "data:text/plain;charset=utf-8;base64"
+
+	seLinuxRTEPolicyDst    = "/etc/selinux/rte.cil"
+	seLinuxRTEContextType  = "rte.process"
+	seLinuxRTEContextLevel = "s0"
+
+	templateSELinuxPolicyDst = "selinuxPolicyDst"
+)
+
+const (
+	containerNameRTE = "resource-topology-exporter"
 )
 
 //go:embed yaml
@@ -82,7 +99,7 @@ func Namespace(component string) (*corev1.Namespace, error) {
 	return ns, nil
 }
 
-func ServiceAccount(component, subComponent string) (*corev1.ServiceAccount, error) {
+func ServiceAccount(component, subComponent, namespace string) (*corev1.ServiceAccount, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
@@ -99,10 +116,14 @@ func ServiceAccount(component, subComponent string) (*corev1.ServiceAccount, err
 	if !ok {
 		return nil, fmt.Errorf("unexpected type, got %t", obj)
 	}
+
+	if namespace != "" {
+		sa.Namespace = namespace
+	}
 	return sa, nil
 }
 
-func Role(component, subComponent string) (*rbacv1.Role, error) {
+func Role(component, subComponent, namespace string) (*rbacv1.Role, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
@@ -119,10 +140,14 @@ func Role(component, subComponent string) (*rbacv1.Role, error) {
 	if !ok {
 		return nil, fmt.Errorf("unexpected type, got %t", obj)
 	}
+
+	if namespace != "" {
+		role.Namespace = namespace
+	}
 	return role, nil
 }
 
-func RoleBinding(component, subComponent string) (*rbacv1.RoleBinding, error) {
+func RoleBinding(component, subComponent, namespace string) (*rbacv1.RoleBinding, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
@@ -138,6 +163,10 @@ func RoleBinding(component, subComponent string) (*rbacv1.RoleBinding, error) {
 	rb, ok := obj.(*rbacv1.RoleBinding)
 	if !ok {
 		return nil, fmt.Errorf("unexpected type, got %t", obj)
+	}
+
+	if namespace != "" {
+		rb.Namespace = namespace
 	}
 	return rb, nil
 }
@@ -246,7 +275,7 @@ func Deployment(component, subComponent string) (*appsv1.Deployment, error) {
 	return dp, nil
 }
 
-func DaemonSet(component string) (*appsv1.DaemonSet, error) {
+func DaemonSet(component string, plat platform.Platform, namespace string) (*appsv1.DaemonSet, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
@@ -259,6 +288,42 @@ func DaemonSet(component string) (*appsv1.DaemonSet, error) {
 	if !ok {
 		return nil, fmt.Errorf("unexpected type, got %t", obj)
 	}
+
+	for i := range ds.Spec.Template.Spec.Containers {
+		c := &ds.Spec.Template.Spec.Containers[i]
+		if c.Name == containerNameRTE {
+			c.Image = images.ResourceTopologyExporterImage
+			c.Command = []string{
+				"/bin/resource-topology-exporter",
+				"--sleep-interval=10s",
+				"--sysfs=/host-sys",
+				"--kubelet-state-dir=/host-var/lib/kubelet",
+				"--podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock",
+				fmt.Sprintf("--export-namespace=%s", namespace),
+			}
+
+			if plat == platform.OpenShift {
+				// TODO: we should fetch the policy from the KubeletConfig CR
+				c.Command = append(c.Command, "--topology-manager-policy=single-numa-node")
+
+				// this is needed to put watches in the kubelet state dirs AND
+				// to open the podresources socket in R/W mode
+				if c.SecurityContext == nil {
+					c.SecurityContext = &corev1.SecurityContext{}
+				}
+				c.SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
+					Type:  seLinuxRTEContextType,
+					Level: seLinuxRTEContextLevel,
+				}
+			}
+
+			if plat == platform.Kubernetes {
+				c.Command = append(c.Command, "--kubelet-config-file=/host-var/lib/kubelet/config.yaml")
+			}
+		}
+	}
+
+	ds.Namespace = namespace
 	return ds, nil
 }
 
