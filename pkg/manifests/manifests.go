@@ -60,7 +60,7 @@ const (
 	defaultIgnitionVersion       = "3.2.0"
 	defaultIgnitionContentSource = "data:text/plain;charset=utf-8;base64"
 	defaultOCIHooksDir           = "/etc/containers/oci/hooks.d"
-	defaultScriptsDir            = "/usr/bin"
+	defaultScriptsDir            = "/usr/local/bin"
 	seLinuxRTEPolicyDst          = "/etc/selinux/rte.cil"
 	seLinuxRTEContextType        = "rte.process"
 	seLinuxRTEContextLevel       = "s0"
@@ -70,7 +70,13 @@ const (
 )
 
 const (
-	containerNameRTE = "resource-topology-exporter"
+	containerNameRTE                = "resource-topology-exporter"
+	rteNotifierVolumeName           = "host-run-rte"
+	rteSysVolumeName                = "host-sys"
+	rtePodresourcesSocketVolumeName = "host-podresources-socket"
+	rteKubeletDirVolumeName         = "host-var-lib-kubelet"
+	rteNotifierFileName             = "notify"
+	hostNotifierDir                 = "/run/rte"
 )
 
 //go:embed yaml
@@ -291,6 +297,82 @@ func DaemonSet(component string, plat platform.Platform, namespace string) (*app
 		return nil, fmt.Errorf("unexpected type, got %t", obj)
 	}
 
+	hostPathDirectory := corev1.HostPathDirectory
+	hostPathSocket := corev1.HostPathSocket
+	ds.Spec.Template.Spec.Volumes = []corev1.Volume{
+		{
+			// needed to get the CPU, PCI devices and memory information
+			Name: rteSysVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/sys",
+					Type: &hostPathDirectory,
+				},
+			},
+		},
+		{
+			Name: rtePodresourcesSocketVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/var/lib/kubelet/pod-resources/kubelet.sock",
+					Type: &hostPathSocket,
+				},
+			},
+		},
+	}
+
+	containerPodResourcesSocket := filepath.Join("/", rtePodresourcesSocketVolumeName, "kubelet.sock")
+	containerHostSysDir := filepath.Join("/", rteSysVolumeName)
+	rteContainerVolumeMounts := []corev1.VolumeMount{
+		{
+			Name:      rteSysVolumeName,
+			ReadOnly:  true,
+			MountPath: containerHostSysDir,
+		},
+		{
+			Name:      rtePodresourcesSocketVolumeName,
+			MountPath: containerPodResourcesSocket,
+		},
+	}
+
+	if plat == platform.OpenShift {
+		// notifier file volume
+		hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
+		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, corev1.Volume{
+			Name: rteNotifierVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: hostNotifierDir,
+					Type: &hostPathDirectoryOrCreate,
+				},
+			},
+		})
+
+		rteContainerVolumeMounts = append(rteContainerVolumeMounts, corev1.VolumeMount{
+			Name:      rteNotifierVolumeName,
+			MountPath: filepath.Join("/", rteNotifierVolumeName),
+		})
+	}
+
+	if plat == platform.Kubernetes {
+		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes,
+			corev1.Volume{
+				Name: rteKubeletDirVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/var/lib/kubelet",
+						Type: &hostPathDirectory,
+					},
+				},
+			},
+		)
+		rteContainerVolumeMounts = append(rteContainerVolumeMounts, corev1.VolumeMount{
+			Name:      rteKubeletDirVolumeName,
+			ReadOnly:  true,
+			MountPath: filepath.Join("/", rteKubeletDirVolumeName),
+		})
+	}
+
 	for i := range ds.Spec.Template.Spec.Containers {
 		c := &ds.Spec.Template.Spec.Containers[i]
 		if c.Name == containerNameRTE {
@@ -298,14 +380,18 @@ func DaemonSet(component string, plat platform.Platform, namespace string) (*app
 			c.Command = []string{
 				"/bin/resource-topology-exporter",
 				"--sleep-interval=10s",
-				"--sysfs=/host-sys",
-				"--kubelet-state-dir=/host-var/lib/kubelet",
-				"--podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock",
+				fmt.Sprintf("--sysfs=%s", containerHostSysDir),
+				fmt.Sprintf("--podresources-socket=unix://%s", containerPodResourcesSocket),
 			}
 
 			if plat == platform.OpenShift {
-				// TODO: we should fetch the policy from the KubeletConfig CR
-				c.Command = append(c.Command, "--topology-manager-policy=single-numa-node")
+				c.Command = append(
+					c.Command,
+					// TODO: we should fetch the policy from the KubeletConfig CR
+					"--topology-manager-policy=single-numa-node",
+					// we add notify file only for the OpenShift, because we install CRI-O hooks only for the OpenShift
+					fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
+				)
 
 				// this is needed to put watches in the kubelet state dirs AND
 				// to open the podresources socket in R/W mode
@@ -319,8 +405,14 @@ func DaemonSet(component string, plat platform.Platform, namespace string) (*app
 			}
 
 			if plat == platform.Kubernetes {
-				c.Command = append(c.Command, "--kubelet-config-file=/host-var/lib/kubelet/config.yaml")
+				c.Command = append(
+					c.Command,
+					fmt.Sprintf("--kubelet-config-file=/%s/config.yaml", rteKubeletDirVolumeName),
+					fmt.Sprintf("--kubelet-state-dir=/%s", rteKubeletDirVolumeName),
+				)
 			}
+
+			c.VolumeMounts = rteContainerVolumeMounts
 		}
 	}
 
@@ -356,11 +448,12 @@ func getIgnitionConfig() ([]byte, error) {
 	var files []igntypes.File
 
 	// load SELinux policy
-	files = addFileToIgnitionConfig(files, rteassets.SELinuxPolicy, 644, seLinuxRTEPolicyDst)
+	files = addFileToIgnitionConfig(files, rteassets.SELinuxPolicy, 0644, seLinuxRTEPolicyDst)
 
 	// load RTE notifier OCI hook config
 	notifierHookConfigContent, err := getTemplateContent(rteassets.HookConfigRTENotifier, map[string]string{
 		templateNotifierBinaryDst: filepath.Join(defaultScriptsDir, "rte-notifier.sh"),
+		templateNotifierFilePath:  filepath.Join(hostNotifierDir, rteNotifierFileName),
 	})
 	if err != nil {
 		return nil, err
@@ -368,22 +461,15 @@ func getIgnitionConfig() ([]byte, error) {
 	files = addFileToIgnitionConfig(
 		files,
 		notifierHookConfigContent,
-		644,
+		0644,
 		filepath.Join(defaultOCIHooksDir, "rte-notifier.json"),
 	)
 
 	// load RTE notifier script
-	notifierScript, err := getTemplateContent(rteassets.RTENotifierScript, map[string]string{
-		// TODO: we should use the variable passed from the deployer or operator
-		templateNotifierFilePath: "/run/rte/notify",
-	})
-	if err != nil {
-		return nil, err
-	}
 	files = addFileToIgnitionConfig(
 		files,
-		notifierScript,
-		755,
+		rteassets.NotifierScript,
+		0755,
 		filepath.Join(defaultScriptsDir, "rte-notifier.sh"),
 	)
 
