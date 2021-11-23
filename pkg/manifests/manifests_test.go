@@ -17,7 +17,13 @@
 package manifests
 
 import (
+	"encoding/json"
+	"fmt"
+	"strings"
 	"testing"
+
+	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
+	"k8s.io/klog/v2"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 )
@@ -426,16 +432,146 @@ func TestGetDaemonSet(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.component, func(t *testing.T) {
-			obj, err := DaemonSet(tc.component, platform.Kubernetes, "")
-			if tc.expectError {
-				if err == nil || obj != nil {
-					t.Fatalf("nil err or non-nil obj=%v", obj)
+			_, err := DaemonSet(tc.component, platform.Kubernetes, "")
+			if (err != nil) != tc.expectError {
+				t.Fatalf("nil obj or non-nil err=%v", err)
+			}
+		})
+	}
+}
+
+func TestDaemonSet(t *testing.T) {
+	type testCase struct {
+		name                 string
+		plat                 platform.Platform
+		expectedCommandArgs  []string
+		expectedVolumes      map[string]string
+		expectedVolumeMounts map[string]string
+	}
+
+	containerPodResourcesSocket := fmt.Sprintf("/%s/kubelet.sock", rtePodresourcesSocketVolumeName)
+	containerHostSysDir := fmt.Sprintf("/%s", rteSysVolumeName)
+	testCases := []testCase{
+		{
+			name: "Verify DaemonSet generation for OpenShift platform",
+			plat: platform.OpenShift,
+			expectedCommandArgs: []string{
+				fmt.Sprintf("--sysfs=%s", containerHostSysDir),
+				fmt.Sprintf("--podresources-socket=unix://%s", containerPodResourcesSocket),
+				fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
+				"--topology-manager-policy=single-numa-node",
+			},
+			expectedVolumes: map[string]string{
+				rteSysVolumeName:                "/sys",
+				rtePodresourcesSocketVolumeName: "/var/lib/kubelet/pod-resources/kubelet.sock",
+				rteNotifierVolumeName:           "/run/rte",
+			},
+			expectedVolumeMounts: map[string]string{
+				rteSysVolumeName:                containerHostSysDir,
+				rtePodresourcesSocketVolumeName: containerPodResourcesSocket,
+				rteNotifierVolumeName:           fmt.Sprintf("/%s", rteNotifierVolumeName),
+			},
+		},
+		{
+			name: "Verify DaemonSet generation for Kubernetes platform",
+			plat: platform.Kubernetes,
+			expectedCommandArgs: []string{
+				fmt.Sprintf("--sysfs=%s", containerHostSysDir),
+				fmt.Sprintf("--podresources-socket=unix://%s", containerPodResourcesSocket),
+				fmt.Sprintf("--kubelet-config-file=/%s/config.yaml", rteKubeletDirVolumeName),
+				fmt.Sprintf("--kubelet-state-dir=/%s", rteKubeletDirVolumeName),
+			},
+			expectedVolumes: map[string]string{
+				rteSysVolumeName:                "/sys",
+				rtePodresourcesSocketVolumeName: "/var/lib/kubelet/pod-resources/kubelet.sock",
+				rteKubeletDirVolumeName:         "/var/lib/kubelet",
+			},
+			expectedVolumeMounts: map[string]string{
+				rteSysVolumeName:                containerHostSysDir,
+				rtePodresourcesSocketVolumeName: containerPodResourcesSocket,
+				rteKubeletDirVolumeName:         fmt.Sprintf("/%s", rteKubeletDirVolumeName),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ds, err := DaemonSet(ComponentResourceTopologyExporter, tc.plat, "test")
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			// we are expecting 3 volumes
+			// 1. Host sys
+			// 2. Pod resources socket file
+			// 3. RTE notifier directory for OpenShift platform or /var/lib/kubelet for Kubernetes platform
+			if len(ds.Spec.Template.Spec.Volumes) != 3 {
+				klog.Errorf("the daemon set volumes: %+v", ds.Spec.Template.Spec.Volumes)
+				t.Fatalf("the daemon set has %d volumes when it should have %d", len(ds.Spec.Template.Spec.Volumes), 2)
+			}
+
+			for _, v := range ds.Spec.Template.Spec.Volumes {
+				path, ok := tc.expectedVolumes[v.Name]
+				if !ok {
+					t.Fatalf("the volume %q does not exist under expected volumes %v", v.Name, tc.expectedVolumes)
 				}
-			} else {
-				if err != nil || obj == nil {
-					t.Fatalf("nil obj or non-nil err=%v", err)
+
+				if v.HostPath.Path != path {
+					t.Fatalf("the volume %q path %q does not have expected value %q", v.Name, v.HostPath.Path, path)
+				}
+			}
+
+			rteContainer := ds.Spec.Template.Spec.Containers[0]
+			if len(rteContainer.VolumeMounts) != 3 {
+				klog.Errorf("the daemon set container volume mounts: %+v", rteContainer.VolumeMounts)
+				t.Fatalf("the daemon set container has %d volume mounts when it should have %d", len(rteContainer.VolumeMounts), 2)
+			}
+
+			for _, m := range rteContainer.VolumeMounts {
+				path, ok := tc.expectedVolumeMounts[m.Name]
+				if !ok {
+					t.Fatalf("the volume mount %q does not exist under expected volumes mounts %v", m.Name, tc.expectedVolumeMounts)
+				}
+
+				if m.MountPath != path {
+					t.Fatalf("the volume mount %q path %q does not have expected value %q", m.Name, m.MountPath, path)
+				}
+			}
+
+			containerCommand := strings.Join(rteContainer.Command, " ")
+			for _, arg := range tc.expectedCommandArgs {
+				if !strings.Contains(containerCommand, arg) {
+					t.Fatalf("the container command %q does not container argument %q", containerCommand, arg)
 				}
 			}
 		})
+	}
+}
+
+func TestMachineConfig(t *testing.T) {
+	mc, err := MachineConfig(ComponentResourceTopologyExporter)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	ignitionConfig := &igntypes.Config{}
+	if err := json.Unmarshal(mc.Spec.Config.Raw, ignitionConfig); err != nil {
+		t.Fatalf("failed to unmarshal ignition config: %v", err)
+	}
+
+	// we are expecting to have 3 files
+	// 1. OCI hook configuration
+	// 2. OCI hook script
+	// 3. SELinux policy
+	if len(ignitionConfig.Storage.Files) != 3 {
+		klog.Errorf("ignition config files: %+v", ignitionConfig.Storage.Files)
+		t.Fatalf("the ignition config has %d files when it should have %d", len(ignitionConfig.Storage.Files), 3)
+	}
+
+	// we are expecting only one systemd unit
+	// 1. Systemd unit to install the SELinux policy
+	if len(ignitionConfig.Systemd.Units) != 1 {
+		klog.Errorf("ignition config systemd units: %+v", ignitionConfig.Systemd.Units)
+		t.Fatalf("the ignition config has %d systemd units when it should have %d", len(ignitionConfig.Systemd.Units), 1)
 	}
 }
