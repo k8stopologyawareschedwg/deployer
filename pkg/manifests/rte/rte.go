@@ -33,11 +33,13 @@ import (
 )
 
 type Manifests struct {
-	ServiceAccount *corev1.ServiceAccount
-	Role           *rbacv1.Role
-	RoleBinding    *rbacv1.RoleBinding
-	ConfigMap      *corev1.ConfigMap
-	DaemonSet      *appsv1.DaemonSet
+	ServiceAccount     *corev1.ServiceAccount
+	Role               *rbacv1.Role
+	RoleBinding        *rbacv1.RoleBinding
+	ClusterRole        *rbacv1.ClusterRole
+	ClusterRoleBinding *rbacv1.ClusterRoleBinding
+	ConfigMap          *corev1.ConfigMap
+	DaemonSet          *appsv1.DaemonSet
 
 	// OpenShift related components
 	MachineConfig             *machineconfigv1.MachineConfig
@@ -51,11 +53,13 @@ func (mf Manifests) Clone() Manifests {
 	ret := Manifests{
 		plat: mf.plat,
 		// objects
-		Role:           mf.Role.DeepCopy(),
-		RoleBinding:    mf.RoleBinding.DeepCopy(),
-		DaemonSet:      mf.DaemonSet.DeepCopy(),
-		ServiceAccount: mf.ServiceAccount.DeepCopy(),
-		ConfigMap:      mf.ConfigMap.DeepCopy(),
+		Role:               mf.Role.DeepCopy(),
+		RoleBinding:        mf.RoleBinding.DeepCopy(),
+		ClusterRole:        mf.ClusterRole.DeepCopy(),
+		ClusterRoleBinding: mf.ClusterRoleBinding.DeepCopy(),
+		DaemonSet:          mf.DaemonSet.DeepCopy(),
+		ServiceAccount:     mf.ServiceAccount.DeepCopy(),
+		ConfigMap:          mf.ConfigMap.DeepCopy(),
 	}
 
 	if mf.plat == platform.OpenShift {
@@ -95,9 +99,12 @@ func (mf Manifests) Update(options UpdateOptions) Manifests {
 		ret.ServiceAccount.Name = options.Name
 		ret.Role.Name = options.Name
 		ret.DaemonSet.Name = options.Name
+		ret.ClusterRole.Name = options.Name
+		ret.ClusterRoleBinding.Name = options.Name
 	}
 
-	manifests.UpdateRoleBinding(ret.RoleBinding, mf.ServiceAccount.Name, ret.Role.Namespace)
+	manifests.UpdateRoleBinding(ret.RoleBinding, mf.ServiceAccount.Name, ret.ServiceAccount.Namespace)
+	manifests.UpdateClusterRoleBinding(ret.ClusterRoleBinding, mf.ServiceAccount.Name, mf.ServiceAccount.Namespace)
 
 	ret.DaemonSet.Spec.Template.Spec.ServiceAccountName = mf.ServiceAccount.Name
 	manifests.UpdateResourceTopologyExporterDaemonSet(
@@ -154,6 +161,8 @@ func (mf Manifests) ToObjects() []client.Object {
 	return append(objs,
 		mf.Role,
 		mf.RoleBinding,
+		mf.ClusterRole,
+		mf.ClusterRoleBinding,
 		mf.DaemonSet,
 		mf.ServiceAccount,
 	)
@@ -183,6 +192,8 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []d
 	return append(objs,
 		deployer.WaitableObject{Obj: mf.Role},
 		deployer.WaitableObject{Obj: mf.RoleBinding},
+		deployer.WaitableObject{Obj: mf.ClusterRole},
+		deployer.WaitableObject{Obj: mf.ClusterRoleBinding},
 		deployer.WaitableObject{Obj: mf.ServiceAccount},
 		deployer.WaitableObject{
 			Obj:  mf.DaemonSet,
@@ -197,8 +208,10 @@ func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []d
 			Obj:  mf.DaemonSet,
 			Wait: func() error { return wait.DaemonSetToBeGone(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
 		},
-		{Obj: mf.RoleBinding},
 		{Obj: mf.Role},
+		{Obj: mf.RoleBinding},
+		{Obj: mf.ClusterRole},
+		{Obj: mf.ClusterRoleBinding},
 		{Obj: mf.ServiceAccount},
 	}
 	if mf.ConfigMap != nil {
@@ -251,6 +264,14 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 		return mf, err
 	}
 	mf.RoleBinding, err = manifests.RoleBinding(manifests.ComponentResourceTopologyExporter, "", namespace)
+	if err != nil {
+		return mf, err
+	}
+	mf.ClusterRole, err = manifests.ClusterRole(manifests.ComponentResourceTopologyExporter, "")
+	if err != nil {
+		return mf, err
+	}
+	mf.ClusterRoleBinding, err = manifests.ClusterRoleBinding(manifests.ComponentResourceTopologyExporter, "")
 	if err != nil {
 		return mf, err
 	}
