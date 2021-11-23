@@ -227,7 +227,7 @@ func TestGetClusterRole(t *testing.T) {
 		},
 		{
 			component:   ComponentResourceTopologyExporter,
-			expectError: true,
+			expectError: false,
 		},
 	}
 
@@ -275,7 +275,7 @@ func TestGetClusterRoleBinding(t *testing.T) {
 		},
 		{
 			component:   ComponentResourceTopologyExporter,
-			expectError: true,
+			expectError: false,
 		},
 	}
 
