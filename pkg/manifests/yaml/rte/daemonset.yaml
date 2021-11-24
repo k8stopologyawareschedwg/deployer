@@ -19,7 +19,6 @@ spec:
         - /bin/resource-topology-exporter
         - --sleep-interval=${RTE_POLL_INTERVAL}
         - --sysfs=/host-sys
-        - --kubelet-state-dir=/host-var/lib/kubelet
         - --podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock
         env:
         - name: NODE_NAME
@@ -42,9 +41,6 @@ spec:
           - name: host-sys
             mountPath: "/host-sys"
             readOnly: true
-          - name: host-conf
-            mountPath: "/host-var/lib/kubelet/config.yaml"
-            readOnly: true
           - name: host-podresources
             mountPath: "/host-var/lib/kubelet/pod-resources"
       - name: shared-pool-container
@@ -53,9 +49,6 @@ spec:
       - name: host-sys
         hostPath:
           path: "/sys"
-      - name: host-conf
-        hostPath:
-          path: "/var/lib/kubelet/config.yaml"
       - name: host-podresources
         hostPath:
           path: "/var/lib/kubelet/pod-resources"

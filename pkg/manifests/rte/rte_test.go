@@ -66,3 +66,22 @@ func TestUpdate(t *testing.T) {
 		}
 	}
 }
+
+func TestGetManifestsOpenShift(t *testing.T) {
+	mf, err := GetManifests(platform.OpenShift, "test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if mf.SecurityContextConstraint == nil {
+		t.Fatalf("no security context constraint is generated for the OpenShift platform")
+	}
+
+	if mf.MachineConfig == nil {
+		t.Fatalf("no machine config is generated for the OpenShift platform")
+	}
+
+	if mf.DaemonSet == nil {
+		t.Fatalf("no daemon set is generated for the OpenShift platform")
+	}
+}
