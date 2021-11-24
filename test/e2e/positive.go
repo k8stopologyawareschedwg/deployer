@@ -283,7 +283,7 @@ func getNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name st
 	var nrt *v1alpha1.NodeResourceTopology
 	fmt.Fprintf(ginkgo.GinkgoWriter, "looking for noderesourcetopology %q in namespace %q\n", name, namespace)
 	gomega.EventuallyWithOffset(1, func() error {
-		nrt, err = tc.TopologyV1alpha1().NodeResourceTopologies(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+		nrt, err = tc.TopologyV1alpha1().NodeResourceTopologies().Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}

@@ -299,7 +299,6 @@ func DaemonSet(component string, plat platform.Platform, namespace string) (*app
 				"--sysfs=/host-sys",
 				"--kubelet-state-dir=/host-var/lib/kubelet",
 				"--podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock",
-				fmt.Sprintf("--export-namespace=%s", namespace),
 			}
 
 			if plat == platform.OpenShift {
