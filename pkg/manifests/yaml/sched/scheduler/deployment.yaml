@@ -33,7 +33,11 @@ spec:
             port: 10251
         resources:
           requests:
-            cpu: '500m'
+            cpu: '200m'
+            memory: '500Mi'
+          limits:
+            cpu: '200m'
+            memory: '500Mi'
         volumeMounts:
         - name: scheduler-config
           mountPath: /etc/kubernetes
