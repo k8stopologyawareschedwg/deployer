@@ -4,9 +4,8 @@ go 1.16
 
 require (
 	github.com/coreos/ignition/v2 v2.7.0
-	github.com/drone/envsubst v1.0.3
 	github.com/hashicorp/go-version v1.2.0
-	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.10
+	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.12
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.14.0
 	github.com/openshift/api v0.0.0-20210924154557-a4f696157341
