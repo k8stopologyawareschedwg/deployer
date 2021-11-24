@@ -77,9 +77,8 @@ func (mf Manifests) Clone() Manifests {
 }
 
 type UpdateOptions struct {
-	Replicas               int32
-	NodeResourcesNamespace string
-	PullIfNotPresent       bool
+	Replicas         int32
+	PullIfNotPresent bool
 }
 
 func (mf Manifests) Update(logger tlog.Logger, options UpdateOptions) Manifests {
@@ -108,9 +107,6 @@ func (mf Manifests) Update(logger tlog.Logger, options UpdateOptions) Manifests 
 	ret.DPScheduler.Namespace = ret.Namespace.Name
 	ret.ConfigMap.Namespace = ret.Namespace.Name
 
-	if options.NodeResourcesNamespace != "" {
-		ret.ConfigMap = manifests.UpdateSchedulerConfigNamespaces(logger, ret.ConfigMap, options.NodeResourcesNamespace)
-	}
 	return ret
 }
 

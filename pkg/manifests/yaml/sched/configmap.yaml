@@ -40,5 +40,3 @@ data:
       - name: NodeResourceTopologyMatch
         args:
           kubeconfigpath: "" # needs to be empty string
-          namespaces:
-          - openshift-topology-aware-scheduler
