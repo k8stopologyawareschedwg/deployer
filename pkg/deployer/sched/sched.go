@@ -23,7 +23,6 @@ import (
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
-	rtemanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	schedmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
@@ -49,16 +48,9 @@ func Deploy(log tlog.Logger, opts Options) error {
 		return err
 	}
 
-	rteMf, err := rtemanifests.GetManifests(opts.Platform, "")
-	if err != nil {
-		return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
-	}
-
-	rteMf = rteMf.Update(rtemanifests.UpdateOptions{ConfigData: opts.RTEConfigData})
 	mf = mf.Update(log, schedmanifests.UpdateOptions{
-		Replicas:               opts.Replicas,
-		NodeResourcesNamespace: rteMf.DaemonSet.Name,
-		PullIfNotPresent:       opts.PullIfNotPresent,
+		Replicas:         opts.Replicas,
+		PullIfNotPresent: opts.PullIfNotPresent,
 	})
 	log.Debugf("SCD manifests loaded")
 
@@ -92,16 +84,9 @@ func Remove(log tlog.Logger, opts Options) error {
 		return err
 	}
 
-	rteMf, err := rtemanifests.GetManifests(opts.Platform, "")
-	if err != nil {
-		return fmt.Errorf("cannot get the rte manifests for sched: %w", err)
-	}
-
-	rteMf = rteMf.Update(rtemanifests.UpdateOptions{ConfigData: opts.RTEConfigData})
 	mf = mf.Update(log, schedmanifests.UpdateOptions{
-		Replicas:               opts.Replicas,
-		NodeResourcesNamespace: rteMf.DaemonSet.Namespace,
-		PullIfNotPresent:       opts.PullIfNotPresent,
+		Replicas:         opts.Replicas,
+		PullIfNotPresent: opts.PullIfNotPresent,
 	})
 	log.Debugf("SCD manifests loaded")
 

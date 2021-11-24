@@ -92,9 +92,8 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOpti
 			}
 
 			updateOpts := sched.UpdateOptions{
-				Replicas:               int32(commonOpts.Replicas),
-				NodeResourcesNamespace: rteNamespace,
-				PullIfNotPresent:       commonOpts.PullIfNotPresent,
+				Replicas:         int32(commonOpts.Replicas),
+				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			}
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
 			return renderObjects(schedManifests.Update(la, updateOpts).ToObjects())
@@ -167,9 +166,8 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	}
 
 	schedUpdateOpts := sched.UpdateOptions{
-		Replicas:               int32(commonOpts.Replicas),
-		NodeResourcesNamespace: rteNs,
-		PullIfNotPresent:       commonOpts.PullIfNotPresent,
+		Replicas:         int32(commonOpts.Replicas),
+		PullIfNotPresent: commonOpts.PullIfNotPresent,
 	}
 
 	la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
