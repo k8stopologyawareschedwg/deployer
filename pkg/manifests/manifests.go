@@ -299,6 +299,7 @@ func DaemonSet(component string, plat platform.Platform, namespace string) (*app
 
 	hostPathDirectory := corev1.HostPathDirectory
 	hostPathSocket := corev1.HostPathSocket
+	hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
 	ds.Spec.Template.Spec.Volumes = []corev1.Volume{
 		{
 			// needed to get the CPU, PCI devices and memory information
@@ -319,6 +320,16 @@ func DaemonSet(component string, plat platform.Platform, namespace string) (*app
 				},
 			},
 		},
+		{
+			// notifier file volume
+			Name: rteNotifierVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: hostNotifierDir,
+					Type: &hostPathDirectoryOrCreate,
+				},
+			},
+		},
 	}
 
 	containerPodResourcesSocket := filepath.Join("/", rtePodresourcesSocketVolumeName, "kubelet.sock")
@@ -333,25 +344,10 @@ func DaemonSet(component string, plat platform.Platform, namespace string) (*app
 			Name:      rtePodresourcesSocketVolumeName,
 			MountPath: containerPodResourcesSocket,
 		},
-	}
-
-	if plat == platform.OpenShift {
-		// notifier file volume
-		hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
-		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, corev1.Volume{
-			Name: rteNotifierVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: hostNotifierDir,
-					Type: &hostPathDirectoryOrCreate,
-				},
-			},
-		})
-
-		rteContainerVolumeMounts = append(rteContainerVolumeMounts, corev1.VolumeMount{
+		{
 			Name:      rteNotifierVolumeName,
 			MountPath: filepath.Join("/", rteNotifierVolumeName),
-		})
+		},
 	}
 
 	if plat == platform.Kubernetes {
@@ -382,6 +378,7 @@ func DaemonSet(component string, plat platform.Platform, namespace string) (*app
 				"--sleep-interval=10s",
 				fmt.Sprintf("--sysfs=%s", containerHostSysDir),
 				fmt.Sprintf("--podresources-socket=unix://%s", containerPodResourcesSocket),
+				fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
 			}
 
 			if plat == platform.OpenShift {
@@ -389,8 +386,6 @@ func DaemonSet(component string, plat platform.Platform, namespace string) (*app
 					c.Command,
 					// TODO: we should fetch the policy from the KubeletConfig CR
 					"--topology-manager-policy=single-numa-node",
-					// we add notify file only for the OpenShift, because we install CRI-O hooks only for the OpenShift
-					fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
 				)
 
 				// this is needed to put watches in the kubelet state dirs AND

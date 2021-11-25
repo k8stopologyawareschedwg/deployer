@@ -480,16 +480,19 @@ func TestDaemonSet(t *testing.T) {
 				fmt.Sprintf("--podresources-socket=unix://%s", containerPodResourcesSocket),
 				fmt.Sprintf("--kubelet-config-file=/%s/config.yaml", rteKubeletDirVolumeName),
 				fmt.Sprintf("--kubelet-state-dir=/%s", rteKubeletDirVolumeName),
+				fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
 			},
 			expectedVolumes: map[string]string{
 				rteSysVolumeName:                "/sys",
 				rtePodresourcesSocketVolumeName: "/var/lib/kubelet/pod-resources/kubelet.sock",
 				rteKubeletDirVolumeName:         "/var/lib/kubelet",
+				rteNotifierVolumeName:           "/run/rte",
 			},
 			expectedVolumeMounts: map[string]string{
 				rteSysVolumeName:                containerHostSysDir,
 				rtePodresourcesSocketVolumeName: containerPodResourcesSocket,
 				rteKubeletDirVolumeName:         fmt.Sprintf("/%s", rteKubeletDirVolumeName),
+				rteNotifierVolumeName:           fmt.Sprintf("/%s", rteNotifierVolumeName),
 			},
 		},
 	}
@@ -504,10 +507,15 @@ func TestDaemonSet(t *testing.T) {
 			// we are expecting 3 volumes
 			// 1. Host sys
 			// 2. Pod resources socket file
-			// 3. RTE notifier directory for OpenShift platform or /var/lib/kubelet for Kubernetes platform
-			if len(ds.Spec.Template.Spec.Volumes) != 3 {
+			// 3. RTE notifier directory
+			// 4. Kubelet directory only for Kubernetes platform
+			expectedVolumesNumber := 3
+			if tc.plat == platform.Kubernetes {
+				expectedVolumesNumber = 4
+			}
+			if len(ds.Spec.Template.Spec.Volumes) != expectedVolumesNumber {
 				klog.Errorf("the daemon set volumes: %+v", ds.Spec.Template.Spec.Volumes)
-				t.Fatalf("the daemon set has %d volumes when it should have %d", len(ds.Spec.Template.Spec.Volumes), 2)
+				t.Fatalf("the daemon set has %d volumes when it should have %d", len(ds.Spec.Template.Spec.Volumes), expectedVolumesNumber)
 			}
 
 			for _, v := range ds.Spec.Template.Spec.Volumes {
@@ -522,9 +530,9 @@ func TestDaemonSet(t *testing.T) {
 			}
 
 			rteContainer := ds.Spec.Template.Spec.Containers[0]
-			if len(rteContainer.VolumeMounts) != 3 {
+			if len(rteContainer.VolumeMounts) != expectedVolumesNumber {
 				klog.Errorf("the daemon set container volume mounts: %+v", rteContainer.VolumeMounts)
-				t.Fatalf("the daemon set container has %d volume mounts when it should have %d", len(rteContainer.VolumeMounts), 2)
+				t.Fatalf("the daemon set container has %d volume mounts when it should have %d", len(rteContainer.VolumeMounts), expectedVolumesNumber)
 			}
 
 			for _, m := range rteContainer.VolumeMounts {
