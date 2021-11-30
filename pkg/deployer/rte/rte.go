@@ -67,9 +67,8 @@ func Deploy(log tlog.Logger, opts Options) error {
 	}
 
 	objs := mf.ToCreatableObjects(hp, log)
-	if opts.Platform == platform.Kubernetes {
-		objs = append([]deployer.WaitableObject{{Obj: ns}}, objs...)
-	}
+	objs = append([]deployer.WaitableObject{{Obj: ns}}, objs...)
+
 	for _, wo := range objs {
 		if err := hp.CreateObject(wo.Obj); err != nil {
 			return err
@@ -113,12 +112,10 @@ func Remove(log tlog.Logger, opts Options) error {
 	log.Debugf("RTE manifests loaded")
 
 	objs := mf.ToDeletableObjects(hp, log)
-	if opts.Platform == platform.Kubernetes {
-		objs = append(objs, deployer.WaitableObject{
-			Obj:  ns,
-			Wait: func() error { return wait.NamespaceToBeGone(hp, log, ns.Name) },
-		})
-	}
+	objs = append(objs, deployer.WaitableObject{
+		Obj:  ns,
+		Wait: func() error { return wait.NamespaceToBeGone(hp, log, ns.Name) },
+	})
 	for _, wo := range objs {
 		err = hp.DeleteObject(wo.Obj)
 		if err != nil {

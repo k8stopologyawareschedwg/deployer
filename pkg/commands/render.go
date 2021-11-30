@@ -139,10 +139,7 @@ func makeRTEObjects(commonOpts *CommonOptions) ([]client.Object, string, error) 
 	})
 
 	rteObjs := mf.ToObjects()
-	if commonOpts.UserPlatform == platform.Kubernetes {
-		return append([]client.Object{ns}, rteObjs...), namespace, nil
-	}
-	return rteObjs, namespace, nil
+	return append([]client.Object{ns}, rteObjs...), namespace, nil
 }
 
 func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *renderOptions, args []string) error {
