@@ -111,12 +111,13 @@ func (mf Manifests) Update(options UpdateOptions) Manifests {
 	manifests.UpdateClusterRoleBinding(ret.ClusterRoleBinding, mf.ServiceAccount.Name, mf.ServiceAccount.Namespace)
 
 	ret.DaemonSet.Spec.Template.Spec.ServiceAccountName = mf.ServiceAccount.Name
+
+	rteConfigMapName := ""
+	if ret.ConfigMap != nil {
+		rteConfigMapName = manifests.RTEConfigMapName
+	}
 	manifests.UpdateResourceTopologyExporterDaemonSet(
-		ret.DaemonSet,
-		ret.ConfigMap,
-		options.PullIfNotPresent,
-		options.NodeSelector,
-	)
+		ret.DaemonSet, rteConfigMapName, options.PullIfNotPresent, options.NodeSelector)
 
 	if mf.plat == platform.OpenShift {
 		manifests.UpdateMachineConfig(ret.MachineConfig, options.Name, options.MachineConfigPoolSelector)
