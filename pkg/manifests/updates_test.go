@@ -87,3 +87,55 @@ func TestUpdateMetricsPort(t *testing.T) {
 		})
 	}
 }
+
+func TestAddConfigMapToDaemonSet(t *testing.T) {
+	ds := appsv1.DaemonSet{
+		Spec: appsv1.DaemonSetSpec{
+			Template: v1.PodTemplateSpec{
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{},
+					},
+				},
+			},
+		},
+	}
+	if len(ds.Spec.Template.Spec.Containers[0].VolumeMounts) != 0 {
+		t.Errorf("unexpected volume mount")
+	}
+	if len(ds.Spec.Template.Spec.Volumes) != 0 {
+		t.Errorf("unexpected volume declaration")
+	}
+
+	UpdateResourceTopologyExporterContainerConfig(&ds.Spec.Template.Spec, &ds.Spec.Template.Spec.Containers[0], "test-cfg")
+	if len(ds.Spec.Template.Spec.Containers[0].VolumeMounts) != 1 {
+		t.Errorf("missing volume mount")
+	}
+	if len(ds.Spec.Template.Spec.Volumes) != 1 {
+		t.Errorf("missing volume declaration")
+	}
+}
+
+func TestAddConfigMapToPod(t *testing.T) {
+	pod := &v1.Pod{
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{},
+			},
+		},
+	}
+	if len(pod.Spec.Containers[0].VolumeMounts) != 0 {
+		t.Errorf("unexpected volume mount")
+	}
+	if len(pod.Spec.Volumes) != 0 {
+		t.Errorf("unexpected volume declaration")
+	}
+
+	UpdateResourceTopologyExporterContainerConfig(&pod.Spec, &pod.Spec.Containers[0], "test-cfg")
+	if len(pod.Spec.Containers[0].VolumeMounts) != 1 {
+		t.Errorf("missing volume mount")
+	}
+	if len(pod.Spec.Volumes) != 1 {
+		t.Errorf("missing volume declaration")
+	}
+}
