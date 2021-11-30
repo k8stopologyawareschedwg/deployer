@@ -32,6 +32,10 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
+const (
+	configDataField = "config.yaml"
+)
+
 type Manifests struct {
 	ServiceAccount     *corev1.ServiceAccount
 	Role               *rbacv1.Role
@@ -120,12 +124,12 @@ func (mf Manifests) Update(options UpdateOptions) Manifests {
 	}
 
 	if len(options.ConfigData) > 0 {
-		ret.ConfigMap = createConfigMap(ret.DaemonSet.Name, ret.DaemonSet.Namespace, options.ConfigData)
+		ret.ConfigMap = CreateConfigMap(ret.DaemonSet.Namespace, ret.DaemonSet.Name, options.ConfigData)
 	}
 	return ret
 }
 
-func createConfigMap(name string, namespace string, configData string) *corev1.ConfigMap {
+func CreateConfigMap(namespace, name, configData string) *corev1.ConfigMap {
 	cm := &corev1.ConfigMap{
 		// TODO: why is this needed?
 		TypeMeta: metav1.TypeMeta{
@@ -137,7 +141,7 @@ func createConfigMap(name string, namespace string, configData string) *corev1.C
 			Namespace: namespace,
 		},
 		Data: map[string]string{
-			"config.yaml": configData,
+			configDataField: configData,
 		},
 	}
 	return cm
