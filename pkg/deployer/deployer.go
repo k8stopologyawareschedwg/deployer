@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/ready"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
@@ -127,7 +128,7 @@ func (hp *Helper) IsDaemonSetRunning(namespace, name string) (bool, error) {
 		return false, err
 	}
 	hp.log.Printf("daemonset %q %q desired %d scheduled %d ready %d", namespace, name, ds.Status.DesiredNumberScheduled, ds.Status.CurrentNumberScheduled, ds.Status.NumberReady)
-	return (ds.Status.DesiredNumberScheduled > 0 && ds.Status.DesiredNumberScheduled == ds.Status.NumberReady), nil
+	return ready.DaemonSet(ds), nil
 }
 
 func (hp *Helper) IsDaemonSetGone(namespace, name string) (bool, error) {
