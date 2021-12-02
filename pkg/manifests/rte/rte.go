@@ -189,9 +189,11 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []d
 	}
 
 	if mf.MachineConfig != nil {
-		// TODO: we should add functionality to wait for the MCP update
 		objs = append(objs, deployer.WaitableObject{
 			Obj: mf.MachineConfig,
+			Wait: func() error {
+				return wait.MachineConfigPoolToBeUpdated(hp, log, mf.MachineConfig.Name, mf.MachineConfig.Labels)
+			},
 		})
 	}
 
@@ -230,8 +232,10 @@ func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []d
 	}
 	if mf.MachineConfig != nil {
 		objs = append(objs, deployer.WaitableObject{
-			// TODO: we should add functionality to wait for the MCP update
 			Obj: mf.MachineConfig,
+			Wait: func() error {
+				return wait.MachineConfigPoolToBeUpdated(hp, log, mf.MachineConfig.Name, mf.MachineConfig.Labels)
+			},
 		})
 	}
 	return objs
