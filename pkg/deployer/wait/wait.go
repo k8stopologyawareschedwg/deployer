@@ -22,10 +22,15 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	machineconfigv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
+
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/ready"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
@@ -99,4 +104,48 @@ func DaemonSetToBeGone(hp *deployer.Helper, log tlog.Logger, namespace, name str
 	return wait.PollImmediate(3*time.Second, 3*time.Minute, func() (bool, error) {
 		return hp.IsDaemonSetGone(namespace, name)
 	})
+}
+
+func MachineConfigPoolToBeUpdated(hp *deployer.Helper, log tlog.Logger, name string, mcpLabels map[string]string) error {
+	// we target a single MCP anyway, so let's figure it out once outside the loop to save calls and CPU time
+	mcps, err := hp.ListMachineConfigPools()
+	if err != nil {
+		return err
+	}
+	mcp, err := findMCPByLabels(mcps, mcpLabels, log)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("wait for the machineconfig pool %q to be updated", mcp.Name)
+	return wait.PollImmediate(5*time.Second, 60*time.Minute, func() (bool, error) {
+		mcp, err := hp.GetMachineConfigPoolByName(mcp.Name)
+		if err != nil {
+			return false, err
+		}
+		return ready.MachineConfigPool(mcp, name), nil
+	})
+}
+
+func findMCPByLabels(mcps []machineconfigv1.MachineConfigPool, mcpLabels map[string]string, log tlog.Logger) (*machineconfigv1.MachineConfigPool, error) {
+	mcpSelector := &metav1.LabelSelector{
+		MatchLabels: mcpLabels,
+	}
+
+	for i := range mcps {
+		mcp := &mcps[i]
+
+		selector, err := metav1.LabelSelectorAsSelector(mcpSelector)
+		if err != nil {
+			log.Debugf("bad machine config pool selector %q", mcpSelector.String())
+			continue
+		}
+
+		mcpLabels := labels.Set(mcp.Labels)
+		if selector.Matches(mcpLabels) {
+			return mcp, nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to find MachineConfigPool for the node group with the selector %q", mcpSelector.String())
 }

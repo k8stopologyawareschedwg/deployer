@@ -26,6 +26,8 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	machineconfigv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
+
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/ready"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
@@ -142,4 +144,24 @@ func (hp *Helper) IsDaemonSetGone(namespace, name string) (bool, error) {
 	}
 	hp.log.Printf("daemonset %q %q running count %d", namespace, name, ds.Status.CurrentNumberScheduled)
 	return false, nil
+}
+
+func (hp *Helper) GetMachineConfigPoolByName(mcpName string) (*machineconfigv1.MachineConfigPool, error) {
+	key := client.ObjectKey{
+		Name: mcpName,
+	}
+	var mcp machineconfigv1.MachineConfigPool
+	err := hp.GetObject(key, &mcp)
+	if err != nil {
+		return nil, err
+	}
+	return &mcp, nil
+}
+
+func (hp *Helper) ListMachineConfigPools() ([]machineconfigv1.MachineConfigPool, error) {
+	mcps := &machineconfigv1.MachineConfigPoolList{}
+	if err := hp.cli.List(context.TODO(), mcps); err != nil {
+		return nil, err
+	}
+	return mcps.Items, nil
 }

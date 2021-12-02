@@ -18,8 +18,25 @@ package ready
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
+
+	machineconfigv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 )
 
 func DaemonSet(ds *appsv1.DaemonSet) bool {
 	return (ds.Status.DesiredNumberScheduled > 0 && ds.Status.DesiredNumberScheduled == ds.Status.NumberReady)
+}
+
+func MachineConfigPool(mcp *machineconfigv1.MachineConfigPool, mcName string) bool {
+	existing := false
+	for _, s := range mcp.Status.Configuration.Source {
+		if s.Name == mcName {
+			existing = true
+			break
+		}
+	}
+	// the Machine Config Pool still did not apply the machine config wait for one minute
+	if !existing || machineconfigv1.IsMachineConfigPoolConditionFalse(mcp.Status.Conditions, machineconfigv1.MachineConfigPoolUpdated) {
+		return false
+	}
+	return true
 }
