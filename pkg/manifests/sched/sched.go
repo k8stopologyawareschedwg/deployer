@@ -165,6 +165,7 @@ func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []d
 		// no need to remove objects created inside the namespace we just removed
 		{Obj: mf.CRBScheduler},
 		{Obj: mf.CRScheduler},
+		{Obj: mf.RBScheduler},
 		{Obj: mf.CRBController},
 		{Obj: mf.CRController},
 		{Obj: mf.RBController},
