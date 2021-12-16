@@ -79,6 +79,7 @@ func (mf Manifests) Clone() Manifests {
 type UpdateOptions struct {
 	Replicas         int32
 	PullIfNotPresent bool
+	Namespace        string
 }
 
 func (mf Manifests) Update(logger tlog.Logger, options UpdateOptions) Manifests {
@@ -94,6 +95,10 @@ func (mf Manifests) Update(logger tlog.Logger, options UpdateOptions) Manifests 
 	manifests.UpdateSchedulerPluginControllerDeployment(ret.DPController, options.PullIfNotPresent)
 	if mf.plat == platform.OpenShift {
 		ret.Namespace.Name = NamespaceOpenShift
+	}
+
+	if options.Namespace != "" {
+		ret.Namespace.Name = options.Namespace
 	}
 
 	ret.SAController.Namespace = ret.Namespace.Name
