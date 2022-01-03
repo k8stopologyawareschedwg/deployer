@@ -546,7 +546,7 @@ func TestDaemonSet(t *testing.T) {
 				}
 			}
 
-			containerCommand := strings.Join(rteContainer.Command, " ")
+			containerCommand := strings.Join(rteContainer.Args, " ")
 			for _, arg := range tc.expectedCommandArgs {
 				if !strings.Contains(containerCommand, arg) {
 					t.Fatalf("the container command %q does not container argument %q", containerCommand, arg)
