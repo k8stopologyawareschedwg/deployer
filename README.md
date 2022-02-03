@@ -4,6 +4,21 @@
 the topology-aware-scheduling on a kubernetes cluster. Additionally, the tool can validate if the cluster configuration
 is compatible to the topology-aware-scheduling requirements.
 
+## goals and rationale
+
+the `deployer` project wants to help anyone which want to work with the topology-aware scheduling stack providing:
+
+- a curated package including all the relevant components: CRD API, scheduler plugin, updater agent; a (growing) testsuite
+  and a explicit review process ensure that the component work well together.
+- a single-artifact, no-dependencies tool to verify a given kubernetes or openshift cluster configuration is compatible
+  with the topology-aware scheduling stack, offering suggestions for changes.
+- a single-artifact, no-dependecies tool to install/uninstall all the topology-aware scheduling stack on any
+  kubernetes or openshift cluster.
+- a single, up-to-date, source for all the manifests needed by the topology-aware stack components
+- a set of reusable golang packages which can be used by other golang projects to deploy/undeploy or in general
+  interact with the topology-aware stack components (e.g. operators)
+
+
 ## requirements
 
 * kubernetes >= 1.21
@@ -11,6 +26,37 @@ is compatible to the topology-aware-scheduling requirements.
 * **validation only** `kubectl` >= 1.21 in your `PATH`
 
 ## how does it work?
+
+### rendering manifests
+
+The `depoloyer` tool can render manifests for the topology-aware stack components, instead of sending them to the cluster.
+The manifests are rendered using the same code paths used by the tool internally, so they are functionally identically
+to the manifests the tool uses for its internal operations. See the `render` command:
+```
+$ deployer help render
+render all the manifests
+
+Usage:
+  deployer render [flags]
+  deployer render [command]
+
+Available Commands:
+  api              render the APIs needed for topology-aware-scheduling
+  scheduler-plugin render the scheduler plugin needed for topology-aware-scheduling
+  topology-updater render the topology updater needed for topology-aware-scheduling
+
+Flags:
+  -h, --help   help for render
+
+Global Flags:
+  -D, --debug                    enable debug log
+  -P, --platform string          platform to deploy on
+      --pull-if-not-present      force pull policies to IfNotPresent.
+  -R, --replicas int             set the replica value - where relevant. (default 1)
+      --rte-config-file string   inject rte configuration reading from this file.
+
+Use "deployer render [command] --help" for more information about a command.
+```
 
 ### deploy on a kubernetes cluster
 
