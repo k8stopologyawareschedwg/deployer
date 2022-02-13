@@ -31,6 +31,7 @@ const (
 	ComponentConfiguration   = "configuration"
 	ComponentFeatureGates    = "feature gates"
 	ComponentCPUManager      = "CPU manager"
+	ComponentMemoryManager   = "memory manager"
 	ComponentTopologyManager = "topology manager"
 )
 
@@ -43,6 +44,7 @@ const (
 const (
 	ExpectedPodResourcesFeatureGate = "KubeletPodResourcesGetAllocatable"
 	ExpectedCPUManagerPolicy        = "static"
+	ExpectedMemoryManagerPolicy     = "Static" // we need uppercase "S"
 	ExpectedTopologyManagerPolicy   = "single-numa-node"
 )
 
@@ -154,6 +156,17 @@ func ValidateClusterNodeKubeletConfig(nodeName string, nodeVersion *version.Info
 			Setting:   "reconcile period",
 			Expected:  fmt.Sprintf("in range [%v, %v]", CPUManagerReconcilePeriodMin, CPUManagerReconcilePeriodMax),
 			Detected:  fmt.Sprintf("%v", kubeletConf.CPUManagerReconcilePeriod.Duration),
+		})
+	}
+
+	if kubeletConf.MemoryManagerPolicy != ExpectedMemoryManagerPolicy {
+		vrs = append(vrs, ValidationResult{
+			Node:      nodeName,
+			Area:      AreaKubelet,
+			Component: ComponentMemoryManager,
+			Setting:   "policy",
+			Expected:  ExpectedMemoryManagerPolicy,
+			Detected:  kubeletConf.MemoryManagerPolicy,
 		})
 	}
 
