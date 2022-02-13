@@ -51,20 +51,21 @@ type validationOutput struct {
 }
 
 func validateCluster(cmd *cobra.Command, commonOpts *CommonOptions, opts *validateOptions, args []string) error {
+	vd, err := validator.NewValidator(commonOpts.DebugLog)
+	if err != nil {
+		return err
+	}
+
 	nodeList, err := nodes.GetWorkers()
 	if err != nil {
 		return err
 	}
 
-	vd := validator.Validator{
-		Log: commonOpts.DebugLog,
-	}
-	items, err := vd.ValidateClusterConfig(nodeList)
-	if err != nil {
+	if _, err := vd.ValidateClusterConfig(nodeList); err != nil {
 		return err
 	}
 
-	printValidationResults(items, opts.jsonOutput)
+	printValidationResults(vd.Results(), opts.jsonOutput)
 	return nil
 }
 

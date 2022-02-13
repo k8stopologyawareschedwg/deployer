@@ -19,10 +19,46 @@ package validator
 import (
 	"fmt"
 	"log"
+
+	"k8s.io/apimachinery/pkg/version"
+	"k8s.io/client-go/discovery"
+
+	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
+)
+
+const (
+	AreaCluster = "cluster"
+	AreaKubelet = "kubelet"
 )
 
 type Validator struct {
 	Log *log.Logger
+
+	results       []ValidationResult
+	serverVersion *version.Info
+}
+
+func NewValidatorWithDiscoveryClient(logger *log.Logger, cli *discovery.DiscoveryClient) (*Validator, error) {
+	vd := &Validator{
+		Log: logger,
+	}
+	_, err := vd.ValidateClusterVersion(cli)
+	if err != nil {
+		return nil, err
+	}
+	return vd, nil
+}
+
+func NewValidator(logger *log.Logger) (*Validator, error) {
+	cli, err := clientutil.NewDiscoveryClient()
+	if err != nil {
+		return nil, err
+	}
+	return NewValidatorWithDiscoveryClient(logger, cli)
+}
+
+func (vd *Validator) Results() []ValidationResult {
+	return vd.results
 }
 
 type ValidationResult struct {
@@ -35,6 +71,10 @@ type ValidationResult struct {
 }
 
 func (vr ValidationResult) String() string {
+	if vr.Area == AreaCluster {
+		return fmt.Sprintf("Incorrect configuration of cluster: component %q setting %q: expected %q detected %q",
+			vr.Component, vr.Setting, vr.Expected, vr.Detected)
+	}
 	return fmt.Sprintf("Incorrect configuration of node %q area %q component %q setting %q: expected %q detected %q",
 		vr.Node, vr.Area, vr.Component, vr.Setting, vr.Expected, vr.Detected)
 }

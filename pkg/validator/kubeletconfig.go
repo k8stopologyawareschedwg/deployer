@@ -21,14 +21,10 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/version"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/kubeletconfig"
-)
-
-const (
-	AreaCluster = "cluster"
-	AreaKubelet = "kubelet"
 )
 
 const (
@@ -50,7 +46,11 @@ const (
 	ExpectedTopologyManagerPolicy   = "single-numa-node"
 )
 
-func (vd Validator) ValidateClusterConfig(nodes []corev1.Node) ([]ValidationResult, error) {
+const (
+	kubeMinVersionGetAllocatable = "1.23"
+)
+
+func (vd *Validator) ValidateClusterConfig(nodes []corev1.Node) ([]ValidationResult, error) {
 	nodeNames := []string{}
 	for _, node := range nodes {
 		nodeNames = append(nodeNames, node.Name)
@@ -68,7 +68,6 @@ func (vd Validator) ValidateClusterConfig(nodes []corev1.Node) ([]ValidationResu
 
 	vrs := []ValidationResult{}
 	if len(kubeConfs) == 0 {
-		vd.Log.Printf("no worker nodes found")
 		vrs = append(vrs, ValidationResult{
 			/* no specific nodes: all are missing! */
 			Area: AreaCluster,
@@ -79,18 +78,27 @@ func (vd Validator) ValidateClusterConfig(nodes []corev1.Node) ([]ValidationResu
 		})
 	} else {
 		for nodeName, kubeletConf := range kubeConfs {
-			vrs = append(vrs, vd.ValidateNodeKubeletConfig(nodeName, kubeletConf)...)
+			vrs = append(vrs, vd.ValidateNodeKubeletConfig(nodeName, vd.serverVersion, kubeletConf)...)
 		}
 	}
+	vd.results = append(vd.results, vrs...)
 	return vrs, nil
 }
 
-func (vd Validator) ValidateNodeKubeletConfig(nodeName string, kubeletConf *kubeletconfigv1beta1.KubeletConfiguration) []ValidationResult {
+func (vd *Validator) ValidateNodeKubeletConfig(nodeName string, nodeVersion *version.Info, kubeletConf *kubeletconfigv1beta1.KubeletConfiguration) []ValidationResult {
+	vrs := ValidateClusterNodeKubeletConfig(nodeName, nodeVersion, kubeletConf)
+	result := "OK"
+	if len(vrs) > 0 {
+		result = fmt.Sprintf("%d issues found", len(vrs))
+	}
+	vd.Log.Printf("validated node %q: %s", nodeName, result)
+	return vrs
+}
+
+func ValidateClusterNodeKubeletConfig(nodeName string, nodeVersion *version.Info, kubeletConf *kubeletconfigv1beta1.KubeletConfiguration) []ValidationResult {
 	vrs := []ValidationResult{}
 
 	if kubeletConf == nil {
-		vd.Log.Printf("missing kubelet configuration for node %q", nodeName)
-
 		vrs = append(vrs, ValidationResult{
 			Node:      nodeName,
 			Area:      AreaKubelet,
@@ -102,25 +110,27 @@ func (vd Validator) ValidateNodeKubeletConfig(nodeName string, kubeletConf *kube
 		return vrs
 	}
 
-	if kubeletConf.FeatureGates == nil {
-		vrs = append(vrs, ValidationResult{
-			Node:      nodeName,
-			Area:      AreaKubelet,
-			Component: ComponentFeatureGates,
-			/* no specific Setting: all are missing! */
-			Expected: "present",
-			Detected: "missing data",
-		})
-	} else {
-		if enabled := kubeletConf.FeatureGates[ExpectedPodResourcesFeatureGate]; !enabled {
+	if needCheckFeatureGates(nodeVersion) {
+		if kubeletConf.FeatureGates == nil {
 			vrs = append(vrs, ValidationResult{
 				Node:      nodeName,
 				Area:      AreaKubelet,
 				Component: ComponentFeatureGates,
-				Setting:   ExpectedPodResourcesFeatureGate,
-				Expected:  "enabled",
-				Detected:  "disabled",
+				/* no specific Setting: all are missing! */
+				Expected: "present",
+				Detected: "missing data",
 			})
+		} else {
+			if enabled := kubeletConf.FeatureGates[ExpectedPodResourcesFeatureGate]; !enabled {
+				vrs = append(vrs, ValidationResult{
+					Node:      nodeName,
+					Area:      AreaKubelet,
+					Component: ComponentFeatureGates,
+					Setting:   ExpectedPodResourcesFeatureGate,
+					Expected:  "enabled",
+					Detected:  "disabled",
+				})
+			}
 		}
 	}
 
@@ -157,10 +167,18 @@ func (vd Validator) ValidateNodeKubeletConfig(nodeName string, kubeletConf *kube
 			Detected:  kubeletConf.TopologyManagerPolicy,
 		})
 	}
-	result := "OK"
-	if len(vrs) > 0 {
-		result = fmt.Sprintf("%d issues found", len(vrs))
-	}
-	vd.Log.Printf("validated node %q: %s", nodeName, result)
 	return vrs
+}
+
+func needCheckFeatureGates(nodeVersion *version.Info) bool {
+	if nodeVersion == nil {
+		// we don't know, we don't take any risk
+		return true
+	}
+	if nodeVersion.GitVersion == "" {
+		// ditto
+		return true
+	}
+	ok, _ := isAPIVersionAtLeast(nodeVersion.GitVersion, kubeMinVersionGetAllocatable)
+	return !ok // note NOT
 }

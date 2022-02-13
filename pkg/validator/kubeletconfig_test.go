@@ -201,13 +201,12 @@ func TestKubeletValidations(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := vd.ValidateNodeKubeletConfig(nodeName, tc.kubeletConf)
+			got := vd.ValidateNodeKubeletConfig(nodeName, tc.nodeVersion, tc.kubeletConf)
 			if !matchValidationResults(tc.expected, got) {
 				t.Fatalf("validation failed:\nexpected=%#v\ngot=%#v", tc.expected, got)
 			}
 		})
 	}
-
 }
 
 func matchValidationResults(expected, got []ValidationResult) bool {
