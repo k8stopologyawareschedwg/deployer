@@ -44,8 +44,8 @@ const (
 const (
 	ExpectedPodResourcesFeatureGate = "KubeletPodResourcesGetAllocatable"
 	ExpectedCPUManagerPolicy        = "static"
-	ExpectedMemoryManagerPolicy     = "Static" // we need uppercase "S"
-	ExpectedTopologyManagerPolicy   = "single-numa-node"
+	ExpectedMemoryManagerPolicy     = kubeletconfigv1beta1.StaticMemoryManagerPolicy
+	ExpectedTopologyManagerPolicy   = kubeletconfigv1beta1.SingleNumaNodeTopologyManagerPolicy
 )
 
 const (
