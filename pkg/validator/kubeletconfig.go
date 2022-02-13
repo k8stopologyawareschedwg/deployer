@@ -136,7 +136,7 @@ func ValidateClusterNodeKubeletConfig(nodeName string, nodeVersion *version.Info
 		}
 	}
 
-	if kubeletConf.CPUManagerPolicy != "static" {
+	if kubeletConf.CPUManagerPolicy != ExpectedCPUManagerPolicy {
 		vrs = append(vrs, ValidationResult{
 			Node:      nodeName,
 			Area:      AreaKubelet,
@@ -170,7 +170,7 @@ func ValidateClusterNodeKubeletConfig(nodeName string, nodeVersion *version.Info
 		})
 	}
 
-	if kubeletConf.TopologyManagerPolicy != "single-numa-node" {
+	if kubeletConf.TopologyManagerPolicy != ExpectedTopologyManagerPolicy {
 		vrs = append(vrs, ValidationResult{
 			Node:      nodeName,
 			Area:      AreaKubelet,
