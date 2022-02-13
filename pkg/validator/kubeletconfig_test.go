@@ -23,6 +23,7 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/version"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 )
 
@@ -32,6 +33,7 @@ func TestKubeletValidations(t *testing.T) {
 	type testCase struct {
 		name        string
 		kubeletConf *kubeletconfigv1beta1.KubeletConfiguration
+		nodeVersion *version.Info
 		expected    []ValidationResult
 	}
 
@@ -71,6 +73,24 @@ func TestKubeletValidations(t *testing.T) {
 				{
 					Node:      nodeName,
 					Area:      AreaKubelet,
+					Component: ComponentConfiguration,
+					Setting:   "CPU",
+				},
+				{
+					Node:      nodeName,
+					Area:      AreaKubelet,
+					Component: ComponentMemoryManager,
+					Setting:   "policy",
+				},
+				{
+					Node:      nodeName,
+					Area:      AreaKubelet,
+					Component: ComponentConfiguration,
+					Setting:   "memory",
+				},
+				{
+					Node:      nodeName,
+					Area:      AreaKubelet,
 					Component: ComponentTopologyManager,
 					Setting:   "policy",
 				},
@@ -86,6 +106,13 @@ func TestKubeletValidations(t *testing.T) {
 				CPUManagerReconcilePeriod: metav1.Duration{
 					Duration: 5 * time.Second,
 				},
+				MemoryManagerPolicy: ExpectedMemoryManagerPolicy,
+				ReservedMemory: []kubeletconfigv1beta1.MemoryReservation{
+					{
+						NumaNode: 1,
+					},
+				},
+				ReservedSystemCPUs:    "0,1",
 				TopologyManagerPolicy: ExpectedTopologyManagerPolicy,
 			},
 			expected: []ValidationResult{},
@@ -97,6 +124,13 @@ func TestKubeletValidations(t *testing.T) {
 				CPUManagerReconcilePeriod: metav1.Duration{
 					Duration: 5 * time.Second,
 				},
+				MemoryManagerPolicy: ExpectedMemoryManagerPolicy,
+				ReservedMemory: []kubeletconfigv1beta1.MemoryReservation{
+					{
+						NumaNode: 1,
+					},
+				},
+				ReservedSystemCPUs:    "0,1",
 				TopologyManagerPolicy: ExpectedTopologyManagerPolicy,
 			},
 			expected: []ValidationResult{
@@ -117,6 +151,13 @@ func TestKubeletValidations(t *testing.T) {
 				CPUManagerReconcilePeriod: metav1.Duration{
 					Duration: 5 * time.Second,
 				},
+				MemoryManagerPolicy: ExpectedMemoryManagerPolicy,
+				ReservedMemory: []kubeletconfigv1beta1.MemoryReservation{
+					{
+						NumaNode: 1,
+					},
+				},
+				ReservedSystemCPUs: "0,1",
 			},
 			expected: []ValidationResult{
 				{
@@ -137,6 +178,13 @@ func TestKubeletValidations(t *testing.T) {
 				CPUManagerReconcilePeriod: metav1.Duration{
 					Duration: 5 * time.Second,
 				},
+				MemoryManagerPolicy: ExpectedMemoryManagerPolicy,
+				ReservedMemory: []kubeletconfigv1beta1.MemoryReservation{
+					{
+						NumaNode: 1,
+					},
+				},
+				ReservedSystemCPUs:    "0,1",
 				TopologyManagerPolicy: "restricted",
 			},
 			expected: []ValidationResult{
@@ -154,6 +202,12 @@ func TestKubeletValidations(t *testing.T) {
 				FeatureGates: map[string]bool{
 					ExpectedPodResourcesFeatureGate: true,
 				},
+				MemoryManagerPolicy: ExpectedMemoryManagerPolicy,
+				ReservedMemory: []kubeletconfigv1beta1.MemoryReservation{
+					{
+						NumaNode: 1,
+					},
+				},
 				TopologyManagerPolicy: ExpectedTopologyManagerPolicy,
 			},
 			expected: []ValidationResult{
@@ -170,6 +224,12 @@ func TestKubeletValidations(t *testing.T) {
 					Component: ComponentCPUManager,
 					Setting:   "reconcile period",
 				},
+				{
+					Node:      nodeName,
+					Area:      AreaKubelet,
+					Component: ComponentConfiguration,
+					Setting:   "CPU",
+				},
 			},
 		},
 		{
@@ -182,6 +242,13 @@ func TestKubeletValidations(t *testing.T) {
 				CPUManagerReconcilePeriod: metav1.Duration{
 					Duration: 30 * time.Second,
 				},
+				MemoryManagerPolicy: ExpectedMemoryManagerPolicy,
+				ReservedMemory: []kubeletconfigv1beta1.MemoryReservation{
+					{
+						NumaNode: 1,
+					},
+				},
+				ReservedSystemCPUs:    "0,1",
 				TopologyManagerPolicy: ExpectedTopologyManagerPolicy,
 			},
 			expected: []ValidationResult{
@@ -193,6 +260,62 @@ func TestKubeletValidations(t *testing.T) {
 					Setting:   "reconcile period",
 				},
 			},
+		},
+		{
+			// CAUTION: I'm not actually sure k8s <= 1.20 had all these
+			// fields in the KubeletConfig, so we're bending the rules a bit here
+			name: "version too old, no feature gate",
+			kubeletConf: &kubeletconfigv1beta1.KubeletConfiguration{
+				FeatureGates:     map[string]bool{},
+				CPUManagerPolicy: ExpectedCPUManagerPolicy,
+				CPUManagerReconcilePeriod: metav1.Duration{
+					Duration: 5 * time.Second,
+				},
+				MemoryManagerPolicy: ExpectedMemoryManagerPolicy,
+				ReservedMemory: []kubeletconfigv1beta1.MemoryReservation{
+					{
+						NumaNode: 1,
+					},
+				},
+				ReservedSystemCPUs:    "0,1",
+				TopologyManagerPolicy: ExpectedTopologyManagerPolicy,
+			},
+			nodeVersion: &version.Info{
+				Major:      "1",
+				Minor:      "20",
+				GitVersion: "v1.20.5",
+			},
+			expected: []ValidationResult{
+				{
+					Node:      nodeName,
+					Area:      AreaKubelet,
+					Component: ComponentFeatureGates,
+				},
+			},
+		},
+		{
+			name: "version recent enough, no feature gate",
+			kubeletConf: &kubeletconfigv1beta1.KubeletConfiguration{
+				FeatureGates:     map[string]bool{},
+				CPUManagerPolicy: ExpectedCPUManagerPolicy,
+				CPUManagerReconcilePeriod: metav1.Duration{
+					Duration: 5 * time.Second,
+				},
+				MemoryManagerPolicy: ExpectedMemoryManagerPolicy,
+				ReservedMemory: []kubeletconfigv1beta1.MemoryReservation{
+					{
+						NumaNode: 1,
+					},
+				},
+				ReservedSystemCPUs:    "0,1",
+				TopologyManagerPolicy: ExpectedTopologyManagerPolicy,
+			},
+			nodeVersion: &version.Info{
+				Major:      "1",
+				Minor:      "23",
+				GitVersion: "v1.23.1",
+			},
+			expected: []ValidationResult{},
 		},
 	}
 

@@ -158,6 +158,16 @@ func ValidateClusterNodeKubeletConfig(nodeName string, nodeVersion *version.Info
 			Detected:  fmt.Sprintf("%v", kubeletConf.CPUManagerReconcilePeriod.Duration),
 		})
 	}
+	if kubeletConf.ReservedSystemCPUs == "" {
+		vrs = append(vrs, ValidationResult{
+			Node:      nodeName,
+			Area:      AreaKubelet,
+			Component: ComponentConfiguration,
+			Setting:   "CPU",
+			Expected:  "reserved some CPU cores",
+			Detected:  "no reserved CPU cores",
+		})
+	}
 
 	if kubeletConf.MemoryManagerPolicy != ExpectedMemoryManagerPolicy {
 		vrs = append(vrs, ValidationResult{
@@ -167,6 +177,17 @@ func ValidateClusterNodeKubeletConfig(nodeName string, nodeVersion *version.Info
 			Setting:   "policy",
 			Expected:  ExpectedMemoryManagerPolicy,
 			Detected:  kubeletConf.MemoryManagerPolicy,
+		})
+	}
+
+	if len(kubeletConf.ReservedMemory) == 0 {
+		vrs = append(vrs, ValidationResult{
+			Node:      nodeName,
+			Area:      AreaKubelet,
+			Component: ComponentConfiguration,
+			Setting:   "memory",
+			Expected:  "reserved memory blocks",
+			Detected:  "no reserved memory blocks",
 		})
 	}
 
