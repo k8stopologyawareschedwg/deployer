@@ -6,6 +6,17 @@ kubeadmConfigPatches:
   cpuManagerPolicy: "static"
   topologyManagerPolicy: "single-numa-node"
   reservedSystemCPUs: "0"
+  memoryManagerPolicy: "Static"
+  evictionHard:
+    memory.available: "100Mi"
+  kubeReserved: 
+    memory: "256Mi"
+  reservedMemory:
+    - numaNode: 0
+      limits:
+        memory: "612Mi"
+  systemReserved: 
+    memory: "256Mi"
   featureGates:
     KubeletPodResourcesGetAllocatable: true
 nodes:
