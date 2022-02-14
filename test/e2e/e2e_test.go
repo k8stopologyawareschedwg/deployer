@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/onsi/ginkgo"
@@ -53,6 +54,15 @@ var _ = ginkgo.BeforeSuite(func() {
 type validationOutput struct {
 	Success bool                         `json:"success"`
 	Errors  []validator.ValidationResult `json:"errors,omitempty"`
+}
+
+func (vo validationOutput) String() string {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "validation: success=%t\n", vo.Success)
+	for _, vErr := range vo.Errors {
+		fmt.Fprintf(&sb, "validation: error: %s\n", vErr.String())
+	}
+	return sb.String()
 }
 
 type detectionOutput struct {

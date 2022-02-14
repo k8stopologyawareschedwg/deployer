@@ -3,6 +3,7 @@ module github.com/k8stopologyawareschedwg/deployer
 go 1.16
 
 require (
+	github.com/aquasecurity/go-version v0.0.0-20210121072130-637058cfe492
 	github.com/coreos/ignition/v2 v2.7.0
 	github.com/hashicorp/go-version v1.2.0
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.12
@@ -16,6 +17,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.22.3
 	k8s.io/apimachinery v0.22.3
 	k8s.io/client-go v0.22.3
+	k8s.io/klog/v2 v2.10.0
 	k8s.io/kube-scheduler v0.22.3
 	k8s.io/kubelet v0.22.3
 	k8s.io/kubernetes v1.22.3 // indirect

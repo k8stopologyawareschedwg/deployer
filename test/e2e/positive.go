@@ -173,8 +173,8 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer validation", func() {
 			if err := json.Unmarshal(out, &vo); err != nil {
 				ginkgo.Fail(fmt.Sprintf("Error unmarshalling output %q: %v", out, err))
 			}
-			gomega.Expect(vo.Success).To(gomega.BeTrue())
-			gomega.Expect(vo.Errors).To(gomega.BeEmpty())
+			gomega.Expect(vo.Errors).To(gomega.BeEmpty(), "unexpected validation: %s", vo.String())
+			gomega.Expect(vo.Success).To(gomega.BeTrue(), "unexpected validation: %s", vo.String())
 		})
 	})
 })
