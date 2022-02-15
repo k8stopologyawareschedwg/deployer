@@ -50,11 +50,17 @@ jobs:
       run: |
         _out/e2e.test -ginkgo.focus='\[PositiveFlow\]'
 
+    - name: render manifests
+      run: |
+        make release-manifests-k8s
+
     - name: fix build artifacts
       run: |
         mv _out/deployer deployer-${{ env.RELEASE_VERSION }}-linux-amd64
+        mv _out/deployer-manifests-allinone.yaml deployer-manifests-allinone-${{ env.RELEASE_VERSION }}.yaml
         make clean outdir
         mv deployer-${{ env.RELEASE_VERSION}}-linux-amd64 _out/
+        mv deployer-manifests-allinone-${{ env.RELEASE_VERSION}}.yaml _out/
 
     - name: compute signature
       run: |
