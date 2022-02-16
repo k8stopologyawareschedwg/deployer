@@ -56,15 +56,12 @@ jobs:
 
     - name: fix build artifacts
       run: |
-        mv _out/deployer deployer-${{ env.RELEASE_VERSION }}-linux-amd64
-        mv _out/deployer-manifests-allinone.yaml deployer-manifests-allinone-${{ env.RELEASE_VERSION }}.yaml
-        make clean outdir
-        mv deployer-${{ env.RELEASE_VERSION}}-linux-amd64 _out/
-        mv deployer-manifests-allinone-${{ env.RELEASE_VERSION}}.yaml _out/
+        cp _out/deployer _out/deployer-${{ env.RELEASE_VERSION }}-linux-amd64
+        cp _out/deployer-manifests-allinone.yaml _out/deployer-manifests-allinone-${{ env.RELEASE_VERSION }}.yaml
 
     - name: compute signature
       run: |
-        pushd _out && sha256sum * >> ../SHA256SUMS && mv ../SHA256SUMS . && popd
+        hack/make-checksum.sh ${{ env.RELEASE_VERSION }}
 
     - name: upload build artifacts
       uses: actions/upload-artifact@v2
