@@ -34,6 +34,10 @@ deployer: outdir update-version
 outdir:
 	@mkdir -p _out || :
 
+.PHONY: release-manifests
+release-manifests-k8s: deployer
+	@_out/deployer -P kubernetes render > _out/deployer-manifests-allinone.yaml
+
 .PHONY: test-unit
 test-unit:
 	go test ./pkg/...
