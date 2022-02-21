@@ -40,6 +40,10 @@ jobs:
       run: |
         make
 
+    - name: render manifests
+      run: |
+        make release-manifests-k8s
+
     - name: create K8S kind cluster
       run: |
         # kind is part of 20.04 image, see: https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
@@ -49,10 +53,6 @@ jobs:
     - name: run E2E tests
       run: |
         _out/e2e.test -ginkgo.focus='\[PositiveFlow\]'
-
-    - name: render manifests
-      run: |
-        make release-manifests-k8s
 
     - name: fix build artifacts
       run: |
@@ -100,5 +100,5 @@ jobs:
     - name: create release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "SHA256SUMS,deployer-v*-linux-amd64"
+        artifacts: "SHA256SUMS,deployer-v*-linux-amd64,deployer*.yaml"
         token: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
