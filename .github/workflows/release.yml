@@ -57,7 +57,7 @@ jobs:
     - name: fix build artifacts
       run: |
         cp _out/deployer _out/deployer-${{ env.RELEASE_VERSION }}-linux-amd64
-        cp _out/deployer-manifests-allinone.yaml _out/deployer-manifests-allinone-${{ env.RELEASE_VERSION }}.yaml
+        cp _out/deployer-manifests-allinone.yaml _out/deployer-${{ env.RELEASE_VERSION }}-manifests-allinone.yaml
 
     - name: compute signature
       run: |
@@ -100,5 +100,5 @@ jobs:
     - name: create release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "SHA256SUMS,deployer-v*-linux-amd64,deployer*.yaml"
+        artifacts: "SHA256SUMS,deployer-v*-linux-amd64,deployer-v*-.yaml"
         token: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
