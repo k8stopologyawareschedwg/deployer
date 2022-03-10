@@ -49,11 +49,14 @@ const (
 	ComponentAPI                      = "api"
 	ComponentSchedulerPlugin          = "sched"
 	ComponentResourceTopologyExporter = "rte"
+	ComponentNodeFeatureDiscovery     = "nfd"
 )
 
 const (
-	SubComponentSchedulerPluginScheduler  = "scheduler"
-	SubComponentSchedulerPluginController = "controller"
+	SubComponentSchedulerPluginScheduler            = "scheduler"
+	SubComponentSchedulerPluginController           = "controller"
+	SubComponentNodeFeatureDiscoveryMaster          = "master"
+	SubComponentNodeFeatureDiscoveryTopologyUpdater = "topologyupdater"
 )
 
 const (
@@ -71,6 +74,8 @@ const (
 
 const (
 	containerNameRTE                = "resource-topology-exporter"
+	containerNameNFDTopologyUpdater = "nfd-topology-updater"
+	containerNameNFDMaster          = "nfd-master"
 	rteNotifierVolumeName           = "host-run-rte"
 	rteSysVolumeName                = "host-sys"
 	rtePodresourcesSocketVolumeName = "host-podresources-socket"
@@ -264,14 +269,14 @@ func ConfigMap(component, subComponent string) (*corev1.ConfigMap, error) {
 	return crd, nil
 }
 
-func Deployment(component, subComponent string) (*appsv1.Deployment, error) {
+func Deployment(component, subComponent, namespace string) (*appsv1.Deployment, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
 	if err := validateSubComponent(component, subComponent); err != nil {
 		return nil, err
 	}
-	obj, err := loadObject(filepath.Join("yaml", "sched", subComponent, "deployment.yaml"))
+	obj, err := loadObject(filepath.Join("yaml", component, subComponent, "deployment.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -280,14 +285,21 @@ func Deployment(component, subComponent string) (*appsv1.Deployment, error) {
 	if !ok {
 		return nil, fmt.Errorf("unexpected type, got %t", obj)
 	}
+
+	if namespace != "" {
+		dp.Namespace = namespace
+	}
 	return dp, nil
 }
 
-func DaemonSet(component string, plat platform.Platform, namespace string) (*appsv1.DaemonSet, error) {
+func DaemonSet(component, subComponent string, plat platform.Platform, namespace string) (*appsv1.DaemonSet, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
-	obj, err := loadObject(filepath.Join("yaml", component, "daemonset.yaml"))
+	if err := validateSubComponent(component, subComponent); err != nil {
+		return nil, err
+	}
+	obj, err := loadObject(filepath.Join("yaml", component, subComponent, "daemonset.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -628,7 +640,7 @@ func loadObject(path string) (runtime.Object, error) {
 }
 
 func validateComponent(component string) error {
-	if component == "api" || component == "rte" || component == "sched" {
+	if component == "api" || component == "rte" || component == "nfd" || component == "sched" {
 		return nil
 	}
 	return fmt.Errorf("unknown component: %q", component)
@@ -639,6 +651,9 @@ func validateSubComponent(component, subComponent string) error {
 		return nil
 	}
 	if component == "sched" && (subComponent == "controller" || subComponent == "scheduler") {
+		return nil
+	}
+	if component == "nfd" && (subComponent == "topologyupdater" || subComponent == "master") {
 		return nil
 	}
 	return fmt.Errorf("unknown subComponent %q for component: %q", subComponent, component)

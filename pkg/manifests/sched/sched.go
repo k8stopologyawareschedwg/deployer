@@ -211,7 +211,7 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
-	mf.DPScheduler, err = manifests.Deployment(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler)
+	mf.DPScheduler, err = manifests.Deployment(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, "")
 	if err != nil {
 		return mf, err
 	}
@@ -232,7 +232,7 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
-	mf.DPController, err = manifests.Deployment(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController)
+	mf.DPController, err = manifests.Deployment(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController, "")
 	if err != nil {
 		return mf, err
 	}

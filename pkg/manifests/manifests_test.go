@@ -391,7 +391,7 @@ func TestGetDeployment(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.component, func(t *testing.T) {
-			obj, err := Deployment(tc.component, tc.subComponent)
+			obj, err := Deployment(tc.component, tc.subComponent, "")
 			if tc.expectError {
 				if err == nil || obj != nil {
 					t.Fatalf("nil err or non-nil obj=%v", obj)
@@ -407,8 +407,9 @@ func TestGetDeployment(t *testing.T) {
 
 func TestGetDaemonSet(t *testing.T) {
 	type testCase struct {
-		component   string
-		expectError bool
+		component    string
+		subComponent string
+		expectError  bool
 	}
 
 	testCases := []testCase{
@@ -432,7 +433,7 @@ func TestGetDaemonSet(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.component, func(t *testing.T) {
-			_, err := DaemonSet(tc.component, platform.Kubernetes, "")
+			_, err := DaemonSet(tc.component, tc.subComponent, platform.Kubernetes, "")
 			if (err != nil) != tc.expectError {
 				t.Fatalf("nil obj or non-nil err=%v", err)
 			}
@@ -499,7 +500,7 @@ func TestDaemonSet(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ds, err := DaemonSet(ComponentResourceTopologyExporter, tc.plat, "test")
+			ds, err := DaemonSet(ComponentResourceTopologyExporter, "", tc.plat, "test")
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
