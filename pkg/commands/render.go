@@ -24,10 +24,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
-	rtedeploy "github.com/k8stopologyawareschedwg/deployer/pkg/deployer/rte"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
-	rtemanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
@@ -81,12 +80,12 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOpti
 				return fmt.Errorf("must explicitely select a cluster platform")
 			}
 
-			_, rteNamespace, err := rtedeploy.SetupNamespace()
+			_, namespace, err := updaters.SetupNamespace(commonOpts.UpdaterType)
 			if err != nil {
 				return err
 			}
 
-			schedManifests, err := sched.GetManifests(commonOpts.UserPlatform, rteNamespace)
+			schedManifests, err := sched.GetManifests(commonOpts.UserPlatform, namespace)
 			if err != nil {
 				return err
 			}
@@ -111,7 +110,7 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOpti
 			if commonOpts.UserPlatform == platform.Unknown {
 				return fmt.Errorf("must explicitely select a cluster platform")
 			}
-			objs, _, err := makeRTEObjects(commonOpts)
+			objs, _, err := makeUpdaterObjects(commonOpts)
 			if err != nil {
 				return err
 			}
@@ -122,24 +121,23 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOpti
 	return render
 }
 
-func makeRTEObjects(commonOpts *CommonOptions) ([]client.Object, string, error) {
-	ns, namespace, err := rtedeploy.SetupNamespace()
+func makeUpdaterObjects(commonOpts *CommonOptions) ([]client.Object, string, error) {
+	ns, namespace, err := updaters.SetupNamespace(commonOpts.UpdaterType)
 	if err != nil {
 		return nil, namespace, err
 	}
 
-	mf, err := rtemanifests.GetManifests(commonOpts.UserPlatform, namespace)
-	if err != nil {
-		return nil, namespace, err
-	}
-	mf = mf.Render(rtemanifests.RenderOptions{
-		ConfigData:       commonOpts.RTEConfigData,
+	opts := updaters.Options{
+		Platform:         commonOpts.UserPlatform,
 		PullIfNotPresent: commonOpts.PullIfNotPresent,
-		Namespace:        namespace,
-	})
+		RTEConfigData:    commonOpts.RTEConfigData,
+	}
+	objs, err := updaters.GetObjects(opts, commonOpts.UpdaterType, namespace)
+	if err != nil {
+		return nil, namespace, err
+	}
 
-	rteObjs := mf.ToObjects()
-	return append([]client.Object{ns}, rteObjs...), namespace, nil
+	return append([]client.Object{ns}, objs...), namespace, nil
 }
 
 func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *renderOptions, args []string) error {
@@ -151,13 +149,13 @@ func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *render
 	}
 	objs = append(objs, apiManifests.Render().ToObjects()...)
 
-	rteObjs, rteNs, err := makeRTEObjects(commonOpts)
+	updaterObjs, updaterNs, err := makeUpdaterObjects(commonOpts)
 	if err != nil {
 		return err
 	}
-	objs = append(objs, rteObjs...)
+	objs = append(objs, updaterObjs...)
 
-	schedManifests, err := sched.GetManifests(commonOpts.UserPlatform, rteNs)
+	schedManifests, err := sched.GetManifests(commonOpts.UserPlatform, updaterNs)
 	if err != nil {
 		return err
 	}

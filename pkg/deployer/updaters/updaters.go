@@ -11,62 +11,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Copyright 2021 Red Hat, Inc.
+ * Copyright 2022 Red Hat, Inc.
  */
 
-package rte
+package updaters
 
 import (
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
-	rtemanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
+)
+
+const (
+	RTE string = "RTE"
+	NFD string = "NFD"
 )
 
 type Options struct {
 	Platform         platform.Platform
 	WaitCompletion   bool
-	RTEConfigData    string
 	PullIfNotPresent bool
+	RTEConfigData    string
 }
 
-func SetupNamespace() (*corev1.Namespace, string, error) {
-	ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
-	if err != nil {
-		return nil, "", err
-	}
-	return ns, ns.Name, nil
-}
-
-func Deploy(log tlog.Logger, opts Options) error {
+func Deploy(log tlog.Logger, updaterType string, opts Options) error {
 	log.Printf("deploying topology-aware-scheduling topology updater...")
 
-	ns, namespace, err := SetupNamespace()
+	ns, namespace, err := SetupNamespace(updaterType)
 	if err != nil {
 		return err
 	}
 
-	mf, err := rtemanifests.GetManifests(opts.Platform, namespace)
-	if err != nil {
-		return err
-	}
-	mf = mf.Render(rtemanifests.RenderOptions{
-		ConfigData:       opts.RTEConfigData,
-		PullIfNotPresent: opts.PullIfNotPresent,
-		Namespace:        namespace,
-	})
-	log.Debugf("RTE manifests loaded")
-
-	hp, err := deployer.NewHelper("RTE", log)
+	hp, err := deployer.NewHelper(updaterType, log)
 	if err != nil {
 		return err
 	}
 
-	objs := mf.ToCreatableObjects(hp, log)
+	objs, err := getCreatableObjects(opts, hp, log, updaterType, namespace)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("%s manifests loaded", updaterType)
+
 	objs = append([]deployer.WaitableObject{{Obj: ns}}, objs...)
 
 	for _, wo := range objs {
@@ -81,37 +74,32 @@ func Deploy(log tlog.Logger, opts Options) error {
 		}
 	}
 
-	log.Printf("...deployed topology-aware-scheduling topology updater!")
+	log.Printf("...deployed topology-aware-scheduling [%s] topology updater!", updaterType)
 	return nil
 }
 
-func Remove(log tlog.Logger, opts Options) error {
+func Remove(log tlog.Logger, updaterType string, opts Options) error {
 	var err error
 	log.Printf("removing topology-aware-scheduling topology updater...")
 
-	hp, err := deployer.NewHelper("RTE", log)
+	hp, err := deployer.NewHelper(updaterType, log)
 	if err != nil {
 		return err
 	}
 
-	ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
+	ns, err := manifests.Namespace(updaterTypeAsComponent(updaterType))
 	if err != nil {
 		return err
 	}
 	namespace := ns.Name
 
-	mf, err := rtemanifests.GetManifests(opts.Platform, namespace)
+	objs, err := getDeletableObjects(opts, hp, log, updaterType, namespace)
 	if err != nil {
 		return err
 	}
-	mf = mf.Render(rtemanifests.RenderOptions{
-		ConfigData:       opts.RTEConfigData,
-		PullIfNotPresent: opts.PullIfNotPresent,
-		Namespace:        namespace,
-	})
-	log.Debugf("RTE manifests loaded")
 
-	objs := mf.ToDeletableObjects(hp, log)
+	log.Debugf("%s manifests loaded", updaterType)
+
 	objs = append(objs, deployer.WaitableObject{
 		Obj:  ns,
 		Wait: func() error { return wait.NamespaceToBeGone(hp, log, ns.Name) },
@@ -135,4 +123,17 @@ func Remove(log tlog.Logger, opts Options) error {
 
 	log.Printf("...removed topology-aware-scheduling topology updater!")
 	return nil
+}
+
+func SetupNamespace(updaterType string) (*corev1.Namespace, string, error) {
+	ns, err := manifests.Namespace(updaterTypeAsComponent(updaterType))
+	if err != nil {
+		return nil, "", err
+	}
+	return ns, ns.Name, nil
+}
+
+func updaterTypeAsComponent(updaterType string) string {
+	// this relation is loose, but we're validating it before use
+	return strings.ToLower(updaterType)
 }
