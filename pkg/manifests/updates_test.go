@@ -17,6 +17,8 @@
 package manifests
 
 import (
+	"github.com/google/go-cmp/cmp"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -137,5 +139,101 @@ func TestAddConfigMapToPod(t *testing.T) {
 	}
 	if len(pod.Spec.Volumes) != 1 {
 		t.Errorf("missing volume declaration")
+	}
+}
+
+func TestUpdateNFDTopologyUpdaterDaemonSet(t *testing.T) {
+	ds := &appsv1.DaemonSet{
+		Spec: appsv1.DaemonSetSpec{
+			Template: v1.PodTemplateSpec{
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{},
+					},
+				},
+			},
+		},
+	}
+
+	testCases := []struct {
+		cntName          string
+		pullIfNotPresent bool
+		nodeSelector     *metav1.LabelSelector
+	}{
+		{
+			cntName:          containerNameNFDTopologyUpdater,
+			pullIfNotPresent: false,
+			nodeSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"foo": "bar"},
+			},
+		},
+		{
+			cntName:          containerNameNFDMaster,
+			pullIfNotPresent: true,
+			nodeSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"foo": "bar"},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		mutatedDs := ds.DeepCopy()
+		pSpec := &mutatedDs.Spec.Template.Spec
+		pSpec.Containers[0].Name = tc.cntName
+		UpdateNFDTopologyUpdaterDaemonSet(mutatedDs, tc.pullIfNotPresent, tc.nodeSelector)
+		if tc.cntName == containerNameNFDTopologyUpdater {
+			if pSpec.Containers[0].ImagePullPolicy != pullPolicy(tc.pullIfNotPresent) {
+				t.Errorf("expected container ImagePullPolicy to be: %q; got: %q", pullPolicy(tc.pullIfNotPresent), pSpec.Containers[0].ImagePullPolicy)
+			}
+			if !cmp.Equal(pSpec.NodeSelector, tc.nodeSelector.MatchLabels) {
+				t.Errorf("expected NodeSelector to be: %v; got: %v", tc.nodeSelector.MatchLabels, pSpec.NodeSelector)
+			}
+		} else {
+			if pSpec.Containers[0].ImagePullPolicy != "" {
+				t.Errorf("container name is other than %q, no changes to container are expected", containerNameNFDTopologyUpdater)
+			}
+		}
+	}
+}
+
+func TestUpdateNFDMasterDeployment(t *testing.T) {
+	dp := &appsv1.Deployment{
+		Spec: appsv1.DeploymentSpec{
+			Template: v1.PodTemplateSpec{
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{},
+					},
+				},
+			},
+		},
+	}
+
+	testCases := []struct {
+		cntName          string
+		pullIfNotPresent bool
+	}{
+		{
+			cntName:          containerNameNFDMaster,
+			pullIfNotPresent: true,
+		},
+		{
+			cntName:          "foo",
+			pullIfNotPresent: true,
+		},
+	}
+	for _, tc := range testCases {
+		mutatedDp := dp.DeepCopy()
+		pSpec := &mutatedDp.Spec.Template.Spec
+		pSpec.Containers[0].Name = tc.cntName
+		UpdateNFDMasterDeployment(mutatedDp, tc.pullIfNotPresent)
+		if tc.cntName == containerNameNFDMaster {
+			if pSpec.Containers[0].ImagePullPolicy != pullPolicy(tc.pullIfNotPresent) {
+				t.Errorf("expected container ImagePullPolicy to be: %q; got: %q", pullPolicy(tc.pullIfNotPresent), pSpec.Containers[0].ImagePullPolicy)
+			}
+		} else {
+			if pSpec.Containers[0].ImagePullPolicy != "" {
+				t.Errorf("container name is other than %q, no changes to container are expected", containerNameNFDMaster)
+			}
+		}
 	}
 }
