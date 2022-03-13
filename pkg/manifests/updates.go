@@ -96,6 +96,7 @@ func UpdateNFDTopologyUpdaterDaemonSet(ds *appsv1.DaemonSet, pullIfNotPresent bo
 			continue
 		}
 		c.ImagePullPolicy = pullPolicy(pullIfNotPresent)
+		c.Image = images.NodeFeatureDiscoveryImage
 
 	}
 	if nodeSelector != nil {
@@ -110,6 +111,7 @@ func UpdateNFDMasterDeployment(ds *appsv1.Deployment, pullIfNotPresent bool) {
 			continue
 		}
 		c.ImagePullPolicy = pullPolicy(pullIfNotPresent)
+		c.Image = images.NodeFeatureDiscoveryImage
 	}
 }
 
