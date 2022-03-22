@@ -22,7 +22,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"path/filepath"
 	"text/template"
 
@@ -34,7 +33,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeschedulerconfigv1beta1 "k8s.io/kube-scheduler/config/v1beta1"
 	"k8s.io/utils/pointer"
@@ -603,28 +601,6 @@ func NodeResourceTopologyMatchArgsToData(ma *apiconfig.NodeResourceTopologyMatch
 		Namespaces:     ma.Namespaces,
 	}
 	return json.Marshal(cfg)
-}
-
-func SerializeObject(obj runtime.Object, out io.Writer) error {
-	srz := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-	return srz.Encode(obj, out)
-}
-
-func deserializeObjectFromData(data []byte) (runtime.Object, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode(data, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-	return obj, nil
-}
-
-func loadObject(path string) (runtime.Object, error) {
-	data, err := src.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	return deserializeObjectFromData(data)
 }
 
 func validateComponent(component string) error {
