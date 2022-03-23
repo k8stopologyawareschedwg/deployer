@@ -47,11 +47,14 @@ const (
 	ComponentAPI                      = "api"
 	ComponentSchedulerPlugin          = "sched"
 	ComponentResourceTopologyExporter = "rte"
+	ComponentNodeFeatureDiscovery     = "nfd"
 )
 
 const (
-	SubComponentSchedulerPluginScheduler  = "scheduler"
-	SubComponentSchedulerPluginController = "controller"
+	SubComponentSchedulerPluginScheduler            = "scheduler"
+	SubComponentSchedulerPluginController           = "controller"
+	SubComponentNodeFeatureDiscoveryMaster          = "master"
+	SubComponentNodeFeatureDiscoveryTopologyUpdater = "topologyupdater"
 )
 
 const (
@@ -69,6 +72,8 @@ const (
 
 const (
 	containerNameRTE                = "resource-topology-exporter"
+	containerNameNFDTopologyUpdater = "nfd-topology-updater"
+	containerNameNFDMaster          = "nfd-master"
 	rteNotifierVolumeName           = "host-run-rte"
 	rteSysVolumeName                = "host-sys"
 	rtePodresourcesSocketVolumeName = "host-podresources-socket"
@@ -262,14 +267,14 @@ func ConfigMap(component, subComponent string) (*corev1.ConfigMap, error) {
 	return crd, nil
 }
 
-func Deployment(component, subComponent string) (*appsv1.Deployment, error) {
+func Deployment(component, subComponent, namespace string) (*appsv1.Deployment, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
 	if err := validateSubComponent(component, subComponent); err != nil {
 		return nil, err
 	}
-	obj, err := loadObject(filepath.Join("yaml", "sched", subComponent, "deployment.yaml"))
+	obj, err := loadObject(filepath.Join("yaml", component, subComponent, "deployment.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -278,14 +283,21 @@ func Deployment(component, subComponent string) (*appsv1.Deployment, error) {
 	if !ok {
 		return nil, fmt.Errorf("unexpected type, got %t", obj)
 	}
+
+	if namespace != "" {
+		dp.Namespace = namespace
+	}
 	return dp, nil
 }
 
-func DaemonSet(component string, plat platform.Platform, namespace string) (*appsv1.DaemonSet, error) {
+func DaemonSet(component, subComponent string, plat platform.Platform, namespace string) (*appsv1.DaemonSet, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
-	obj, err := loadObject(filepath.Join("yaml", component, "daemonset.yaml"))
+	if err := validateSubComponent(component, subComponent); err != nil {
+		return nil, err
+	}
+	obj, err := loadObject(filepath.Join("yaml", component, subComponent, "daemonset.yaml"))
 	if err != nil {
 		return nil, err
 	}
@@ -295,120 +307,121 @@ func DaemonSet(component string, plat platform.Platform, namespace string) (*app
 		return nil, fmt.Errorf("unexpected type, got %t", obj)
 	}
 
-	hostPathDirectory := corev1.HostPathDirectory
-	hostPathSocket := corev1.HostPathSocket
-	hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
-	ds.Spec.Template.Spec.Volumes = []corev1.Volume{
-		{
-			// needed to get the CPU, PCI devices and memory information
-			Name: rteSysVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/sys",
-					Type: &hostPathDirectory,
-				},
-			},
-		},
-		{
-			Name: rtePodresourcesSocketVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/var/lib/kubelet/pod-resources/kubelet.sock",
-					Type: &hostPathSocket,
-				},
-			},
-		},
-		{
-			// notifier file volume
-			Name: rteNotifierVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: hostNotifierDir,
-					Type: &hostPathDirectoryOrCreate,
-				},
-			},
-		},
-	}
-
-	containerPodResourcesSocket := filepath.Join("/", rtePodresourcesSocketVolumeName, "kubelet.sock")
-	containerHostSysDir := filepath.Join("/", rteSysVolumeName)
-	rteContainerVolumeMounts := []corev1.VolumeMount{
-		{
-			Name:      rteSysVolumeName,
-			ReadOnly:  true,
-			MountPath: containerHostSysDir,
-		},
-		{
-			Name:      rtePodresourcesSocketVolumeName,
-			MountPath: containerPodResourcesSocket,
-		},
-		{
-			Name:      rteNotifierVolumeName,
-			MountPath: filepath.Join("/", rteNotifierVolumeName),
-		},
-	}
-
-	if plat == platform.Kubernetes {
-		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes,
-			corev1.Volume{
-				Name: rteKubeletDirVolumeName,
+	if component == ComponentResourceTopologyExporter {
+		hostPathDirectory := corev1.HostPathDirectory
+		hostPathSocket := corev1.HostPathSocket
+		hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
+		ds.Spec.Template.Spec.Volumes = []corev1.Volume{
+			{
+				// needed to get the CPU, PCI devices and memory information
+				Name: rteSysVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/var/lib/kubelet",
+						Path: "/sys",
 						Type: &hostPathDirectory,
 					},
 				},
 			},
-		)
-		rteContainerVolumeMounts = append(rteContainerVolumeMounts, corev1.VolumeMount{
-			Name:      rteKubeletDirVolumeName,
-			ReadOnly:  true,
-			MountPath: filepath.Join("/", rteKubeletDirVolumeName),
-		})
-	}
+			{
+				Name: rtePodresourcesSocketVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/var/lib/kubelet/pod-resources/kubelet.sock",
+						Type: &hostPathSocket,
+					},
+				},
+			},
+			{
+				// notifier file volume
+				Name: rteNotifierVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: hostNotifierDir,
+						Type: &hostPathDirectoryOrCreate,
+					},
+				},
+			},
+		}
 
-	for i := range ds.Spec.Template.Spec.Containers {
-		c := &ds.Spec.Template.Spec.Containers[i]
-		if c.Name == containerNameRTE {
-			c.Image = images.ResourceTopologyExporterImage
-			// we do this explicitely, but should be already OK from the YAML manifest
-			c.Command = []string{
-				"/bin/resource-topology-exporter",
-			}
-			c.Args = []string{
-				"--sleep-interval=10s",
-				fmt.Sprintf("--sysfs=%s", containerHostSysDir),
-				fmt.Sprintf("--podresources-socket=unix://%s", containerPodResourcesSocket),
-				fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
-			}
+		containerPodResourcesSocket := filepath.Join("/", rtePodresourcesSocketVolumeName, "kubelet.sock")
+		containerHostSysDir := filepath.Join("/", rteSysVolumeName)
+		rteContainerVolumeMounts := []corev1.VolumeMount{
+			{
+				Name:      rteSysVolumeName,
+				ReadOnly:  true,
+				MountPath: containerHostSysDir,
+			},
+			{
+				Name:      rtePodresourcesSocketVolumeName,
+				MountPath: containerPodResourcesSocket,
+			},
+			{
+				Name:      rteNotifierVolumeName,
+				MountPath: filepath.Join("/", rteNotifierVolumeName),
+			},
+		}
+		if plat == platform.Kubernetes {
+			ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes,
+				corev1.Volume{
+					Name: rteKubeletDirVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						HostPath: &corev1.HostPathVolumeSource{
+							Path: "/var/lib/kubelet",
+							Type: &hostPathDirectory,
+						},
+					},
+				},
+			)
+			rteContainerVolumeMounts = append(rteContainerVolumeMounts, corev1.VolumeMount{
+				Name:      rteKubeletDirVolumeName,
+				ReadOnly:  true,
+				MountPath: filepath.Join("/", rteKubeletDirVolumeName),
+			})
+		}
 
-			if plat == platform.OpenShift {
-				c.Args = append(
-					c.Args,
-					// TODO: we should fetch the policy from the KubeletConfig CR
-					"--topology-manager-policy=single-numa-node",
-				)
-
-				// this is needed to put watches in the kubelet state dirs AND
-				// to open the podresources socket in R/W mode
-				if c.SecurityContext == nil {
-					c.SecurityContext = &corev1.SecurityContext{}
+		for i := range ds.Spec.Template.Spec.Containers {
+			c := &ds.Spec.Template.Spec.Containers[i]
+			if c.Name == containerNameRTE {
+				c.Image = images.ResourceTopologyExporterImage
+				// we do this explicitely, but should be already OK from the YAML manifest
+				c.Command = []string{
+					"/bin/resource-topology-exporter",
 				}
-				c.SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
-					Type:  seLinuxRTEContextType,
-					Level: seLinuxRTEContextLevel,
+				c.Args = []string{
+					"--sleep-interval=10s",
+					fmt.Sprintf("--sysfs=%s", containerHostSysDir),
+					fmt.Sprintf("--podresources-socket=unix://%s", containerPodResourcesSocket),
+					fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
 				}
-			}
 
-			if plat == platform.Kubernetes {
-				c.Args = append(
-					c.Args,
-					fmt.Sprintf("--kubelet-config-file=/%s/config.yaml", rteKubeletDirVolumeName),
-					fmt.Sprintf("--kubelet-state-dir=/%s", rteKubeletDirVolumeName),
-				)
-			}
+				if plat == platform.OpenShift {
+					c.Args = append(
+						c.Args,
+						// TODO: we should fetch the policy from the KubeletConfig CR
+						"--topology-manager-policy=single-numa-node",
+					)
 
-			c.VolumeMounts = rteContainerVolumeMounts
+					// this is needed to put watches in the kubelet state dirs AND
+					// to open the podresources socket in R/W mode
+					if c.SecurityContext == nil {
+						c.SecurityContext = &corev1.SecurityContext{}
+					}
+					c.SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
+						Type:  seLinuxRTEContextType,
+						Level: seLinuxRTEContextLevel,
+					}
+				}
+
+				if plat == platform.Kubernetes {
+					c.Args = append(
+						c.Args,
+						fmt.Sprintf("--kubelet-config-file=/%s/config.yaml", rteKubeletDirVolumeName),
+						fmt.Sprintf("--kubelet-state-dir=/%s", rteKubeletDirVolumeName),
+					)
+				}
+
+				c.VolumeMounts = rteContainerVolumeMounts
+			}
 		}
 	}
 
@@ -604,7 +617,7 @@ func NodeResourceTopologyMatchArgsToData(ma *apiconfig.NodeResourceTopologyMatch
 }
 
 func validateComponent(component string) error {
-	if component == "api" || component == "rte" || component == "sched" {
+	if component == ComponentAPI || component == ComponentResourceTopologyExporter || component == ComponentNodeFeatureDiscovery || component == ComponentSchedulerPlugin {
 		return nil
 	}
 	return fmt.Errorf("unknown component: %q", component)
@@ -614,8 +627,35 @@ func validateSubComponent(component, subComponent string) error {
 	if subComponent == "" {
 		return nil
 	}
-	if component == "sched" && (subComponent == "controller" || subComponent == "scheduler") {
+	if component == ComponentSchedulerPlugin && (subComponent == SubComponentSchedulerPluginController || subComponent == SubComponentSchedulerPluginScheduler) {
+		return nil
+	}
+	if component == ComponentNodeFeatureDiscovery && (subComponent == SubComponentNodeFeatureDiscoveryTopologyUpdater || subComponent == SubComponentNodeFeatureDiscoveryMaster) {
 		return nil
 	}
 	return fmt.Errorf("unknown subComponent %q for component: %q", subComponent, component)
+}
+
+func Service(component, subComponent, namespace string) (*corev1.Service, error) {
+	if err := validateComponent(component); err != nil {
+		return nil, err
+	}
+	if err := validateSubComponent(component, subComponent); err != nil {
+		return nil, err
+	}
+
+	obj, err := loadObject(filepath.Join("yaml", component, subComponent, "service.yaml"))
+	if err != nil {
+		return nil, err
+	}
+
+	sv, ok := obj.(*corev1.Service)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type, got %t", obj)
+	}
+
+	if namespace != "" {
+		sv.Namespace = namespace
+	}
+	return sv, nil
 }

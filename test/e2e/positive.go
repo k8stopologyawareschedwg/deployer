@@ -38,7 +38,9 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil/nodes"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/nfd"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
@@ -181,99 +183,201 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer validation", func() {
 
 var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 	ginkgo.Context("with a running cluster without any components", func() {
-		ginkgo.BeforeEach(func() {
-			err := deploy()
+		var updaterType string
+		ginkgo.JustBeforeEach(func() {
+			err := deploy(updaterType)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 		})
 
-		ginkgo.AfterEach(func() {
-			err := remove()
+		ginkgo.JustAfterEach(func() {
+			err := remove(updaterType)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 		})
-
-		ginkgo.It("should perform overall deployment and verify all pods are running", func() {
-			ginkgo.By("checking that resource-topology-exporter pod is running")
-
-			ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
-			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-			mf, err := rte.GetManifests(platform.Kubernetes, ns.Name)
-			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			mf = mf.Render(rte.RenderOptions{
-				Namespace: ns.Name,
+		ginkgo.When("deployed with resource-topology-exporter as the updater", func() {
+			ginkgo.BeforeEach(func() {
+				updaterType = updaters.RTE
 			})
-			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DaemonSet.Name))
+			ginkgo.AfterEach(func() {
+				updaterType = updaters.RTE
+			})
+			ginkgo.It("should perform overall deployment and verify all pods are running", func() {
+				ginkgo.By("checking that resource-topology-exporter pod is running")
 
-			ginkgo.By("checking that topo-aware-scheduler pod is running")
-			mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
-			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			// no need for options!
-			mfs = mfs.Render(tlog.NewNullLogAdapter(), sched.RenderOptions{})
-			e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
+				ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-			ginkgo.By("checking that noderesourcetopolgy has some information in it")
-			tc, err := clientutil.NewTopologyClient()
-			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				mf, err := rte.GetManifests(platform.Kubernetes, ns.Name)
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				mf = mf.Render(rte.RenderOptions{
+					Namespace: ns.Name,
+				})
+				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DaemonSet.Name))
 
-			workers, err := nodes.GetWorkers()
-			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			for _, node := range workers {
-				ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
+				ginkgo.By("checking that topo-aware-scheduler pod is running")
+				mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				// no need for options!
+				mfs = mfs.Render(tlog.NewNullLogAdapter(), sched.RenderOptions{})
+				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
 
-				// the name of the nrt object is the same as the worker node's name
-				nrt := getNodeResourceTopology(tc, mf.DaemonSet.Namespace, node.Name)
-				// we check CPUs because that's the only resource we know it will always be available
-				hasCPU := false
-				for _, zone := range nrt.Zones {
-					for _, resource := range zone.Resources {
-						if resource.Name == string(corev1.ResourceCPU) && resource.Capacity.Size() >= 1 {
-							hasCPU = true
+				ginkgo.By("checking that noderesourcetopolgy has some information in it")
+				tc, err := clientutil.NewTopologyClient()
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+				workers, err := nodes.GetWorkers()
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				for _, node := range workers {
+					ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
+
+					// the name of the nrt object is the same as the worker node's name
+					nrt := getNodeResourceTopology(tc, mf.DaemonSet.Namespace, node.Name)
+					// we check CPUs because that's the only resource we know it will always be available
+					hasCPU := false
+					for _, zone := range nrt.Zones {
+						for _, resource := range zone.Resources {
+							if resource.Name == string(corev1.ResourceCPU) && resource.Capacity.Size() >= 1 {
+								hasCPU = true
+							}
 						}
 					}
+					gomega.Expect(hasCPU).To(gomega.BeTrue())
+					gomega.Expect(nrt.TopologyPolicies[0]).ToNot(gomega.BeEmpty())
 				}
-				gomega.Expect(hasCPU).To(gomega.BeTrue())
-				gomega.Expect(nrt.TopologyPolicies[0]).ToNot(gomega.BeEmpty())
-			}
 
-			ginkgo.By("checking the cluster resource availability")
-			cli, err := clientutil.NewK8s()
-			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				ginkgo.By("checking the cluster resource availability")
+				cli, err := clientutil.NewK8s()
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-			workerNodes, err := e2enodes.GetWorkerNodes(cli)
-			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			if len(workerNodes) < 1 {
-				// how come did the validation pass?
-				ginkgo.Fail("no worker nodes found in the cluster")
-			}
+				workerNodes, err := e2enodes.GetWorkerNodes(cli)
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				if len(workerNodes) < 1 {
+					// how come did the validation pass?
+					ginkgo.Fail("no worker nodes found in the cluster")
+				}
 
-			// min 1 reserved + min 1 allocatable = 2
-			nodes, err := e2enodes.FilterNodesWithEnoughCores(workerNodes, "2")
-			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			if len(nodes) < 1 {
-				// TODO: it is unusual to skip so late, maybe split this spec in 2?
-				ginkgo.Skip("skipping the pod check - not enough resources")
-			}
+				// min 1 reserved + min 1 allocatable = 2
+				nodes, err := e2enodes.FilterNodesWithEnoughCores(workerNodes, "2")
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				if len(nodes) < 1 {
+					// TODO: it is unusual to skip so late, maybe split this spec in 2?
+					ginkgo.Skip("skipping the pod check - not enough resources")
+				}
 
-			testNs := &corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: "tas-test-",
-				},
-			}
-			ginkgo.By("creating a test namespace")
-			testNs, err = cli.CoreV1().Namespaces().Create(context.TODO(), testNs, metav1.CreateOptions{})
-			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			defer func() {
-				cli.CoreV1().Namespaces().Delete(context.TODO(), testNs.Name, metav1.DeleteOptions{})
-			}()
+				testNs := &corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						GenerateName: "tas-test-",
+					},
+				}
+				ginkgo.By("creating a test namespace")
+				testNs, err = cli.CoreV1().Namespaces().Create(context.TODO(), testNs, metav1.CreateOptions{})
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				defer func() {
+					cli.CoreV1().Namespaces().Delete(context.TODO(), testNs.Name, metav1.DeleteOptions{})
+				}()
 
-			// TODO autodetect the scheduler name
-			testPod := e2epods.GuaranteedSleeperPod(testNs.Name, "topology-aware-scheduler")
-			ginkgo.By("creating a guaranteed sleeper pod using the topology aware scheduler")
-			testPod, err = cli.CoreV1().Pods(testPod.Namespace).Create(context.TODO(), testPod, metav1.CreateOptions{})
-			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				// TODO autodetect the scheduler name
+				testPod := e2epods.GuaranteedSleeperPod(testNs.Name, "topology-aware-scheduler")
+				ginkgo.By("creating a guaranteed sleeper pod using the topology aware scheduler")
+				testPod, err = cli.CoreV1().Pods(testPod.Namespace).Create(context.TODO(), testPod, metav1.CreateOptions{})
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-			ginkgo.By("checking the pod goes running")
-			e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name)
+				ginkgo.By("checking the pod goes running")
+				e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name)
+			})
+		})
+
+		ginkgo.When("deployed with node-feature-discovery as the updater", func() {
+			ginkgo.BeforeEach(func() {
+				updaterType = updaters.NFD
+			})
+			ginkgo.AfterEach(func() {
+				updaterType = updaters.NFD
+			})
+			ginkgo.It("should perform overall deployment and verify all pods are running", func() {
+				ginkgo.By("checking that node-feature-discovery pods are running")
+
+				ns, err := manifests.Namespace(manifests.ComponentNodeFeatureDiscovery)
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+				mf, err := nfd.GetManifests(platform.Kubernetes, ns.Name)
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				mf = mf.Render(nfd.RenderOptions{
+					Namespace: ns.Name,
+				})
+				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DPMaster.Name))
+				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DSTopologyUpdater.Name))
+
+				ginkgo.By("checking that topo-aware-scheduler pod is running")
+				mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				// no need for options!
+				mfs = mfs.Render(tlog.NewNullLogAdapter(), sched.RenderOptions{})
+				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
+
+				ginkgo.By("checking that noderesourcetopolgy has some information in it")
+				tc, err := clientutil.NewTopologyClient()
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+				workers, err := nodes.GetWorkers()
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				for _, node := range workers {
+					ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
+
+					// the name of the nrt object is the same as the worker node's name
+					nrt := getNodeResourceTopology(tc, mf.DSTopologyUpdater.Namespace, node.Name)
+					// we check CPUs because that's the only resource we know it will always be available
+					hasCPU := false
+					for _, zone := range nrt.Zones {
+						for _, resource := range zone.Resources {
+							if resource.Name == string(corev1.ResourceCPU) && resource.Capacity.Size() >= 1 {
+								hasCPU = true
+							}
+						}
+					}
+					gomega.Expect(hasCPU).To(gomega.BeTrue())
+					gomega.Expect(nrt.TopologyPolicies[0]).ToNot(gomega.BeEmpty())
+				}
+
+				ginkgo.By("checking the cluster resource availability")
+				cli, err := clientutil.NewK8s()
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+				workerNodes, err := e2enodes.GetWorkerNodes(cli)
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				if len(workerNodes) < 1 {
+					// how come did the validation pass?
+					ginkgo.Fail("no worker nodes found in the cluster")
+				}
+
+				// min 1 reserved + min 1 allocatable = 2
+				nodes, err := e2enodes.FilterNodesWithEnoughCores(workerNodes, "2")
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				if len(nodes) < 1 {
+					// TODO: it is unusual to skip so late, maybe split this spec in 2?
+					ginkgo.Skip("skipping the pod check - not enough resources")
+				}
+
+				testNs := &corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						GenerateName: "tas-test-",
+					},
+				}
+				ginkgo.By("creating a test namespace")
+				testNs, err = cli.CoreV1().Namespaces().Create(context.TODO(), testNs, metav1.CreateOptions{})
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				defer func() {
+					cli.CoreV1().Namespaces().Delete(context.TODO(), testNs.Name, metav1.DeleteOptions{})
+				}()
+
+				// TODO autodetect the scheduler name
+				testPod := e2epods.GuaranteedSleeperPod(testNs.Name, "topology-aware-scheduler")
+				ginkgo.By("creating a guaranteed sleeper pod using the topology aware scheduler")
+				testPod, err = cli.CoreV1().Pods(testPod.Namespace).Create(context.TODO(), testPod, metav1.CreateOptions{})
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+				ginkgo.By("checking the pod goes running")
+				e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name)
+			})
 		})
 	})
 })
@@ -293,7 +397,7 @@ func getNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name st
 	return nrt
 }
 
-func deploy() error {
+func deploy(updaterType string) error {
 	cmdline := []string{
 		filepath.Join(binariesPath, "deployer"),
 		"--debug",
@@ -301,6 +405,8 @@ func deploy() error {
 		"--rte-config-file", filepath.Join(deployerBaseDir, "hack", "rte.yaml"),
 		"--wait",
 	}
+	updaterArg := fmt.Sprintf("--updater-type=%s", updaterType)
+	cmdline = append(cmdline, updaterArg)
 	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
 
 	cmd := exec.Command(cmdline[0], cmdline[1:]...)
@@ -313,12 +419,15 @@ func deploy() error {
 	return nil
 }
 
-func remove() error {
+func remove(updaterType string) error {
 	cmdline := []string{
 		filepath.Join(binariesPath, "deployer"),
 		"--debug",
 		"remove",
+		"--wait",
 	}
+	updaterArg := fmt.Sprintf("--updater-type=%s", updaterType)
+	cmdline = append(cmdline, updaterArg)
 	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
 
 	cmd := exec.Command(cmdline[0], cmdline[1:]...)

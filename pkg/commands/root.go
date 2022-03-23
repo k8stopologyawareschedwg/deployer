@@ -25,6 +25,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 )
 
 type CommonOptions struct {
@@ -35,6 +36,7 @@ type CommonOptions struct {
 	Replicas         int
 	RTEConfigData    string
 	PullIfNotPresent bool
+	UpdaterType      string
 	rteConfigFile    string
 	plat             string
 }
@@ -74,6 +76,9 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 				commonOpts.RTEConfigData = string(data)
 				commonOpts.DebugLog.Printf("RTE config: read %d bytes", len(commonOpts.RTEConfigData))
 			}
+			if err := validateUpdaterType(commonOpts.UpdaterType); err != nil {
+				return err
+			}
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -88,6 +93,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	root.PersistentFlags().IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
 	root.PersistentFlags().BoolVar(&commonOpts.PullIfNotPresent, "pull-if-not-present", false, "force pull policies to IfNotPresent.")
 	root.PersistentFlags().StringVar(&commonOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
+	root.PersistentFlags().StringVar(&commonOpts.UpdaterType, "updater-type", "RTE", "type of updater to deploy - RTE or NFD")
 
 	root.AddCommand(
 		NewRenderCommand(commonOpts),
@@ -104,4 +110,11 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	}
 
 	return root
+}
+
+func validateUpdaterType(updaterType string) error {
+	if updaterType != updaters.RTE && updaterType != updaters.NFD {
+		return fmt.Errorf("%q is invalid updater type", updaterType)
+	}
+	return nil
 }
