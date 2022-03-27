@@ -594,28 +594,6 @@ func KubeSchedulerConfigurationToData(sc *kubeschedulerconfigv1beta1.KubeSchedul
 	return buf.Bytes(), err
 }
 
-func NodeResourceTopologyMatchArgsFromData(data []byte) (*apiconfig.NodeResourceTopologyMatchArgs, error) {
-	sc := apiconfig.NodeResourceTopologyMatchArgs{}
-	err := json.Unmarshal(data, &sc)
-	return &sc, err
-}
-
-// helper type to marshal the right names (forcing lowercase)
-type nodeResourceTopologyMatchArgs struct {
-	KubeConfigPath string   `json:"kubeconfigpath"`
-	MasterOverride string   `json:"masteroverride"`
-	Namespaces     []string `json:"namespaces"`
-}
-
-func NodeResourceTopologyMatchArgsToData(ma *apiconfig.NodeResourceTopologyMatchArgs) ([]byte, error) {
-	cfg := nodeResourceTopologyMatchArgs{
-		KubeConfigPath: ma.KubeConfigPath,
-		MasterOverride: ma.MasterOverride,
-		Namespaces:     ma.Namespaces,
-	}
-	return json.Marshal(cfg)
-}
-
 func validateComponent(component string) error {
 	if component == ComponentAPI || component == ComponentResourceTopologyExporter || component == ComponentNodeFeatureDiscovery || component == ComponentSchedulerPlugin {
 		return nil
