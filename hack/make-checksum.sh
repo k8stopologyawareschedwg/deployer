@@ -5,7 +5,7 @@ set -eu
 VERSION="${1}"
 FILES="
 deployer-${VERSION}-linux-amd64
-deployer-manifests-allinone-${VERSION}.yaml
+deployer-${VERSION}-manifests-allinone.yaml
 "
 
 for artifact in $FILES; do
