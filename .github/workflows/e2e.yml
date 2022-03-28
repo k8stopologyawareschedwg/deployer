@@ -43,7 +43,7 @@ jobs:
 
     - name: run E2E tests
       run: |
-        _out/e2e.test -ginkgo.focus='\[PositiveFlow\]'
+        _out/e2e.test -ginkgo.focus='\[PositiveFlow\]' -ginkgo.v
 
   e2e-negative:
     runs-on: ubuntu-20.04
@@ -77,4 +77,4 @@ jobs:
 
     - name: run E2E tests
       run: |
-        _out/e2e.test -ginkgo.focus='\[NegativeFlow\]'
+        _out/e2e.test -ginkgo.focus='\[NegativeFlow\]' -ginkgo.v
