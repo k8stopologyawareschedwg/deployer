@@ -200,7 +200,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 			ginkgo.AfterEach(func() {
 				updaterType = updaters.RTE
 			})
-			ginkgo.It("should perform overall deployment and verify all pods are running", func() {
+			ginkgo.It("should perform overall deployment", func() {
 				ginkgo.By("checking that resource-topology-exporter pod is running")
 
 				ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
@@ -243,7 +243,9 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 					gomega.Expect(hasCPU).To(gomega.BeTrue())
 					gomega.Expect(nrt.TopologyPolicies[0]).ToNot(gomega.BeEmpty())
 				}
+			})
 
+			ginkgo.It("should verify a test pod scheduled with the topology aware scheduler goes running", func() {
 				ginkgo.By("checking the cluster resource availability")
 				cli, err := clientutil.NewK8s()
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -293,7 +295,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 			ginkgo.AfterEach(func() {
 				updaterType = updaters.NFD
 			})
-			ginkgo.It("should perform overall deployment and verify all pods are running", func() {
+			ginkgo.It("should perform overall deployment", func() {
 				ginkgo.By("checking that node-feature-discovery pods are running")
 
 				ns, err := manifests.Namespace(manifests.ComponentNodeFeatureDiscovery)
@@ -337,7 +339,9 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 					gomega.Expect(hasCPU).To(gomega.BeTrue())
 					gomega.Expect(nrt.TopologyPolicies[0]).ToNot(gomega.BeEmpty())
 				}
+			})
 
+			ginkgo.It("should verify a test pod scheduled with the topology aware scheduler goes running", func() {
 				ginkgo.By("checking the cluster resource availability")
 				cli, err := clientutil.NewK8s()
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -378,6 +382,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				ginkgo.By("checking the pod goes running")
 				e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name)
 			})
+
 		})
 	})
 })
