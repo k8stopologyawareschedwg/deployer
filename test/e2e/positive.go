@@ -23,8 +23,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -47,6 +49,7 @@ import (
 
 	e2enodes "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/nodes"
 	e2epods "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/pods"
+	e2ewait "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/wait"
 )
 
 var _ = ginkgo.Describe("[PositiveFlow] Deployer version", func() {
@@ -387,6 +390,70 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 	})
 })
 
+var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
+	ginkgo.Context("with a running cluster without any components", func() {
+		ginkgo.It("should perform the deployment of scheduler plugin + API and verify all pods are running", func() {
+			binPath := filepath.Join(binariesPath, "deployer")
+
+			err := runCmdline(
+				[]string{binPath, "--debug", "deploy", "api", "--wait"},
+				"failed to deploy partial components before test started",
+			)
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			err = runCmdline(
+				[]string{binPath, "--debug", "deploy", "scheduler-plugin", "--wait"},
+				"failed to deploy partial components before test started",
+			)
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			defer func() {
+				err := runCmdline(
+					[]string{binPath, "--debug", "remove", "scheduler-plugin", "--wait"},
+					"failed to remove partial components after test finished",
+				)
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+				err = runCmdline(
+					[]string{binPath, "--debug", "remove", "api", "--wait"},
+					"failed to remove partial components after test finished",
+				)
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			}()
+
+			ginkgo.By("checking that scheduler plugin is running")
+
+			ns, err := manifests.Namespace(manifests.ComponentSchedulerPlugin)
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			ginkgo.By("checking that topo-aware-scheduler pod is running")
+			// TODO: autodetect the platform
+			mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			// no need for options!
+			mfs = mfs.Render(tlog.NewNullLogAdapter(), sched.RenderOptions{})
+
+			cli, err := clientutil.New()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			var wg sync.WaitGroup
+			for _, dp := range []*appsv1.Deployment{
+				mfs.DPScheduler,
+				mfs.DPController,
+			} {
+				wg.Add(1)
+				go func(dp *appsv1.Deployment) {
+					defer ginkgo.GinkgoRecover()
+					defer wg.Done()
+					err = e2ewait.ForDeploymentComplete(cli, dp, 10*time.Second, 3*time.Minute)
+					gomega.Expect(err).ToNot(gomega.HaveOccurred())
+				}(dp)
+			}
+			wg.Wait()
+		})
+	})
+})
+
 func getNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name string) *v1alpha1.NodeResourceTopology {
 	var err error
 	var nrt *v1alpha1.NodeResourceTopology
@@ -410,18 +477,12 @@ func deploy(updaterType string) error {
 		"--rte-config-file", filepath.Join(deployerBaseDir, "hack", "rte.yaml"),
 		"--wait",
 	}
-	updaterArg := fmt.Sprintf("--updater-type=%s", updaterType)
-	cmdline = append(cmdline, updaterArg)
-	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
-
-	cmd := exec.Command(cmdline[0], cmdline[1:]...)
-	cmd.Stdout = ginkgo.GinkgoWriter
-	cmd.Stderr = ginkgo.GinkgoWriter
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to deploy componentes before test started: %v", err)
+	if updaterType != "" {
+		updaterArg := fmt.Sprintf("--updater-type=%s", updaterType)
+		cmdline = append(cmdline, updaterArg)
 	}
-	return nil
+	// TODO: use error wrapping
+	return runCmdline(cmdline, "failed to deploy components before test started")
 }
 
 func remove(updaterType string) error {
@@ -431,8 +492,15 @@ func remove(updaterType string) error {
 		"remove",
 		"--wait",
 	}
-	updaterArg := fmt.Sprintf("--updater-type=%s", updaterType)
-	cmdline = append(cmdline, updaterArg)
+	if updaterType != "" {
+		updaterArg := fmt.Sprintf("--updater-type=%s", updaterType)
+		cmdline = append(cmdline, updaterArg)
+	}
+	// TODO: use error wrapping
+	return runCmdline(cmdline, "failed to remove components after test finished")
+}
+
+func runCmdline(cmdline []string, errMsg string) error {
 	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
 
 	cmd := exec.Command(cmdline[0], cmdline[1:]...)
@@ -440,7 +508,7 @@ func remove(updaterType string) error {
 	cmd.Stderr = ginkgo.GinkgoWriter
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to remove components after test finished: %v", err)
+		return fmt.Errorf("%s: %v", errMsg, err)
 	}
 	return nil
 }
