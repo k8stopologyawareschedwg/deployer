@@ -42,7 +42,7 @@ func NewRenderCommand(commonOpts *CommonOptions) *cobra.Command {
 			if commonOpts.UserPlatform == platform.Unknown {
 				return fmt.Errorf("must explicitely select a cluster platform")
 			}
-			return renderManifests(cmd, commonOpts, opts, args)
+			return RenderManifests(commonOpts)
 		},
 		Args: cobra.NoArgs,
 	}
@@ -140,7 +140,7 @@ func makeUpdaterObjects(commonOpts *CommonOptions) ([]client.Object, string, err
 	return append([]client.Object{ns}, objs...), namespace, nil
 }
 
-func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *RenderOptions, args []string) error {
+func RenderManifests(commonOpts *CommonOptions) error {
 	var objs []client.Object
 
 	apiManifests, err := api.GetManifests(commonOpts.UserPlatform)
