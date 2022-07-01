@@ -31,10 +31,10 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
-type renderOptions struct{}
+type RenderOptions struct{}
 
 func NewRenderCommand(commonOpts *CommonOptions) *cobra.Command {
-	opts := &renderOptions{}
+	opts := &RenderOptions{}
 	render := &cobra.Command{
 		Use:   "render",
 		Short: "render all the manifests",
@@ -52,7 +52,7 @@ func NewRenderCommand(commonOpts *CommonOptions) *cobra.Command {
 	return render
 }
 
-func NewRenderAPICommand(commonOpts *CommonOptions, opts *renderOptions) *cobra.Command {
+func NewRenderAPICommand(commonOpts *CommonOptions, opts *RenderOptions) *cobra.Command {
 	render := &cobra.Command{
 		Use:   "api",
 		Short: "render the APIs needed for topology-aware-scheduling",
@@ -71,7 +71,7 @@ func NewRenderAPICommand(commonOpts *CommonOptions, opts *renderOptions) *cobra.
 	return render
 }
 
-func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOptions) *cobra.Command {
+func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *RenderOptions) *cobra.Command {
 	render := &cobra.Command{
 		Use:   "scheduler-plugin",
 		Short: "render the scheduler plugin needed for topology-aware-scheduling",
@@ -102,7 +102,7 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *renderOpti
 	return render
 }
 
-func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *renderOptions) *cobra.Command {
+func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *RenderOptions) *cobra.Command {
 	render := &cobra.Command{
 		Use:   "topology-updater",
 		Short: "render the topology updater needed for topology-aware-scheduling",
@@ -140,7 +140,7 @@ func makeUpdaterObjects(commonOpts *CommonOptions) ([]client.Object, string, err
 	return append([]client.Object{ns}, objs...), namespace, nil
 }
 
-func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *renderOptions, args []string) error {
+func renderManifests(cmd *cobra.Command, commonOpts *CommonOptions, opts *RenderOptions, args []string) error {
 	var objs []client.Object
 
 	apiManifests, err := api.GetManifests(commonOpts.UserPlatform)

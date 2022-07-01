@@ -21,7 +21,7 @@ import (
 )
 
 func NewSetupCommand(commonOpts *CommonOptions) *cobra.Command {
-	depOpts := &deployOptions{}
+	depOpts := &DeployOptions{}
 	valOpts := &validateOptions{}
 	setup := &cobra.Command{
 		Use:   "setup",
