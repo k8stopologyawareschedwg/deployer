@@ -102,7 +102,6 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 		NewRemoveCommand(commonOpts),
 		NewSetupCommand(commonOpts),
 		NewDetectCommand(commonOpts),
-		NewVersionCommand(commonOpts),
 		NewImagesCommand(commonOpts),
 	)
 	for _, extraCmd := range extraCmds {

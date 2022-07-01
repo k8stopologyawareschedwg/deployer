@@ -20,11 +20,41 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/spf13/cobra"
+
 	"github.com/k8stopologyawareschedwg/deployer/pkg/commands"
+	deployerversion "github.com/k8stopologyawareschedwg/deployer/pkg/version"
 )
 
+type versionOptions struct {
+	fullOutput bool
+	hashOnly   bool
+}
+
+func NewVersionCommand(commonOpts *commands.CommonOptions) *cobra.Command {
+	opts := versionOptions{}
+	version := &cobra.Command{
+		Use:   "version",
+		Short: "emit the version and exits succesfully",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if opts.hashOnly {
+				fmt.Printf("%s\n", deployerversion.GitCommit)
+			} else if opts.fullOutput {
+				fmt.Printf("%s-%s\n", deployerversion.GitVersion, deployerversion.GitCommit[:9])
+			} else {
+				fmt.Printf("%s\n", deployerversion.GitVersion)
+			}
+			return nil
+		},
+		Args: cobra.NoArgs,
+	}
+	version.PersistentFlags().BoolVar(&opts.fullOutput, "full", false, "emit version and git hash.")
+	version.PersistentFlags().BoolVar(&opts.hashOnly, "hash", false, "emit only the git hash.")
+	return version
+}
+
 func main() {
-	root := commands.NewRootCommand()
+	root := commands.NewRootCommand(NewVersionCommand)
 	if err := root.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
