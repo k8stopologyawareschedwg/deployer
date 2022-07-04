@@ -28,13 +28,13 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 )
 
-type imagesOptions struct {
+type ImagesOptions struct {
 	jsonOutput bool
 	rawOutput  bool
 }
 
 func NewImagesCommand(commonOpts *CommonOptions) *cobra.Command {
-	opts := &imagesOptions{}
+	opts := &ImagesOptions{}
 	images := &cobra.Command{
 		Use:   "images",
 		Short: "dump the container images used to deploy",

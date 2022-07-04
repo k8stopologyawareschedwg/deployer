@@ -51,3 +51,11 @@ var _ = ginkgo.Describe("[NegativeFlow] Deployer validation", func() {
 		})
 	})
 })
+
+var _ = ginkgo.Describe("[NegativeFlow] Deployer option validation", func() {
+	ginkgo.It("It should fail with invalid --updater-type", func() {
+		updaterType := "LOCAL"
+		err := deploy(updaterType)
+		gomega.Expect(err).To(gomega.HaveOccurred(), "deployed succesfully with unknown updater type %s", updaterType)
+	})
+})

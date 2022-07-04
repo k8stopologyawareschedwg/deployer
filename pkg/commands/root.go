@@ -23,6 +23,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
@@ -57,29 +58,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 		Short: "deployer helps setting up all the topology-aware-scheduling components on a kubernetes cluster",
 
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			if commonOpts.Debug {
-				commonOpts.DebugLog = log.New(os.Stderr, "", log.LstdFlags)
-			} else {
-				commonOpts.DebugLog = log.New(ioutil.Discard, "", 0)
-			}
-			// we abuse the logger to have a common interface and the timestamps
-			commonOpts.Log = log.New(os.Stdout, "", log.LstdFlags)
-
-			// if it is unknown, it's fine
-			commonOpts.UserPlatform, _ = platform.FromString(commonOpts.plat)
-
-			if commonOpts.rteConfigFile != "" {
-				data, err := os.ReadFile(commonOpts.rteConfigFile)
-				if err != nil {
-					return err
-				}
-				commonOpts.RTEConfigData = string(data)
-				commonOpts.DebugLog.Printf("RTE config: read %d bytes", len(commonOpts.RTEConfigData))
-			}
-			if err := validateUpdaterType(commonOpts.UpdaterType); err != nil {
-				return err
-			}
-			return nil
+			return PostSetupOptions(commonOpts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return ShowHelp(cmd, args)
@@ -88,12 +67,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 		SilenceErrors: true,
 	}
 
-	root.PersistentFlags().BoolVarP(&commonOpts.Debug, "debug", "D", false, "enable debug log")
-	root.PersistentFlags().StringVarP(&commonOpts.plat, "platform", "P", "", "platform to deploy on")
-	root.PersistentFlags().IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
-	root.PersistentFlags().BoolVar(&commonOpts.PullIfNotPresent, "pull-if-not-present", false, "force pull policies to IfNotPresent.")
-	root.PersistentFlags().StringVar(&commonOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
-	root.PersistentFlags().StringVar(&commonOpts.UpdaterType, "updater-type", "RTE", "type of updater to deploy - RTE or NFD")
+	InitFlags(root.PersistentFlags(), commonOpts)
 
 	root.AddCommand(
 		NewRenderCommand(commonOpts),
@@ -109,6 +83,41 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	}
 
 	return root
+}
+
+func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
+	flags.BoolVarP(&commonOpts.Debug, "debug", "D", false, "enable debug log")
+	flags.StringVarP(&commonOpts.plat, "platform", "P", "", "platform to deploy on")
+	flags.IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
+	flags.BoolVar(&commonOpts.PullIfNotPresent, "pull-if-not-present", false, "force pull policies to IfNotPresent.")
+	flags.StringVar(&commonOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
+	flags.StringVar(&commonOpts.UpdaterType, "updater-type", "RTE", "type of updater to deploy - RTE or NFD")
+}
+
+func PostSetupOptions(commonOpts *CommonOptions) error {
+	if commonOpts.Debug {
+		commonOpts.DebugLog = log.New(os.Stderr, "", log.LstdFlags)
+	} else {
+		commonOpts.DebugLog = log.New(ioutil.Discard, "", 0)
+	}
+	// we abuse the logger to have a common interface and the timestamps
+	commonOpts.Log = log.New(os.Stdout, "", log.LstdFlags)
+
+	// if it is unknown, it's fine
+	commonOpts.UserPlatform, _ = platform.FromString(commonOpts.plat)
+
+	if commonOpts.rteConfigFile != "" {
+		data, err := os.ReadFile(commonOpts.rteConfigFile)
+		if err != nil {
+			return err
+		}
+		commonOpts.RTEConfigData = string(data)
+		commonOpts.DebugLog.Printf("RTE config: read %d bytes", len(commonOpts.RTEConfigData))
+	}
+	if err := validateUpdaterType(commonOpts.UpdaterType); err != nil {
+		return err
+	}
+	return nil
 }
 
 func validateUpdaterType(updaterType string) error {

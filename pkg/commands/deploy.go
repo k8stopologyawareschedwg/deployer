@@ -28,13 +28,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type deployOptions struct {
+type DeployOptions struct {
 	clusterPlatform platform.Platform
 	waitCompletion  bool
 }
 
 func NewDeployCommand(commonOpts *CommonOptions) *cobra.Command {
-	opts := &deployOptions{}
+	opts := &DeployOptions{}
 	deploy := &cobra.Command{
 		Use:   "deploy",
 		Short: "deploy the components and configurations needed for topology-aware-scheduling",
@@ -51,7 +51,7 @@ func NewDeployCommand(commonOpts *CommonOptions) *cobra.Command {
 }
 
 func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
-	opts := &deployOptions{}
+	opts := &DeployOptions{}
 	remove := &cobra.Command{
 		Use:   "remove",
 		Short: "remove the components and configurations needed for topology-aware-scheduling",
@@ -102,7 +102,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 	return remove
 }
 
-func NewDeployAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.Command {
+func NewDeployAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
 	deploy := &cobra.Command{
 		Use:   "api",
 		Short: "deploy the APIs needed for topology-aware-scheduling",
@@ -123,7 +123,7 @@ func NewDeployAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.
 	return deploy
 }
 
-func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.Command {
+func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
 	deploy := &cobra.Command{
 		Use:   "scheduler-plugin",
 		Short: "deploy the scheduler plugin needed for topology-aware-scheduling",
@@ -146,7 +146,7 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 	return deploy
 }
 
-func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.Command {
+func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
 	deploy := &cobra.Command{
 		Use:   "topology-updater",
 		Short: "deploy the topology updater needed for topology-aware-scheduling",
@@ -169,7 +169,7 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 	return deploy
 }
 
-func NewRemoveAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.Command {
+func NewRemoveAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
 	remove := &cobra.Command{
 		Use:   "api",
 		Short: "remove the APIs needed for topology-aware-scheduling",
@@ -191,7 +191,7 @@ func NewRemoveAPICommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.
 	return remove
 }
 
-func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.Command {
+func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
 	remove := &cobra.Command{
 		Use:   "scheduler-plugin",
 		Short: "remove the scheduler plugin needed for topology-aware-scheduling",
@@ -214,7 +214,7 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *deployOpti
 	return remove
 }
 
-func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOptions) *cobra.Command {
+func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
 	remove := &cobra.Command{
 		Use:   "topology-updater",
 		Short: "remove the topology updater needed for topology-aware-scheduling",
@@ -237,7 +237,7 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *deployOpti
 	return remove
 }
 
-func deployOnCluster(commonOpts *CommonOptions, opts *deployOptions) error {
+func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 	la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
 	platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
 	opts.clusterPlatform = platDetect.Discovered
