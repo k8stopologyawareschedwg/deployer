@@ -65,10 +65,21 @@ func (vo validationOutput) String() string {
 	return sb.String()
 }
 
-type detectionOutput struct {
+type platformDetection struct {
 	AutoDetected platform.Platform `json:"auto_detected"`
 	UserSupplied platform.Platform `json:"user_supplied"`
 	Discovered   platform.Platform `json:"discovered"`
+}
+
+type versionDetection struct {
+	AutoDetected platform.Version `json:"auto_detected"`
+	UserSupplied platform.Version `json:"user_supplied"`
+	Discovered   platform.Version `json:"discovered"`
+}
+
+type clusterDetection struct {
+	Platform platformDetection `json:"platform"`
+	Version  versionDetection  `json:"version"`
 }
 
 type imageOutput struct {

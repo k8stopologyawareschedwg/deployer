@@ -46,6 +46,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/validator"
 
 	e2enodes "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/nodes"
 	e2epods "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/pods"
@@ -109,7 +110,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer render", func() {
 		ginkgo.It("it should reflect the overrides in the output", func() {
 			cmdline := []string{
 				filepath.Join(binariesPath, "deployer"),
-				"-P", "kubernetes",
+				"-P", "kubernetes:v1.24",
 				"render",
 			}
 			fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
@@ -148,12 +149,16 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer detection", func() {
 			out, err := cmd.Output()
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-			do := detectionOutput{}
+			do := clusterDetection{}
 			if err := json.Unmarshal(out, &do); err != nil {
 				ginkgo.Fail(fmt.Sprintf("Error unmarshalling output %q: %v", out, err))
 			}
-			gomega.Expect(do.AutoDetected).To(gomega.Equal(platform.Kubernetes))
-			gomega.Expect(do.Discovered).To(gomega.Equal(platform.Kubernetes))
+			gomega.Expect(do.Platform.AutoDetected).To(gomega.Equal(platform.Kubernetes))
+			gomega.Expect(do.Platform.Discovered).To(gomega.Equal(platform.Kubernetes))
+
+			minVer, err := platform.ParseVersion(validator.ExpectedMinKubeVersion)
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			gomega.Expect(do.Version.Discovered.AtLeast(minVer)).To(gomega.BeTrue(), "cluster version mismatch - check validation")
 		})
 	})
 })
