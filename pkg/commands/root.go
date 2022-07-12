@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -30,16 +31,18 @@ import (
 )
 
 type CommonOptions struct {
-	Debug            bool
-	UserPlatform     platform.Platform
-	Log              *log.Logger
-	DebugLog         *log.Logger
-	Replicas         int
-	RTEConfigData    string
-	PullIfNotPresent bool
-	UpdaterType      string
-	rteConfigFile    string
-	plat             string
+	Debug               bool
+	UserPlatform        platform.Platform
+	UserPlatformVersion platform.Version
+	Log                 *log.Logger
+	DebugLog            *log.Logger
+	Replicas            int
+	RTEConfigData       string
+	PullIfNotPresent    bool
+	UpdaterType         string
+	rteConfigFile       string
+	plat                string
+	platVer             string
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -87,7 +90,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 
 func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
 	flags.BoolVarP(&commonOpts.Debug, "debug", "D", false, "enable debug log")
-	flags.StringVarP(&commonOpts.plat, "platform", "P", "", "platform to deploy on")
+	flags.StringVarP(&commonOpts.plat, "platform", "P", "", "platform kind:version to deploy on (example kubernetes:v1.22)")
 	flags.IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
 	flags.BoolVar(&commonOpts.PullIfNotPresent, "pull-if-not-present", false, "force pull policies to IfNotPresent.")
 	flags.StringVar(&commonOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
@@ -104,7 +107,19 @@ func PostSetupOptions(commonOpts *CommonOptions) error {
 	commonOpts.Log = log.New(os.Stdout, "", log.LstdFlags)
 
 	// if it is unknown, it's fine
-	commonOpts.UserPlatform, _ = platform.FromString(commonOpts.plat)
+	if commonOpts.plat == "" {
+		commonOpts.UserPlatform = platform.Unknown
+		commonOpts.UserPlatformVersion = platform.MissingVersion
+	} else {
+		fields := strings.FieldsFunc(commonOpts.plat, func(c rune) bool {
+			return c == ':'
+		})
+		if len(fields) != 2 {
+			return fmt.Errorf("unsupported platform spec: %q", commonOpts.plat)
+		}
+		commonOpts.UserPlatform, _ = platform.ParsePlatform(fields[0])
+		commonOpts.UserPlatformVersion, _ = platform.ParseVersion(fields[1])
+	}
 
 	if commonOpts.rteConfigFile != "" {
 		data, err := os.ReadFile(commonOpts.rteConfigFile)
