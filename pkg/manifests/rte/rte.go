@@ -27,6 +27,7 @@ import (
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
@@ -249,8 +250,13 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 	var err error
 	mf := New(plat)
 
+	version, err := detect.Version(plat)
+	if err != nil {
+		return mf, err
+	}
+
 	if plat == platform.OpenShift {
-		mf.MachineConfig, err = manifests.MachineConfig(manifests.ComponentResourceTopologyExporter)
+		mf.MachineConfig, err = manifests.MachineConfig(manifests.ComponentResourceTopologyExporter, version)
 		if err != nil {
 			return mf, err
 		}

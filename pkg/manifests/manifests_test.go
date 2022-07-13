@@ -558,29 +558,59 @@ func TestDaemonSet(t *testing.T) {
 }
 
 func TestMachineConfig(t *testing.T) {
-	mc, err := MachineConfig(ComponentResourceTopologyExporter)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
 
-	ignitionConfig := &igntypes.Config{}
-	if err := json.Unmarshal(mc.Spec.Config.Raw, ignitionConfig); err != nil {
-		t.Fatalf("failed to unmarshal ignition config: %v", err)
+	type testCase struct {
+		name            string
+		platformVersion platform.Version
+		expectedFileNum int
+		expectedUnitNum int
 	}
-
+	// In both these cases:
 	// we are expecting to have 3 files
 	// 1. OCI hook configuration
 	// 2. OCI hook script
 	// 3. SELinux policy
-	if len(ignitionConfig.Storage.Files) != 3 {
-		klog.Errorf("ignition config files: %+v", ignitionConfig.Storage.Files)
-		t.Fatalf("the ignition config has %d files when it should have %d", len(ignitionConfig.Storage.Files), 3)
+
+	// One systemd unit
+	// 1. Systemd unit to install the SELinux policy
+
+	// TODO: Check SELinuxPolicy in the various cases
+	testCases := []testCase{
+		{
+			name:            "OCP 4.10",
+			platformVersion: "v4.10",
+			expectedFileNum: 3,
+			expectedUnitNum: 1,
+		},
+		{
+			name:            "OCP 4.11",
+			platformVersion: "v4.11",
+			expectedFileNum: 3,
+			expectedUnitNum: 1,
+		},
 	}
 
-	// we are expecting only one systemd unit
-	// 1. Systemd unit to install the SELinux policy
-	if len(ignitionConfig.Systemd.Units) != 1 {
-		klog.Errorf("ignition config systemd units: %+v", ignitionConfig.Systemd.Units)
-		t.Fatalf("the ignition config has %d systemd units when it should have %d", len(ignitionConfig.Systemd.Units), 1)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mc, err := MachineConfig(ComponentResourceTopologyExporter, platform.Version(tc.platformVersion))
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			ignitionConfig := &igntypes.Config{}
+			if err := json.Unmarshal(mc.Spec.Config.Raw, ignitionConfig); err != nil {
+				t.Fatalf("failed to unmarshal ignition config: %v", err)
+			}
+
+			if len(ignitionConfig.Storage.Files) != tc.expectedFileNum {
+				klog.Errorf("ignition config files: %+v", ignitionConfig.Storage.Files)
+				t.Fatalf("the ignition config has %d files when it should have %d", len(ignitionConfig.Storage.Files), tc.expectedFileNum)
+			}
+
+			if len(ignitionConfig.Systemd.Units) != tc.expectedUnitNum {
+				klog.Errorf("ignition config systemd units: %+v", ignitionConfig.Systemd.Units)
+				t.Fatalf("the ignition config has %d systemd units when it should have %d", len(ignitionConfig.Systemd.Units), tc.expectedUnitNum)
+			}
+		})
 	}
 }
