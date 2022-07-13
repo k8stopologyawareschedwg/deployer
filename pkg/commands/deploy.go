@@ -21,6 +21,7 @@ import (
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
@@ -57,7 +58,8 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 		Short: "remove the components and configurations needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
-			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			platDetect, reason := detect.FindPlatform(commonOpts.UserPlatform)
+			commonOpts.DebugLog.Printf("platform %s (%s)", platDetect.Discovered, reason)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
@@ -108,7 +110,8 @@ func NewDeployAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.
 		Short: "deploy the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
-			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			platDetect, reason := detect.FindPlatform(commonOpts.UserPlatform)
+			commonOpts.DebugLog.Printf("platform %s (%s)", platDetect.Discovered, reason)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
@@ -129,7 +132,8 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 		Short: "deploy the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
-			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			platDetect, reason := detect.FindPlatform(commonOpts.UserPlatform)
+			commonOpts.DebugLog.Printf("platform %s (%s)", platDetect.Discovered, reason)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
@@ -152,7 +156,8 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 		Short: "deploy the topology updater needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
-			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			platDetect, reason := detect.FindPlatform(commonOpts.UserPlatform)
+			commonOpts.DebugLog.Printf("platform %s (%s)", platDetect.Discovered, reason)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
@@ -175,7 +180,8 @@ func NewRemoveAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.
 		Short: "remove the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
-			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			platDetect, reason := detect.FindPlatform(commonOpts.UserPlatform)
+			commonOpts.DebugLog.Printf("platform %s (%s)", platDetect.Discovered, reason)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
@@ -197,7 +203,8 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 		Short: "remove the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
-			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			platDetect, reason := detect.FindPlatform(commonOpts.UserPlatform)
+			commonOpts.DebugLog.Printf("platform %s (%s)", platDetect.Discovered, reason)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
@@ -220,7 +227,8 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 		Short: "remove the topology updater needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
-			platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+			platDetect, reason := detect.FindPlatform(commonOpts.UserPlatform)
+			commonOpts.DebugLog.Printf("platform %s (%s)", platDetect.Discovered, reason)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
@@ -239,7 +247,8 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 
 func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 	la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
-	platDetect := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
+	platDetect, reason := detect.FindPlatform(commonOpts.UserPlatform)
+	commonOpts.DebugLog.Printf("platform %s (%s)", platDetect.Discovered, reason)
 	opts.clusterPlatform = platDetect.Discovered
 	if opts.clusterPlatform == platform.Unknown {
 		return fmt.Errorf("cannot autodetect the platform, and no platform given")

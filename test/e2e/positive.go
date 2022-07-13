@@ -40,6 +40,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil/nodes"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/nfd"
@@ -149,7 +150,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer detection", func() {
 			out, err := cmd.Output()
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-			do := clusterDetection{}
+			do := detect.ClusterInfo{}
 			if err := json.Unmarshal(out, &do); err != nil {
 				ginkgo.Fail(fmt.Sprintf("Error unmarshalling output %q: %v", out, err))
 			}

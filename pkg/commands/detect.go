@@ -19,12 +19,10 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
 )
 
@@ -38,9 +36,12 @@ func NewDetectCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "detect",
 		Short: "detect the cluster platform (kubernetes, openshift...)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			platKind := detectPlatform(commonOpts.DebugLog, commonOpts.UserPlatform)
-			platVer := detectVersion(commonOpts.DebugLog, platKind.Discovered, commonOpts.UserPlatformVersion)
-			cluster := clusterDetection{
+			platKind, reason := detect.FindPlatform(commonOpts.UserPlatform)
+			commonOpts.DebugLog.Printf("platform kind %s (%s)", platKind.Discovered, reason)
+			platVer, reason := detect.FindVersion(platKind.Discovered, commonOpts.UserPlatformVersion)
+			commonOpts.DebugLog.Printf("platform version %s (%s)", platVer.Discovered, reason)
+
+			cluster := detect.ClusterInfo{
 				Platform: platKind,
 				Version:  platVer,
 			}
@@ -55,71 +56,4 @@ func NewDetectCommand(commonOpts *CommonOptions) *cobra.Command {
 	}
 	detect.Flags().BoolVarP(&opts.jsonOutput, "json", "J", false, "output JSON, not text.")
 	return detect
-}
-
-type platformDetection struct {
-	AutoDetected platform.Platform `json:"auto_detected"`
-	UserSupplied platform.Platform `json:"user_supplied"`
-	Discovered   platform.Platform `json:"discovered"`
-}
-
-type versionDetection struct {
-	AutoDetected platform.Version `json:"auto_detected"`
-	UserSupplied platform.Version `json:"user_supplied"`
-	Discovered   platform.Version `json:"discovered"`
-}
-
-type clusterDetection struct {
-	Platform platformDetection `json:"platform"`
-	Version  versionDetection  `json:"version"`
-}
-
-func detectPlatform(debugLog *log.Logger, userSupplied platform.Platform) platformDetection {
-	do := platformDetection{
-		AutoDetected: platform.Unknown,
-		UserSupplied: userSupplied,
-		Discovered:   platform.Unknown,
-	}
-
-	if do.UserSupplied != platform.Unknown {
-		debugLog.Printf("user-supplied platform: %q", do.UserSupplied)
-		do.Discovered = do.UserSupplied
-		return do
-	}
-
-	dp, err := detect.Platform()
-	if err != nil {
-		debugLog.Printf("failed to detect the platform: %v", err)
-		return do
-	}
-
-	debugLog.Printf("auto-detected platform: %q", dp)
-	do.AutoDetected = dp
-	do.Discovered = do.AutoDetected
-	return do
-}
-
-func detectVersion(debugLog *log.Logger, plat platform.Platform, userSupplied platform.Version) versionDetection {
-	do := versionDetection{
-		AutoDetected: platform.MissingVersion,
-		UserSupplied: userSupplied,
-		Discovered:   platform.MissingVersion,
-	}
-
-	if do.UserSupplied != platform.MissingVersion {
-		debugLog.Printf("user-supplied version: %q", do.UserSupplied)
-		do.Discovered = do.UserSupplied
-		return do
-	}
-
-	dv, err := detect.Version(plat)
-	if err != nil {
-		debugLog.Printf("failed to detect the version: %v", err)
-		return do
-	}
-
-	debugLog.Printf("auto-detected version: %q", dv)
-	do.AutoDetected = dv
-	do.Discovered = do.AutoDetected
-	return do
 }

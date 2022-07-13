@@ -26,7 +26,6 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/validator"
 )
 
@@ -63,23 +62,6 @@ func (vo validationOutput) String() string {
 		fmt.Fprintf(&sb, "validation: error: %s\n", vErr.String())
 	}
 	return sb.String()
-}
-
-type platformDetection struct {
-	AutoDetected platform.Platform `json:"auto_detected"`
-	UserSupplied platform.Platform `json:"user_supplied"`
-	Discovered   platform.Platform `json:"discovered"`
-}
-
-type versionDetection struct {
-	AutoDetected platform.Version `json:"auto_detected"`
-	UserSupplied platform.Version `json:"user_supplied"`
-	Discovered   platform.Version `json:"discovered"`
-}
-
-type clusterDetection struct {
-	Platform platformDetection `json:"platform"`
-	Version  versionDetection  `json:"version"`
 }
 
 type imageOutput struct {
