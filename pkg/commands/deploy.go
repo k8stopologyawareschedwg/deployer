@@ -31,6 +31,7 @@ import (
 
 type DeployOptions struct {
 	clusterPlatform platform.Platform
+	clusterVersion  platform.Version
 	waitCompletion  bool
 }
 
@@ -64,6 +65,12 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
+			versionDetect, source := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+			commonOpts.DebugLog.Printf("Version detection source: %s", source)
+			opts.clusterVersion = versionDetect.Discovered
+			if opts.clusterVersion == platform.MissingVersion {
+				return fmt.Errorf("cannot autodetect the platform version, and no version given")
+			}
 
 			var err error
 			err = sched.Remove(la, sched.Options{
@@ -78,6 +85,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			}
 			err = updaters.Remove(la, commonOpts.UpdaterType, updaters.Options{
 				Platform:         opts.clusterPlatform,
+				PlatformVersion:  opts.clusterVersion,
 				WaitCompletion:   opts.waitCompletion,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
 				RTEConfigData:    commonOpts.RTEConfigData,
@@ -116,6 +124,12 @@ func NewDeployAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
+			versionDetect, source := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+			commonOpts.DebugLog.Printf("Version detection source: %s", source)
+			opts.clusterVersion = versionDetect.Discovered
+			if opts.clusterVersion == platform.MissingVersion {
+				return fmt.Errorf("cannot autodetect the platform version, and no version given")
+			}
 			if err := api.Deploy(la, api.Options{Platform: opts.clusterPlatform}); err != nil {
 				return err
 			}
@@ -137,6 +151,12 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
+			}
+			versionDetect, source := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+			commonOpts.DebugLog.Printf("Version detection source: %s", source)
+			opts.clusterVersion = versionDetect.Discovered
+			if opts.clusterVersion == platform.MissingVersion {
+				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
 			return sched.Deploy(la, sched.Options{
 				Platform:         opts.clusterPlatform,
@@ -162,8 +182,15 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
+			versionDetect, source := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+			commonOpts.DebugLog.Printf("Version detection source: %s", source)
+			opts.clusterVersion = versionDetect.Discovered
+			if opts.clusterVersion == platform.MissingVersion {
+				return fmt.Errorf("cannot autodetect the platform version, and no version given")
+			}
 			return updaters.Deploy(la, commonOpts.UpdaterType, updaters.Options{
 				Platform:         opts.clusterPlatform,
+				PlatformVersion:  opts.clusterVersion,
 				WaitCompletion:   opts.waitCompletion,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
 				RTEConfigData:    commonOpts.RTEConfigData,
@@ -186,7 +213,12 @@ func NewRemoveAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-
+			versionDetect, source := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+			commonOpts.DebugLog.Printf("Version detection source: %s", source)
+			opts.clusterVersion = versionDetect.Discovered
+			if opts.clusterVersion == platform.MissingVersion {
+				return fmt.Errorf("cannot autodetect the platform version, and no version given")
+			}
 			if err := api.Remove(la, api.Options{Platform: opts.clusterPlatform}); err != nil {
 				return err
 			}
@@ -208,6 +240,12 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
+			}
+			versionDetect, source := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+			commonOpts.DebugLog.Printf("Version detection source: %s", source)
+			opts.clusterVersion = versionDetect.Discovered
+			if opts.clusterVersion == platform.MissingVersion {
+				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
 			return sched.Remove(la, sched.Options{
 				Platform:         opts.clusterPlatform,
@@ -233,8 +271,15 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
+			versionDetect, source := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+			commonOpts.DebugLog.Printf("Version detection source: %s", source)
+			opts.clusterVersion = versionDetect.Discovered
+			if opts.clusterVersion == platform.MissingVersion {
+				return fmt.Errorf("cannot autodetect the platform version, and no version given")
+			}
 			return updaters.Remove(la, commonOpts.UpdaterType, updaters.Options{
 				Platform:         opts.clusterPlatform,
+				PlatformVersion:  opts.clusterVersion,
 				WaitCompletion:   opts.waitCompletion,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
 				RTEConfigData:    commonOpts.RTEConfigData,
@@ -253,6 +298,12 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 	if opts.clusterPlatform == platform.Unknown {
 		return fmt.Errorf("cannot autodetect the platform, and no platform given")
 	}
+	versionDetect, source := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+	commonOpts.DebugLog.Printf("Version detection source: %s", source)
+	opts.clusterVersion = versionDetect.Discovered
+	if opts.clusterVersion == platform.MissingVersion {
+		return fmt.Errorf("cannot autodetect the platform version, and no version given")
+	}
 	if err := api.Deploy(la, api.Options{
 		Platform: opts.clusterPlatform,
 	}); err != nil {
@@ -260,6 +311,7 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 	}
 	if err := updaters.Deploy(la, commonOpts.UpdaterType, updaters.Options{
 		Platform:         opts.clusterPlatform,
+		PlatformVersion:  opts.clusterVersion,
 		WaitCompletion:   opts.waitCompletion,
 		PullIfNotPresent: commonOpts.PullIfNotPresent,
 		RTEConfigData:    commonOpts.RTEConfigData,
