@@ -128,6 +128,7 @@ func makeUpdaterObjects(commonOpts *CommonOptions) ([]client.Object, string, err
 	}
 
 	opts := updaters.Options{
+		PlatformVersion:  commonOpts.UserPlatformVersion,
 		Platform:         commonOpts.UserPlatform,
 		PullIfNotPresent: commonOpts.PullIfNotPresent,
 		RTEConfigData:    commonOpts.RTEConfigData,

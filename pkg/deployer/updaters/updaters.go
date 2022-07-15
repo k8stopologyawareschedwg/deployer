@@ -35,6 +35,7 @@ const (
 
 type Options struct {
 	Platform         platform.Platform
+	PlatformVersion  platform.Version
 	WaitCompletion   bool
 	PullIfNotPresent bool
 	RTEConfigData    string

@@ -28,8 +28,9 @@ import (
 )
 
 func GetObjects(opts Options, updaterType, namespace string) ([]client.Object, error) {
+
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, namespace)
+		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -47,7 +48,7 @@ func GetObjects(opts Options, updaterType, namespace string) ([]client.Object, e
 
 func getCreatableObjects(opts Options, hp *deployer.Helper, log tlog.Logger, updaterType, namespace string) ([]deployer.WaitableObject, error) {
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, namespace)
+		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -65,7 +66,7 @@ func getCreatableObjects(opts Options, hp *deployer.Helper, log tlog.Logger, upd
 
 func getDeletableObjects(opts Options, hp *deployer.Helper, log tlog.Logger, updaterType, namespace string) ([]deployer.WaitableObject, error) {
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, namespace)
+		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
 		if err != nil {
 			return nil, err
 		}
