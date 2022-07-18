@@ -36,9 +36,9 @@ func NewDetectCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "detect",
 		Short: "detect the cluster platform (kubernetes, openshift...)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			platKind, reason := detect.FindPlatform(commonOpts.UserPlatform)
+			platKind, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
 			commonOpts.DebugLog.Printf("platform kind %s (%s)", platKind.Discovered, reason)
-			platVer, reason := detect.FindVersion(platKind.Discovered, commonOpts.UserPlatformVersion)
+			platVer, reason, _ := detect.FindVersion(platKind.Discovered, commonOpts.UserPlatformVersion)
 			commonOpts.DebugLog.Printf("platform version %s (%s)", platVer.Discovered, reason)
 
 			cluster := detect.ClusterInfo{
