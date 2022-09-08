@@ -460,7 +460,6 @@ func TestDaemonSet(t *testing.T) {
 				fmt.Sprintf("--sysfs=%s", containerHostSysDir),
 				fmt.Sprintf("--podresources-socket=unix://%s", containerPodResourcesSocket),
 				fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
-				"--topology-manager-policy=single-numa-node",
 			},
 			expectedVolumes: map[string]string{
 				rteSysVolumeName:                "/sys",
