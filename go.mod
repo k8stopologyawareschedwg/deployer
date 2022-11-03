@@ -1,6 +1,6 @@
 module github.com/k8stopologyawareschedwg/deployer
 
-go 1.17
+go 1.18
 
 require (
 	github.com/aquasecurity/go-version v0.0.0-20210121072130-637058cfe492
