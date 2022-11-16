@@ -22,14 +22,16 @@ jobs:
       uses: actions/setup-go@v2
       id: go
       with:
-        go-version: 1.18
+        go-version: 1.19
 
     - name: build test binary
       run: |
+        go version
         make build-e2e
 
     - name: build tool
       run: |
+        go version
         make
 
     - name: create K8S kind cluster
@@ -56,7 +58,7 @@ jobs:
       uses: actions/setup-go@v2
       id: go
       with:
-        go-version: 1.18
+        go-version: 1.19
 
     - name: build test binary
       run: |
