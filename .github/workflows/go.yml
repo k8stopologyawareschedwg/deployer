@@ -16,7 +16,7 @@ jobs:
     - name: set up golang
       uses: actions/setup-go@v2
       with:
-        go-version: 1.18
+        go-version: 1.19
 
     - name: format
       run: ./hack/check-format.sh
@@ -28,7 +28,9 @@ jobs:
       run: make vet
 
     - name: build
-      run: make all
+      run: |
+        go version
+        make all
 
     - name: test
       run: make test-unit
