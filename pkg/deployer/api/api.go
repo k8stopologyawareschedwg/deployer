@@ -19,8 +19,6 @@ package api
 import (
 	"fmt"
 
-	"github.com/go-logr/logr"
-
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
@@ -36,50 +34,40 @@ func SetupNamespace(plat platform.Platform) (*corev1.Namespace, string, error) {
 	return nil, "", fmt.Errorf("the API is a cluster scoped resource")
 }
 
-func Deploy(log_ logr.Logger, opts Options) error {
+func Deploy(env *deployer.Environment, opts Options) error {
 	var err error
-	log := log_.WithName("API")
-	log.Info("deploying topology-aware-scheduling API")
+	env = env.WithName("API")
+	env.Log.Info("deploying topology-aware-scheduling API")
 
 	mf, err := apimanifests.GetManifests(opts.Platform)
 	if err != nil {
 		return err
 	}
-	log.V(3).Info("API manifests loaded")
+	env.Log.V(3).Info("API manifests loaded")
 
-	hp, err := deployer.NewHelper("API", log)
-	if err != nil {
+	if err = env.CreateObject(mf.Crd); err != nil {
 		return err
 	}
 
-	if err = hp.CreateObject(mf.Crd); err != nil {
-		return err
-	}
-
-	log.Info("deployed topology-aware-scheduling API")
+	env.Log.Info("deployed topology-aware-scheduling API")
 	return nil
 }
 
-func Remove(log_ logr.Logger, opts Options) error {
+func Remove(env *deployer.Environment, opts Options) error {
 	var err error
-	log := log_.WithName("API")
-	log.Info("removing topology-aware-scheduling API")
+	env = env.WithName("API")
+	env.Log.Info("removing topology-aware-scheduling API")
 
 	mf, err := apimanifests.GetManifests(opts.Platform)
 	if err != nil {
 		return err
 	}
-	log.V(3).Info("API manifests loaded")
+	env.Log.V(3).Info("API manifests loaded")
 
-	hp, err := deployer.NewHelper("API", log)
-	if err != nil {
+	if err = env.DeleteObject(mf.Crd); err != nil {
 		return err
 	}
 
-	if err = hp.DeleteObject(mf.Crd); err != nil {
-		return err
-	}
-
-	log.Info("removed topology-aware-scheduling API!")
+	env.Log.Info("removed topology-aware-scheduling API!")
 	return nil
 }

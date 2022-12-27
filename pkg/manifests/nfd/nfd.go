@@ -124,7 +124,7 @@ func (mf Manifests) ToObjects() []client.Object {
 	}
 }
 
-func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log logr.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
 		{Obj: mf.CRMaster},
 		{Obj: mf.CRBMaster},
@@ -133,7 +133,7 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log logr.Logger) []d
 		{
 			Obj: mf.DPMaster,
 			Wait: func() error {
-				return wait.PodsToBeRunningByRegex(hp, log, mf.DPMaster.Namespace, mf.DPMaster.Name)
+				return wait.PodsToBeRunningByRegex(cli, log, mf.DPMaster.Namespace, mf.DPMaster.Name)
 			},
 		},
 		{Obj: mf.SATopologyUpdater},
@@ -142,13 +142,13 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log logr.Logger) []d
 		{
 			Obj: mf.DSTopologyUpdater,
 			Wait: func() error {
-				return wait.PodsToBeRunningByRegex(hp, log, mf.DSTopologyUpdater.Namespace, mf.DSTopologyUpdater.Name)
+				return wait.PodsToBeRunningByRegex(cli, log, mf.DSTopologyUpdater.Namespace, mf.DSTopologyUpdater.Name)
 			},
 		},
 	}
 }
 
-func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log logr.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToDeletableObjects(cli client.Client, log logr.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
 		{Obj: mf.CRBTopologyUpdater},
 		{Obj: mf.CRTopologyUpdater},

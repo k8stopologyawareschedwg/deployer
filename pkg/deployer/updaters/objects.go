@@ -47,38 +47,38 @@ func GetObjects(opts Options, updaterType, namespace string) ([]client.Object, e
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }
 
-func getCreatableObjects(opts Options, hp *deployer.Helper, log logr.Logger, updaterType, namespace string) ([]deployer.WaitableObject, error) {
+func getCreatableObjects(opts Options, cli client.Client, log logr.Logger, updaterType, namespace string) ([]deployer.WaitableObject, error) {
 	if updaterType == RTE {
 		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
 		if err != nil {
 			return nil, err
 		}
-		return mf.Render(rteOptionsFrom(opts, namespace)).ToCreatableObjects(hp, log), nil
+		return mf.Render(rteOptionsFrom(opts, namespace)).ToCreatableObjects(cli, log), nil
 	}
 	if updaterType == NFD {
 		mf, err := nfdmanifests.GetManifests(opts.Platform, namespace)
 		if err != nil {
 			return nil, err
 		}
-		return mf.Render(nfdOptionsFrom(opts, namespace)).ToCreatableObjects(hp, log), nil
+		return mf.Render(nfdOptionsFrom(opts, namespace)).ToCreatableObjects(cli, log), nil
 	}
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }
 
-func getDeletableObjects(opts Options, hp *deployer.Helper, log logr.Logger, updaterType, namespace string) ([]deployer.WaitableObject, error) {
+func getDeletableObjects(opts Options, cli client.Client, log logr.Logger, updaterType, namespace string) ([]deployer.WaitableObject, error) {
 	if updaterType == RTE {
 		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
 		if err != nil {
 			return nil, err
 		}
-		return mf.Render(rteOptionsFrom(opts, namespace)).ToDeletableObjects(hp, log), nil
+		return mf.Render(rteOptionsFrom(opts, namespace)).ToDeletableObjects(cli, log), nil
 	}
 	if updaterType == NFD {
 		mf, err := nfdmanifests.GetManifests(opts.Platform, namespace)
 		if err != nil {
 			return nil, err
 		}
-		return mf.Render(nfdOptionsFrom(opts, namespace)).ToDeletableObjects(hp, log), nil
+		return mf.Render(nfdOptionsFrom(opts, namespace)).ToDeletableObjects(cli, log), nil
 	}
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }

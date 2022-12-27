@@ -17,10 +17,13 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
@@ -57,6 +60,11 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "remove",
 		Short: "remove the components and configurations needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			env, err := environFromOpts(commonOpts)
+			if err != nil {
+				return err
+			}
+
 			platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
@@ -69,8 +77,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			}
 			commonOpts.DebugLog.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
 
-			var err error
-			err = sched.Remove(commonOpts.Log, sched.Options{
+			err = sched.Remove(env, sched.Options{
 				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
 				RTEConfigData:    commonOpts.RTEConfigData,
@@ -80,7 +87,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 				// intentionally keep going to remove as much as possible
 				commonOpts.Log.Info("while removing", "error", err)
 			}
-			err = updaters.Remove(commonOpts.Log, commonOpts.UpdaterType, updaters.Options{
+			err = updaters.Remove(env, commonOpts.UpdaterType, updaters.Options{
 				Platform:         opts.clusterPlatform,
 				PlatformVersion:  opts.clusterVersion,
 				WaitCompletion:   opts.waitCompletion,
@@ -91,7 +98,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 				// intentionally keep going to remove as much as possible
 				commonOpts.Log.Info("while removing", "error", err)
 			}
-			err = api.Remove(commonOpts.Log, api.Options{
+			err = api.Remove(env, api.Options{
 				Platform: opts.clusterPlatform,
 			})
 			if err != nil {
@@ -114,6 +121,11 @@ func NewDeployAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.
 		Use:   "api",
 		Short: "deploy the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			env, err := environFromOpts(commonOpts)
+			if err != nil {
+				return err
+			}
+
 			platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
@@ -126,7 +138,7 @@ func NewDeployAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.
 			}
 
 			commonOpts.DebugLog.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
-			if err := api.Deploy(commonOpts.Log, api.Options{Platform: opts.clusterPlatform}); err != nil {
+			if err := api.Deploy(env, api.Options{Platform: opts.clusterPlatform}); err != nil {
 				return err
 			}
 			return nil
@@ -141,6 +153,11 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 		Use:   "scheduler-plugin",
 		Short: "deploy the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			env, err := environFromOpts(commonOpts)
+			if err != nil {
+				return err
+			}
+
 			platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
@@ -153,7 +170,7 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 			}
 
 			commonOpts.DebugLog.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
-			return sched.Deploy(commonOpts.Log, sched.Options{
+			return sched.Deploy(env, sched.Options{
 				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
 				RTEConfigData:    commonOpts.RTEConfigData,
@@ -170,6 +187,11 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 		Use:   "topology-updater",
 		Short: "deploy the topology updater needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			env, err := environFromOpts(commonOpts)
+			if err != nil {
+				return err
+			}
+
 			platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
@@ -182,7 +204,7 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 			}
 
 			commonOpts.DebugLog.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
-			return updaters.Deploy(commonOpts.Log, commonOpts.UpdaterType, updaters.Options{
+			return updaters.Deploy(env, commonOpts.UpdaterType, updaters.Options{
 				Platform:         opts.clusterPlatform,
 				PlatformVersion:  opts.clusterVersion,
 				WaitCompletion:   opts.waitCompletion,
@@ -200,6 +222,11 @@ func NewRemoveAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.
 		Use:   "api",
 		Short: "remove the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			env, err := environFromOpts(commonOpts)
+			if err != nil {
+				return err
+			}
+
 			platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
@@ -212,7 +239,7 @@ func NewRemoveAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.
 			}
 
 			commonOpts.DebugLog.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
-			if err := api.Remove(commonOpts.Log, api.Options{Platform: opts.clusterPlatform}); err != nil {
+			if err := api.Remove(env, api.Options{Platform: opts.clusterPlatform}); err != nil {
 				return err
 			}
 			return nil
@@ -227,6 +254,11 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 		Use:   "scheduler-plugin",
 		Short: "remove the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			env, err := environFromOpts(commonOpts)
+			if err != nil {
+				return err
+			}
+
 			platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
@@ -239,7 +271,7 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 			}
 
 			commonOpts.DebugLog.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
-			return sched.Remove(commonOpts.Log, sched.Options{
+			return sched.Remove(env, sched.Options{
 				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
 				RTEConfigData:    commonOpts.RTEConfigData,
@@ -256,6 +288,11 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 		Use:   "topology-updater",
 		Short: "remove the topology updater needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			env, err := environFromOpts(commonOpts)
+			if err != nil {
+				return err
+			}
+
 			platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
@@ -268,7 +305,7 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 			}
 
 			commonOpts.DebugLog.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
-			return updaters.Remove(commonOpts.Log, commonOpts.UpdaterType, updaters.Options{
+			return updaters.Remove(env, commonOpts.UpdaterType, updaters.Options{
 				Platform:         opts.clusterPlatform,
 				PlatformVersion:  opts.clusterVersion,
 				WaitCompletion:   opts.waitCompletion,
@@ -282,6 +319,11 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 }
 
 func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
+	env, err := environFromOpts(commonOpts)
+	if err != nil {
+		return err
+	}
+
 	platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
 	opts.clusterPlatform = platDetect.Discovered
 	if opts.clusterPlatform == platform.Unknown {
@@ -294,12 +336,12 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 	}
 
 	commonOpts.DebugLog.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
-	if err := api.Deploy(commonOpts.Log, api.Options{
+	if err := api.Deploy(env, api.Options{
 		Platform: opts.clusterPlatform,
 	}); err != nil {
 		return err
 	}
-	if err := updaters.Deploy(commonOpts.Log, commonOpts.UpdaterType, updaters.Options{
+	if err := updaters.Deploy(env, commonOpts.UpdaterType, updaters.Options{
 		Platform:         opts.clusterPlatform,
 		PlatformVersion:  opts.clusterVersion,
 		WaitCompletion:   opts.waitCompletion,
@@ -308,7 +350,7 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 	}); err != nil {
 		return err
 	}
-	if err := sched.Deploy(commonOpts.Log, sched.Options{
+	if err := sched.Deploy(env, sched.Options{
 		Platform:         opts.clusterPlatform,
 		WaitCompletion:   opts.waitCompletion,
 		RTEConfigData:    commonOpts.RTEConfigData,
@@ -317,4 +359,16 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 		return err
 	}
 	return nil
+}
+
+func environFromOpts(commonOpts *CommonOptions) (*deployer.Environment, error) {
+	cli, err := clientutil.New()
+	if err != nil {
+		return nil, err
+	}
+	return &deployer.Environment{
+		Ctx: context.TODO(),
+		Cli: cli,
+		Log: commonOpts.Log,
+	}, nil
 }
