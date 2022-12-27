@@ -17,9 +17,7 @@
 package commands
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 
@@ -36,20 +34,22 @@ func NewDetectCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "detect",
 		Short: "detect the cluster platform (kubernetes, openshift...)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			platKind, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
-			commonOpts.DebugLog.Printf("platform kind %s (%s)", platKind.Discovered, reason)
-			platVer, reason, _ := detect.FindVersion(platKind.Discovered, commonOpts.UserPlatformVersion)
-			commonOpts.DebugLog.Printf("platform version %s (%s)", platVer.Discovered, reason)
+			platKind, kindReason, _ := detect.FindPlatform(commonOpts.UserPlatform)
+			platVer, verReason, _ := detect.FindVersion(platKind.Discovered, commonOpts.UserPlatformVersion)
+
+			commonOpts.DebugLog.Info("detection", "platform", platKind, "reason", kindReason, "version", platVer, "source", verReason)
 
 			cluster := detect.ClusterInfo{
 				Platform: platKind,
 				Version:  platVer,
 			}
+			var out string
 			if opts.jsonOutput {
-				json.NewEncoder(os.Stdout).Encode(cluster)
+				out = cluster.ToJSON()
 			} else {
-				fmt.Printf("%s:%s\n", cluster.Platform.Discovered, cluster.Version.Discovered)
+				out = cluster.String()
 			}
+			fmt.Printf("%s\n", out)
 			return nil
 		},
 		Args: cobra.NoArgs,

@@ -21,10 +21,10 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/go-logr/logr"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	schedmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
 type Options struct {
@@ -39,9 +39,10 @@ func SetupNamespace(plat platform.Platform) (*corev1.Namespace, string, error) {
 	return nil, "", fmt.Errorf("not yet implemented")
 }
 
-func Deploy(log tlog.Logger, opts Options) error {
+func Deploy(log_ logr.Logger, opts Options) error {
 	var err error
-	log.Printf("deploying topology-aware-scheduling scheduler plugin...")
+	log := log_.WithName("SCD")
+	log.Info("deploying topology-aware-scheduling scheduler plugin")
 
 	mf, err := schedmanifests.GetManifests(opts.Platform, "")
 	if err != nil {
@@ -52,9 +53,9 @@ func Deploy(log tlog.Logger, opts Options) error {
 		Replicas:         opts.Replicas,
 		PullIfNotPresent: opts.PullIfNotPresent,
 	})
-	log.Debugf("SCD manifests loaded")
+	log.V(3).Info("manifests loaded")
 
-	hp, err := deployer.NewHelper("SCD", log)
+	hp, err := deployer.NewHelper("SCD", log_)
 	if err != nil {
 		return err
 	}
@@ -71,13 +72,14 @@ func Deploy(log tlog.Logger, opts Options) error {
 		}
 	}
 
-	log.Printf("...deployed topology-aware-scheduling scheduler plugin!")
+	log.Info("deployed topology-aware-scheduling scheduler plugin")
 	return nil
 }
 
-func Remove(log tlog.Logger, opts Options) error {
+func Remove(log_ logr.Logger, opts Options) error {
 	var err error
-	log.Printf("removing topology-aware-scheduling scheduler plugin...")
+	log := log_.WithName("SCD")
+	log.Info("removing topology-aware-scheduling scheduler plugin")
 
 	mf, err := schedmanifests.GetManifests(opts.Platform, "")
 	if err != nil {
@@ -88,9 +90,9 @@ func Remove(log tlog.Logger, opts Options) error {
 		Replicas:         opts.Replicas,
 		PullIfNotPresent: opts.PullIfNotPresent,
 	})
-	log.Debugf("SCD manifests loaded")
+	log.V(3).Info("manifests loaded")
 
-	hp, err := deployer.NewHelper("SCD", log)
+	hp, err := deployer.NewHelper("SCD", log_)
 	if err != nil {
 		return err
 	}
@@ -98,7 +100,7 @@ func Remove(log tlog.Logger, opts Options) error {
 	for _, wo := range mf.ToDeletableObjects(hp, log) {
 		err = hp.DeleteObject(wo.Obj)
 		if err != nil {
-			log.Printf("failed to remove: %v", err)
+			log.Info("failed to remove: %v", err)
 			continue
 		}
 
@@ -108,10 +110,10 @@ func Remove(log tlog.Logger, opts Options) error {
 
 		err = wo.Wait()
 		if err != nil {
-			log.Printf("failed to wait for removal: %v", err)
+			log.Info("failed to wait for removal", "error", err)
 		}
 	}
 
-	log.Printf("...removed topology-aware-scheduling scheduler plugin!")
+	log.Info("removed topology-aware-scheduling scheduler plugin")
 	return nil
 }

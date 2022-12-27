@@ -17,6 +17,8 @@
 package nfd
 
 import (
+	"github.com/go-logr/logr"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -27,7 +29,6 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
 type Manifests struct {
@@ -123,7 +124,7 @@ func (mf Manifests) ToObjects() []client.Object {
 	}
 }
 
-func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log logr.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
 		{Obj: mf.CRMaster},
 		{Obj: mf.CRBMaster},
@@ -147,7 +148,7 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []d
 	}
 }
 
-func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log logr.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
 		{Obj: mf.CRBTopologyUpdater},
 		{Obj: mf.CRTopologyUpdater},

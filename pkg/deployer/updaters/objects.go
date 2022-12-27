@@ -19,12 +19,13 @@ package updaters
 import (
 	"fmt"
 
+	"github.com/go-logr/logr"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	nfdmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/nfd"
 	rtemanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
 func GetObjects(opts Options, updaterType, namespace string) ([]client.Object, error) {
@@ -46,7 +47,7 @@ func GetObjects(opts Options, updaterType, namespace string) ([]client.Object, e
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }
 
-func getCreatableObjects(opts Options, hp *deployer.Helper, log tlog.Logger, updaterType, namespace string) ([]deployer.WaitableObject, error) {
+func getCreatableObjects(opts Options, hp *deployer.Helper, log logr.Logger, updaterType, namespace string) ([]deployer.WaitableObject, error) {
 	if updaterType == RTE {
 		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
 		if err != nil {
@@ -64,7 +65,7 @@ func getCreatableObjects(opts Options, hp *deployer.Helper, log tlog.Logger, upd
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }
 
-func getDeletableObjects(opts Options, hp *deployer.Helper, log tlog.Logger, updaterType, namespace string) ([]deployer.WaitableObject, error) {
+func getDeletableObjects(opts Options, hp *deployer.Helper, log logr.Logger, updaterType, namespace string) ([]deployer.WaitableObject, error) {
 	if updaterType == RTE {
 		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
 		if err != nil {

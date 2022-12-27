@@ -28,7 +28,6 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
 type RenderOptions struct{}
@@ -94,8 +93,7 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *RenderOpti
 				Replicas:         int32(commonOpts.Replicas),
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			}
-			la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
-			return renderObjects(schedManifests.Render(la, renderOpts).ToObjects())
+			return renderObjects(schedManifests.Render(commonOpts.Log, renderOpts).ToObjects())
 		},
 		Args: cobra.NoArgs,
 	}
@@ -166,8 +164,7 @@ func RenderManifests(commonOpts *CommonOptions) error {
 		PullIfNotPresent: commonOpts.PullIfNotPresent,
 	}
 
-	la := tlog.NewLogAdapter(commonOpts.Log, commonOpts.DebugLog)
-	objs = append(objs, schedManifests.Render(la, schedRenderOpts).ToObjects()...)
+	objs = append(objs, schedManifests.Render(commonOpts.Log, schedRenderOpts).ToObjects()...)
 
 	return renderObjects(objs)
 }

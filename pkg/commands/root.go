@@ -18,11 +18,12 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 
+	"github.com/go-logr/logr"
+	"github.com/go-logr/stdr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -34,8 +35,8 @@ type CommonOptions struct {
 	Debug               bool
 	UserPlatform        platform.Platform
 	UserPlatformVersion platform.Version
-	Log                 *log.Logger
-	DebugLog            *log.Logger
+	Log                 logr.Logger
+	DebugLog            logr.Logger
 	Replicas            int
 	RTEConfigData       string
 	PullIfNotPresent    bool
@@ -98,13 +99,13 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
 }
 
 func PostSetupOptions(commonOpts *CommonOptions) error {
-	if commonOpts.Debug {
-		commonOpts.DebugLog = log.New(os.Stderr, "", log.LstdFlags)
-	} else {
-		commonOpts.DebugLog = log.New(ioutil.Discard, "", 0)
-	}
 	// we abuse the logger to have a common interface and the timestamps
-	commonOpts.Log = log.New(os.Stdout, "", log.LstdFlags)
+	commonOpts.Log = stdr.New(log.New(os.Stderr, "", log.LstdFlags))
+	if commonOpts.Debug {
+		commonOpts.DebugLog = commonOpts.Log.WithName("DEBUG")
+	} else {
+		commonOpts.DebugLog = logr.Discard()
+	}
 
 	// if it is unknown, it's fine
 	if commonOpts.plat == "" {
@@ -127,7 +128,7 @@ func PostSetupOptions(commonOpts *CommonOptions) error {
 			return err
 		}
 		commonOpts.RTEConfigData = string(data)
-		commonOpts.DebugLog.Printf("RTE config: read %d bytes", len(commonOpts.RTEConfigData))
+		commonOpts.DebugLog.Info("RTE config: read", "bytes", len(commonOpts.RTEConfigData))
 	}
 	if err := validateUpdaterType(commonOpts.UpdaterType); err != nil {
 		return err
