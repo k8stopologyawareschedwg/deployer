@@ -17,24 +17,26 @@
 package wait
 
 import (
+	"context"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 )
 
-func PodsToBeRunningByRegex(hp *deployer.Helper, log logr.Logger, namespace, name string) error {
+func PodsToBeRunningByRegex(cli client.Client, log logr.Logger, namespace, name string) error {
 	log = log.WithValues("namespace", namespace, "name", name)
 	log.Info("wait for all the pods in group to be running and ready")
 	return wait.PollImmediate(1*time.Second, 3*time.Minute, func() (bool, error) {
-		pods, err := hp.GetPodsByPattern(namespace, fmt.Sprintf("%s-*", name))
+		pods, err := getPodsByPattern(cli, log, namespace, fmt.Sprintf("%s-*", name))
 		if err != nil {
 			return false, err
 		}
@@ -54,11 +56,11 @@ func PodsToBeRunningByRegex(hp *deployer.Helper, log logr.Logger, namespace, nam
 	})
 }
 
-func PodsToBeGoneByRegex(hp *deployer.Helper, log logr.Logger, namespace, name string) error {
+func PodsToBeGoneByRegex(cli client.Client, log logr.Logger, namespace, name string) error {
 	log = log.WithValues("namespace", namespace, "name", name)
 	log.Info("wait for all the pods in deployment to be gone")
 	return wait.PollImmediate(10*time.Second, 3*time.Minute, func() (bool, error) {
-		pods, err := hp.GetPodsByPattern(namespace, fmt.Sprintf("%s-*", name))
+		pods, err := getPodsByPattern(cli, log, namespace, fmt.Sprintf("%s-*", name))
 		if err != nil {
 			return false, err
 		}
@@ -70,7 +72,7 @@ func PodsToBeGoneByRegex(hp *deployer.Helper, log logr.Logger, namespace, name s
 	})
 }
 
-func NamespaceToBeGone(hp *deployer.Helper, log logr.Logger, namespace string) error {
+func NamespaceToBeGone(cli client.Client, log logr.Logger, namespace string) error {
 	log = log.WithValues("namespace", namespace)
 	log.Info("wait for the namespace to be gone")
 	return wait.PollImmediate(1*time.Second, 3*time.Minute, func() (bool, error) {
@@ -78,7 +80,7 @@ func NamespaceToBeGone(hp *deployer.Helper, log logr.Logger, namespace string) e
 			Name: namespace,
 		}
 		ns := corev1.Namespace{} // unused
-		err := hp.GetObject(nsKey, &ns)
+		err := cli.Get(context.TODO(), nsKey, &ns)
 		if err == nil {
 			// still present
 			return false, nil
@@ -91,16 +93,77 @@ func NamespaceToBeGone(hp *deployer.Helper, log logr.Logger, namespace string) e
 	})
 }
 
-func DaemonSetToBeRunning(hp *deployer.Helper, log logr.Logger, namespace, name string) error {
-	log.Info("wait for the daemonset to be running", "namespace", namespace, "name", name)
+func DaemonSetToBeRunning(cli client.Client, log_ logr.Logger, namespace, name string) error {
+	log := log_.WithValues("namespace", namespace, "name", name)
+	log.Info("wait for the daemonset to be running")
 	return wait.PollImmediate(3*time.Second, 3*time.Minute, func() (bool, error) {
-		return hp.IsDaemonSetRunning(namespace, name)
+		return isDaemonSetRunning(cli, log, namespace, name)
 	})
 }
 
-func DaemonSetToBeGone(hp *deployer.Helper, log logr.Logger, namespace, name string) error {
-	log.Info("wait for the daemonset to be gone", "namespace", namespace, "name", name)
+func DaemonSetToBeGone(cli client.Client, log_ logr.Logger, namespace, name string) error {
+	log := log_.WithValues("namespace", namespace, "name", name)
+	log.Info("wait for the daemonset to be gone")
 	return wait.PollImmediate(3*time.Second, 3*time.Minute, func() (bool, error) {
-		return hp.IsDaemonSetGone(namespace, name)
+		return isDaemonSetGone(cli, log, namespace, name)
 	})
+}
+
+func isDaemonSetRunning(cli client.Client, log logr.Logger, namespace, name string) (bool, error) {
+	ds, err := getDaemonSetByName(cli, namespace, name)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			log.Info("daemonset not found - retrying")
+			return false, nil
+		}
+		return false, err
+	}
+	log.Info("daemonset", "desired", ds.Status.DesiredNumberScheduled, "current", ds.Status.CurrentNumberScheduled, "ready", ds.Status.NumberReady)
+	return (ds.Status.DesiredNumberScheduled > 0 && ds.Status.DesiredNumberScheduled == ds.Status.NumberReady), nil
+}
+
+func isDaemonSetGone(cli client.Client, log logr.Logger, namespace, name string) (bool, error) {
+	ds, err := getDaemonSetByName(cli, namespace, name)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			log.Info("daemonset not found - gone away!")
+			return true, nil
+		}
+		return true, err
+	}
+	log.Info("daemonset running", "count", ds.Status.CurrentNumberScheduled)
+	return false, nil
+}
+
+func getDaemonSetByName(cli client.Client, namespace, name string) (*appsv1.DaemonSet, error) {
+	key := client.ObjectKey{
+		Namespace: namespace,
+		Name:      name,
+	}
+	var ds appsv1.DaemonSet
+	err := cli.Get(context.TODO(), key, &ds)
+	return &ds, err
+}
+
+func getPodsByPattern(cli client.Client, log logr.Logger, namespace, pattern string) ([]*corev1.Pod, error) {
+	var podList corev1.PodList
+	err := cli.List(context.TODO(), &podList)
+	if err != nil {
+		return nil, err
+	}
+	log.Info("found matching pods", "count", len(podList.Items), "namespace", namespace, "pattern", pattern)
+
+	podNameRgx, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []*corev1.Pod{}
+	for _, pod := range podList.Items {
+		if match := podNameRgx.FindString(pod.Name); len(match) != 0 {
+			log.Info("pod matches", "name", pod.Name)
+			ret = append(ret, &pod)
+		}
+	}
+	return ret, nil
 }

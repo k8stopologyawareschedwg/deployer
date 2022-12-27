@@ -21,7 +21,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/go-logr/logr"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	schedmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
@@ -39,29 +38,24 @@ func SetupNamespace(plat platform.Platform) (*corev1.Namespace, string, error) {
 	return nil, "", fmt.Errorf("not yet implemented")
 }
 
-func Deploy(log_ logr.Logger, opts Options) error {
+func Deploy(env *deployer.Environment, opts Options) error {
 	var err error
-	log := log_.WithName("SCD")
-	log.Info("deploying topology-aware-scheduling scheduler plugin")
+	env = env.WithName("SCD")
+	env.Log.Info("deploying topology-aware-scheduling scheduler plugin")
 
 	mf, err := schedmanifests.GetManifests(opts.Platform, "")
 	if err != nil {
 		return err
 	}
 
-	mf = mf.Render(log, schedmanifests.RenderOptions{
+	mf = mf.Render(env.Log, schedmanifests.RenderOptions{
 		Replicas:         opts.Replicas,
 		PullIfNotPresent: opts.PullIfNotPresent,
 	})
-	log.V(3).Info("manifests loaded")
+	env.Log.V(3).Info("manifests loaded")
 
-	hp, err := deployer.NewHelper("SCD", log_)
-	if err != nil {
-		return err
-	}
-
-	for _, wo := range mf.ToCreatableObjects(hp, log) {
-		if err := hp.CreateObject(wo.Obj); err != nil {
+	for _, wo := range mf.ToCreatableObjects(env.Cli, env.Log) {
+		if err := env.CreateObject(wo.Obj); err != nil {
 			return err
 		}
 		if opts.WaitCompletion && wo.Wait != nil {
@@ -72,35 +66,30 @@ func Deploy(log_ logr.Logger, opts Options) error {
 		}
 	}
 
-	log.Info("deployed topology-aware-scheduling scheduler plugin")
+	env.Log.Info("deployed topology-aware-scheduling scheduler plugin")
 	return nil
 }
 
-func Remove(log_ logr.Logger, opts Options) error {
+func Remove(env *deployer.Environment, opts Options) error {
 	var err error
-	log := log_.WithName("SCD")
-	log.Info("removing topology-aware-scheduling scheduler plugin")
+	env = env.WithName("SCD")
+	env.Log.Info("removing topology-aware-scheduling scheduler plugin")
 
 	mf, err := schedmanifests.GetManifests(opts.Platform, "")
 	if err != nil {
 		return err
 	}
 
-	mf = mf.Render(log, schedmanifests.RenderOptions{
+	mf = mf.Render(env.Log, schedmanifests.RenderOptions{
 		Replicas:         opts.Replicas,
 		PullIfNotPresent: opts.PullIfNotPresent,
 	})
-	log.V(3).Info("manifests loaded")
+	env.Log.V(3).Info("manifests loaded")
 
-	hp, err := deployer.NewHelper("SCD", log_)
-	if err != nil {
-		return err
-	}
-
-	for _, wo := range mf.ToDeletableObjects(hp, log) {
-		err = hp.DeleteObject(wo.Obj)
+	for _, wo := range mf.ToDeletableObjects(env.Cli, env.Log) {
+		err = env.DeleteObject(wo.Obj)
 		if err != nil {
-			log.Info("failed to remove: %v", err)
+			env.Log.Info("failed to remove: %v", err)
 			continue
 		}
 
@@ -110,10 +99,10 @@ func Remove(log_ logr.Logger, opts Options) error {
 
 		err = wo.Wait()
 		if err != nil {
-			log.Info("failed to wait for removal", "error", err)
+			env.Log.Info("failed to wait for removal", "error", err)
 		}
 	}
 
-	log.Info("removed topology-aware-scheduling scheduler plugin")
+	env.Log.Info("removed topology-aware-scheduling scheduler plugin")
 	return nil
 }

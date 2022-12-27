@@ -19,8 +19,6 @@ package updaters
 import (
 	"strings"
 
-	"github.com/go-logr/logr"
-
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
@@ -42,31 +40,26 @@ type Options struct {
 	RTEConfigData    string
 }
 
-func Deploy(log_ logr.Logger, updaterType string, opts Options) error {
-	log := log_.WithName(updaterType)
-	log.Info("deploying topology-aware-scheduling topology updater")
+func Deploy(env *deployer.Environment, updaterType string, opts Options) error {
+	env = env.WithName(updaterType)
+	env.Log.Info("deploying topology-aware-scheduling topology updater")
 
 	ns, namespace, err := SetupNamespace(updaterType)
 	if err != nil {
 		return err
 	}
 
-	hp, err := deployer.NewHelper(updaterType, log_)
+	objs, err := getCreatableObjects(opts, env.Cli, env.Log, updaterType, namespace)
 	if err != nil {
 		return err
 	}
 
-	objs, err := getCreatableObjects(opts, hp, log, updaterType, namespace)
-	if err != nil {
-		return err
-	}
-
-	log.V(3).Info("manifests loaded")
+	env.Log.V(3).Info("manifests loaded")
 
 	objs = append([]deployer.WaitableObject{{Obj: ns}}, objs...)
 
 	for _, wo := range objs {
-		if err := hp.CreateObject(wo.Obj); err != nil {
+		if err := env.CreateObject(wo.Obj); err != nil {
 			return err
 		}
 		if opts.WaitCompletion && wo.Wait != nil {
@@ -77,19 +70,14 @@ func Deploy(log_ logr.Logger, updaterType string, opts Options) error {
 		}
 	}
 
-	log.Info("deployed topology-aware-scheduling topology updater!")
+	env.Log.Info("deployed topology-aware-scheduling topology updater!")
 	return nil
 }
 
-func Remove(log_ logr.Logger, updaterType string, opts Options) error {
+func Remove(env *deployer.Environment, updaterType string, opts Options) error {
 	var err error
-	log := log_.WithName(updaterType)
-	log.Info("removing topology-aware-scheduling topology updater")
-
-	hp, err := deployer.NewHelper(updaterType, log_)
-	if err != nil {
-		return err
-	}
+	env = env.WithName(updaterType)
+	env.Log.Info("removing topology-aware-scheduling topology updater")
 
 	ns, err := manifests.Namespace(updaterTypeAsComponent(updaterType))
 	if err != nil {
@@ -97,21 +85,21 @@ func Remove(log_ logr.Logger, updaterType string, opts Options) error {
 	}
 	namespace := ns.Name
 
-	objs, err := getDeletableObjects(opts, hp, log, updaterType, namespace)
+	objs, err := getDeletableObjects(opts, env.Cli, env.Log, updaterType, namespace)
 	if err != nil {
 		return err
 	}
 
-	log.V(3).Info("%s manifests loaded")
+	env.Log.V(3).Info("%s manifests loaded")
 
 	objs = append(objs, deployer.WaitableObject{
 		Obj:  ns,
-		Wait: func() error { return wait.NamespaceToBeGone(hp, log, ns.Name) },
+		Wait: func() error { return wait.NamespaceToBeGone(env.Cli, env.Log, ns.Name) },
 	})
 	for _, wo := range objs {
-		err = hp.DeleteObject(wo.Obj)
+		err = env.DeleteObject(wo.Obj)
 		if err != nil {
-			log.Info("failed to remove: %v", err)
+			env.Log.Info("failed to remove: %v", err)
 			continue
 		}
 
@@ -121,11 +109,11 @@ func Remove(log_ logr.Logger, updaterType string, opts Options) error {
 
 		err = wo.Wait()
 		if err != nil {
-			log.Info("failed to wait for removal", "error", err)
+			env.Log.Info("failed to wait for removal", "error", err)
 		}
 	}
 
-	log.Info("removed topology-aware-scheduling topology updater!")
+	env.Log.Info("removed topology-aware-scheduling topology updater!")
 	return nil
 }
 

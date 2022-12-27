@@ -129,7 +129,7 @@ func (mf Manifests) ToObjects() []client.Object {
 	}
 }
 
-func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log logr.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
 		{Obj: mf.Crd},
 		{Obj: mf.Namespace},
@@ -141,7 +141,7 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log logr.Logger) []d
 		{
 			Obj: mf.DPScheduler,
 			Wait: func() error {
-				return wait.PodsToBeRunningByRegex(hp, log, mf.DPScheduler.Namespace, mf.DPScheduler.Name)
+				return wait.PodsToBeRunningByRegex(cli, log, mf.DPScheduler.Namespace, mf.DPScheduler.Name)
 			},
 		},
 		{Obj: mf.SAController},
@@ -151,17 +151,17 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log logr.Logger) []d
 		{
 			Obj: mf.DPController,
 			Wait: func() error {
-				return wait.PodsToBeRunningByRegex(hp, log, mf.DPController.Namespace, mf.DPController.Name)
+				return wait.PodsToBeRunningByRegex(cli, log, mf.DPController.Namespace, mf.DPController.Name)
 			},
 		},
 	}
 }
 
-func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log logr.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToDeletableObjects(cli client.Client, log logr.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
 		{
 			Obj:  mf.Namespace,
-			Wait: func() error { return wait.NamespaceToBeGone(hp, log, mf.Namespace.Name) },
+			Wait: func() error { return wait.NamespaceToBeGone(cli, log, mf.Namespace.Name) },
 		},
 		// no need to remove objects created inside the namespace we just removed
 		{Obj: mf.CRBScheduler},
