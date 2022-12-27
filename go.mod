@@ -5,6 +5,8 @@ go 1.19
 require (
 	github.com/aquasecurity/go-version v0.0.0-20210121072130-637058cfe492
 	github.com/coreos/ignition/v2 v2.13.0
+	github.com/go-logr/logr v1.2.3
+	github.com/go-logr/stdr v1.2.2
 	github.com/google/go-cmp v0.5.8
 	github.com/hashicorp/go-version v1.6.0
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.12
@@ -37,7 +39,6 @@ require (
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
-	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
