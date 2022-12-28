@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -27,6 +28,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 )
@@ -138,4 +141,16 @@ func validateUpdaterType(updaterType string) error {
 		return fmt.Errorf("%q is invalid updater type", updaterType)
 	}
 	return nil
+}
+
+func environFromOpts(commonOpts *CommonOptions) (*deployer.Environment, error) {
+	cli, err := clientutil.New()
+	if err != nil {
+		return nil, err
+	}
+	return &deployer.Environment{
+		Ctx: context.TODO(),
+		Cli: cli,
+		Log: commonOpts.Log,
+	}, nil
 }

@@ -76,12 +76,17 @@ func validateCluster(cmd *cobra.Command, commonOpts *CommonOptions, opts *valida
 	// TODO
 	validatePostSetupOptions(opts)
 
-	vd, err := validator.NewValidator(commonOpts.DebugLog)
+	env, err := environFromOpts(commonOpts)
 	if err != nil {
 		return err
 	}
 
-	nodeList, err := nodes.GetWorkers()
+	vd, err := validator.NewValidator(env.Log)
+	if err != nil {
+		return err
+	}
+
+	nodeList, err := nodes.GetWorkers(env)
 	if err != nil {
 		return err
 	}
@@ -90,7 +95,7 @@ func validateCluster(cmd *cobra.Command, commonOpts *CommonOptions, opts *valida
 		return err
 	}
 
-	printValidationResults(vd.Results(), commonOpts.Log, opts.outputMode)
+	printValidationResults(vd.Results(), env.Log, opts.outputMode)
 	return nil
 }
 

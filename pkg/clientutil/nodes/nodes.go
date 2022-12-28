@@ -17,37 +17,34 @@
 package nodes
 
 import (
-	"context"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 )
 
-func GetWorkers() ([]corev1.Node, error) {
-	return GetByRole(clientutil.RoleWorker)
+func GetWorkers(env *deployer.Environment) ([]corev1.Node, error) {
+	return GetByRole(env, clientutil.RoleWorker)
 }
 
 // GetByRole returns all nodes with the specified role
-func GetByRole(role string) ([]corev1.Node, error) {
+func GetByRole(env *deployer.Environment, role string) ([]corev1.Node, error) {
 	selector, err := labels.Parse(fmt.Sprintf("%s/%s=", clientutil.LabelRole, role))
 	if err != nil {
 		return nil, err
 	}
-	return GetBySelector(selector)
+	return GetBySelector(env, selector)
 }
 
 // GetBySelector returns all nodes with the specified selector
-func GetBySelector(selector labels.Selector) ([]corev1.Node, error) {
-	cli, err := clientutil.New()
-	if err != nil {
-		return nil, err
-	}
+func GetBySelector(env *deployer.Environment, selector labels.Selector) ([]corev1.Node, error) {
 	nodes := &corev1.NodeList{}
-	if err := cli.List(context.TODO(), nodes, &client.ListOptions{LabelSelector: selector}); err != nil {
+	if err := env.Cli.List(env.Ctx, nodes, &client.ListOptions{LabelSelector: selector}); err != nil {
 		return nil, err
 	}
 	return nodes.Items, nil

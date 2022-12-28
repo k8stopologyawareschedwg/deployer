@@ -40,6 +40,7 @@ import (
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil/nodes"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
@@ -233,7 +234,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				tc, err := clientutil.NewTopologyClient()
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-				workers, err := nodes.GetWorkers()
+				workers, err := nodes.GetWorkers(NullEnv())
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				for _, node := range workers {
 					ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
@@ -329,7 +330,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				tc, err := clientutil.NewTopologyClient()
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-				workers, err := nodes.GetWorkers()
+				workers, err := nodes.GetWorkers(NullEnv())
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				for _, node := range workers {
 					ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
@@ -517,4 +518,15 @@ func runCmdline(cmdline []string, errMsg string) error {
 		return fmt.Errorf("%s: %v", errMsg, err)
 	}
 	return nil
+}
+
+func NullEnv() *deployer.Environment {
+	cli, err := clientutil.New()
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+	env := deployer.Environment{
+		Ctx: context.TODO(),
+		Cli: cli,
+		Log: logr.Discard(),
+	}
+	return &env
 }
