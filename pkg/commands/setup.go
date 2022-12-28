@@ -22,7 +22,9 @@ import (
 
 func NewSetupCommand(commonOpts *CommonOptions) *cobra.Command {
 	depOpts := &DeployOptions{}
-	valOpts := &validateOptions{}
+	valOpts := &validateOptions{
+		outputMode: ValidateOutputLog,
+	}
 	setup := &cobra.Command{
 		Use:   "setup",
 		Short: "validate and setup a cluster to be used for topology-aware-scheduling",

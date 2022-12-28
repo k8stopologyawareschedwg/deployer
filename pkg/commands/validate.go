@@ -21,13 +21,24 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil/nodes"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/validator"
 )
 
+type ValidateOutputMode int
+
+const (
+	ValidateOutputNone ValidateOutputMode = iota
+	ValidateOutputText
+	ValidateOutputJSON
+	ValidateOutputLog
+)
+
 type validateOptions struct {
+	outputMode ValidateOutputMode
 	jsonOutput bool
 }
 
@@ -45,12 +56,26 @@ func NewValidateCommand(commonOpts *CommonOptions) *cobra.Command {
 	return validate
 }
 
+func validatePostSetupOptions(opts *validateOptions) error {
+	if opts.outputMode != ValidateOutputNone {
+		return nil // nothing to do!
+	}
+	opts.outputMode = ValidateOutputText
+	if opts.jsonOutput {
+		opts.outputMode = ValidateOutputJSON
+	}
+	return nil
+}
+
 type validationOutput struct {
 	Success bool                         `json:"success"`
 	Errors  []validator.ValidationResult `json:"errors,omitempty"`
 }
 
 func validateCluster(cmd *cobra.Command, commonOpts *CommonOptions, opts *validateOptions, args []string) error {
+	// TODO
+	validatePostSetupOptions(opts)
+
 	vd, err := validator.NewValidator(commonOpts.DebugLog)
 	if err != nil {
 		return err
@@ -65,30 +90,46 @@ func validateCluster(cmd *cobra.Command, commonOpts *CommonOptions, opts *valida
 		return err
 	}
 
-	printValidationResults(vd.Results(), opts.jsonOutput)
+	printValidationResults(vd.Results(), commonOpts.Log, opts.outputMode)
 	return nil
 }
 
 // we need undecorated output, so we need to use fmt.Printf here. log packages add no value.
-func printValidationResults(items []validator.ValidationResult, jsonOutput bool) {
+func printValidationResults(items []validator.ValidationResult, logger logr.Logger, outputMode ValidateOutputMode) {
 	if len(items) == 0 {
-		if jsonOutput {
+		switch outputMode {
+		case ValidateOutputJSON:
 			json.NewEncoder(os.Stdout).Encode(validationOutput{
 				Success: true,
 			})
-		} else {
+		case ValidateOutputText:
 			fmt.Printf("PASSED>>: the cluster configuration looks ok!\n")
+		case ValidateOutputLog:
+			logger.Info("cluster configuration", "issue", "none")
+		case ValidateOutputNone:
+			fallthrough
+		default:
+			// do nothing!
 		}
 	} else {
-		if jsonOutput {
+		switch outputMode {
+		case ValidateOutputJSON:
 			json.NewEncoder(os.Stdout).Encode(validationOutput{
 				Success: false,
 				Errors:  items,
 			})
-		} else {
+		case ValidateOutputText:
 			for idx, item := range items {
 				fmt.Printf("ERROR#%03d: %s\n", idx, item.String())
 			}
+		case ValidateOutputLog:
+			for idx, item := range items {
+				logger.Info("cluster configuration", "issue", idx, "description", item.String())
+			}
+		case ValidateOutputNone:
+			fallthrough
+		default:
+			// do nothing!
 		}
 	}
 }

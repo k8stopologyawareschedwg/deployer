@@ -36,8 +36,9 @@ func SetupNamespace(plat platform.Platform) (*corev1.Namespace, string, error) {
 	return nil, "", fmt.Errorf("the API is a cluster scoped resource")
 }
 
-func Deploy(log logr.Logger, opts Options) error {
+func Deploy(log_ logr.Logger, opts Options) error {
 	var err error
+	log := log_.WithName("API")
 	log.Info("deploying topology-aware-scheduling API")
 
 	mf, err := apimanifests.GetManifests(opts.Platform)
@@ -59,8 +60,9 @@ func Deploy(log logr.Logger, opts Options) error {
 	return nil
 }
 
-func Remove(log logr.Logger, opts Options) error {
+func Remove(log_ logr.Logger, opts Options) error {
 	var err error
+	log := log_.WithName("API")
 	log.Info("removing topology-aware-scheduling API")
 
 	mf, err := apimanifests.GetManifests(opts.Platform)
