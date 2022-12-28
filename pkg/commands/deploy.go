@@ -17,13 +17,10 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
-	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
@@ -359,16 +356,4 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 		return err
 	}
 	return nil
-}
-
-func environFromOpts(commonOpts *CommonOptions) (*deployer.Environment, error) {
-	cli, err := clientutil.New()
-	if err != nil {
-		return nil, err
-	}
-	return &deployer.Environment{
-		Ctx: context.TODO(),
-		Cli: cli,
-		Log: commonOpts.Log,
-	}, nil
 }
