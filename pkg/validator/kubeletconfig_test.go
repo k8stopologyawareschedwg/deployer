@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/stdr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/version"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
@@ -320,7 +321,7 @@ func TestKubeletValidations(t *testing.T) {
 	}
 
 	vd := Validator{
-		Log: log.New(os.Stderr, "testing ", log.LstdFlags),
+		Log: stdr.New(log.New(os.Stderr, "testing ", log.LstdFlags)),
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

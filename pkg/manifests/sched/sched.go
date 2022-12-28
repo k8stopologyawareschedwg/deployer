@@ -17,6 +17,8 @@
 package sched
 
 import (
+	"github.com/go-logr/logr"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -28,7 +30,6 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
 const (
@@ -81,7 +82,7 @@ type RenderOptions struct {
 	PullIfNotPresent bool
 }
 
-func (mf Manifests) Render(logger tlog.Logger, options RenderOptions) Manifests {
+func (mf Manifests) Render(logger logr.Logger, options RenderOptions) Manifests {
 	ret := mf.Clone()
 	replicas := options.Replicas
 	if replicas <= 0 {
@@ -128,7 +129,7 @@ func (mf Manifests) ToObjects() []client.Object {
 	}
 }
 
-func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log logr.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
 		{Obj: mf.Crd},
 		{Obj: mf.Namespace},
@@ -156,7 +157,7 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []d
 	}
 }
 
-func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log logr.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
 		{
 			Obj:  mf.Namespace,

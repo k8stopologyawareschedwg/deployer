@@ -20,40 +20,43 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-logr/logr"
+
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
-func PodsToBeRunningByRegex(hp *deployer.Helper, log tlog.Logger, namespace, name string) error {
-	log.Printf("wait for all the pods in group %s %s to be running and ready", namespace, name)
+func PodsToBeRunningByRegex(hp *deployer.Helper, log logr.Logger, namespace, name string) error {
+	log = log.WithValues("namespace", namespace, "name", name)
+	log.Info("wait for all the pods in group to be running and ready")
 	return wait.PollImmediate(1*time.Second, 3*time.Minute, func() (bool, error) {
 		pods, err := hp.GetPodsByPattern(namespace, fmt.Sprintf("%s-*", name))
 		if err != nil {
 			return false, err
 		}
 		if len(pods) == 0 {
-			log.Printf("no pods found for %s %s", namespace, name)
+			log.Info("no pods found")
 			return false, nil
 		}
 
 		for _, pod := range pods {
 			if pod.Status.Phase != corev1.PodRunning {
-				log.Printf("pod %s %s not ready yet (%s)", pod.Namespace, pod.Name, pod.Status.Phase)
+				log.Info("pod not ready yet", "podNamespace", pod.Namespace, "podName", pod.Name, "podPhase", pod.Status.Phase)
 				return false, nil
 			}
 		}
-		log.Printf("all the pods in daemonset %s %s are running and ready!", namespace, name)
+		log.Info("all the pods in daemonset are running and ready!")
 		return true, nil
 	})
 }
 
-func PodsToBeGoneByRegex(hp *deployer.Helper, log tlog.Logger, namespace, name string) error {
-	log.Printf("wait for all the pods in deployment %s %s to be gone", namespace, name)
+func PodsToBeGoneByRegex(hp *deployer.Helper, log logr.Logger, namespace, name string) error {
+	log = log.WithValues("namespace", namespace, "name", name)
+	log.Info("wait for all the pods in deployment to be gone")
 	return wait.PollImmediate(10*time.Second, 3*time.Minute, func() (bool, error) {
 		pods, err := hp.GetPodsByPattern(namespace, fmt.Sprintf("%s-*", name))
 		if err != nil {
@@ -62,13 +65,14 @@ func PodsToBeGoneByRegex(hp *deployer.Helper, log tlog.Logger, namespace, name s
 		if len(pods) > 0 {
 			return false, fmt.Errorf("still %d pods found for %s %s", len(pods), namespace, name)
 		}
-		log.Printf("all pods gone for deployment %s %s are gone!", namespace, name)
+		log.Info("all pods gone for deployment %s %s are gone!")
 		return true, nil
 	})
 }
 
-func NamespaceToBeGone(hp *deployer.Helper, log tlog.Logger, namespace string) error {
-	log.Printf("wait for the namespace %q to be gone", namespace)
+func NamespaceToBeGone(hp *deployer.Helper, log logr.Logger, namespace string) error {
+	log = log.WithValues("namespace", namespace)
+	log.Info("wait for the namespace to be gone")
 	return wait.PollImmediate(1*time.Second, 3*time.Minute, func() (bool, error) {
 		nsKey := types.NamespacedName{
 			Name: namespace,
@@ -82,20 +86,20 @@ func NamespaceToBeGone(hp *deployer.Helper, log tlog.Logger, namespace string) e
 		if !k8serrors.IsNotFound(err) {
 			return false, err
 		}
-		log.Printf("namespace %q gone!", namespace)
+		log.Info("namespace gone!")
 		return true, nil
 	})
 }
 
-func DaemonSetToBeRunning(hp *deployer.Helper, log tlog.Logger, namespace, name string) error {
-	log.Printf("wait for the daemonset %q %q to be running", namespace, name)
+func DaemonSetToBeRunning(hp *deployer.Helper, log logr.Logger, namespace, name string) error {
+	log.Info("wait for the daemonset to be running", "namespace", namespace, "name", name)
 	return wait.PollImmediate(3*time.Second, 3*time.Minute, func() (bool, error) {
 		return hp.IsDaemonSetRunning(namespace, name)
 	})
 }
 
-func DaemonSetToBeGone(hp *deployer.Helper, log tlog.Logger, namespace, name string) error {
-	log.Printf("wait for the daemonset %q %q to be gone", namespace, name)
+func DaemonSetToBeGone(hp *deployer.Helper, log logr.Logger, namespace, name string) error {
+	log.Info("wait for the daemonset to be gone", "namespace", namespace, "name", name)
 	return wait.PollImmediate(3*time.Second, 3*time.Minute, func() (bool, error) {
 		return hp.IsDaemonSetGone(namespace, name)
 	})

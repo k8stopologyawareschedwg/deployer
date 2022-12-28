@@ -17,6 +17,8 @@
 package rte
 
 import (
+	"github.com/go-logr/logr"
+
 	securityv1 "github.com/openshift/api/security/v1"
 	machineconfigv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -29,7 +31,6 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/tlog"
 )
 
 const (
@@ -174,7 +175,7 @@ func (mf Manifests) ToObjects() []client.Object {
 	)
 }
 
-func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log logr.Logger) []deployer.WaitableObject {
 	var objs []deployer.WaitableObject
 	if mf.ConfigMap != nil {
 		objs = append(objs, deployer.WaitableObject{
@@ -208,7 +209,7 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log tlog.Logger) []d
 	)
 }
 
-func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log tlog.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log logr.Logger) []deployer.WaitableObject {
 	objs := []deployer.WaitableObject{
 		{
 			Obj:  mf.DaemonSet,
