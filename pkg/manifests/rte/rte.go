@@ -196,6 +196,11 @@ func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []dep
 		})
 	}
 
+	key := wait.ObjectKey{
+		Namespace: mf.DaemonSet.Namespace,
+		Name:      mf.DaemonSet.Name,
+	}
+
 	return append(objs,
 		deployer.WaitableObject{Obj: mf.Role},
 		deployer.WaitableObject{Obj: mf.RoleBinding},
@@ -203,8 +208,11 @@ func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []dep
 		deployer.WaitableObject{Obj: mf.ClusterRoleBinding},
 		deployer.WaitableObject{Obj: mf.ServiceAccount},
 		deployer.WaitableObject{
-			Obj:  mf.DaemonSet,
-			Wait: func() error { return wait.DaemonSetToBeRunning(cli, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
+			Obj: mf.DaemonSet,
+			Wait: func() error {
+				_, err := wait.ForDaemonSetReadyByKey(cli, log, key, wait.DefaultPollInterval, wait.DefaultPollTimeout)
+				return err
+			},
 		},
 	)
 }
@@ -212,8 +220,10 @@ func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []dep
 func (mf Manifests) ToDeletableObjects(cli client.Client, log logr.Logger) []deployer.WaitableObject {
 	objs := []deployer.WaitableObject{
 		{
-			Obj:  mf.DaemonSet,
-			Wait: func() error { return wait.DaemonSetToBeGone(cli, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
+			Obj: mf.DaemonSet,
+			Wait: func() error {
+				return wait.ForDaemonSetDeleted(cli, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name, wait.DefaultPollTimeout)
+			},
 		},
 		{Obj: mf.Role},
 		{Obj: mf.RoleBinding},

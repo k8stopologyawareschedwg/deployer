@@ -133,7 +133,8 @@ func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []dep
 		{
 			Obj: mf.DPMaster,
 			Wait: func() error {
-				return wait.PodsToBeRunningByRegex(cli, log, mf.DPMaster.Namespace, mf.DPMaster.Name)
+				_, err := wait.ForDeploymentComplete(cli, log, mf.DPMaster, wait.DefaultPollInterval, wait.DefaultPollTimeout)
+				return err
 			},
 		},
 		{Obj: mf.SATopologyUpdater},
@@ -142,7 +143,8 @@ func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []dep
 		{
 			Obj: mf.DSTopologyUpdater,
 			Wait: func() error {
-				return wait.PodsToBeRunningByRegex(cli, log, mf.DSTopologyUpdater.Namespace, mf.DSTopologyUpdater.Name)
+				_, err := wait.ForDaemonSetReady(cli, log, mf.DSTopologyUpdater, wait.DefaultPollInterval, wait.DefaultPollTimeout)
+				return err
 			},
 		},
 	}
