@@ -25,6 +25,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 )
 
@@ -39,7 +40,7 @@ func NewImagesCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "images",
 		Short: "dump the container images used to deploy",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			imo := newImageOutput()
+			imo := newImageOutput(commonOpts.UpdaterType)
 			if opts.rawOutput {
 				il := imo.ToList()
 				if opts.jsonOutput {
@@ -69,12 +70,18 @@ type imageOutput struct {
 	SchedulerController string `json:"scheduler_controller"`
 }
 
-func newImageOutput() imageOutput {
-	return imageOutput{
-		TopologyUpdater:     images.ResourceTopologyExporterDefaultImageTag,
+func newImageOutput(updaterType string) imageOutput {
+	imo := imageOutput{
 		SchedulerPlugin:     images.SchedulerPluginSchedulerDefaultImageTag,
 		SchedulerController: images.SchedulerPluginControllerDefaultImageTag,
 	}
+	if updaterType == updaters.RTE {
+		imo.TopologyUpdater = images.ResourceTopologyExporterDefaultImageTag
+	}
+	if updaterType == updaters.NFD {
+		imo.TopologyUpdater = images.NodeFeatureDiscoveryDefaultImageTag
+	}
+	return imo
 }
 
 type imageList []string
