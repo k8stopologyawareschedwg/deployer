@@ -175,7 +175,7 @@ func (mf Manifests) ToObjects() []client.Object {
 	)
 }
 
-func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log logr.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []deployer.WaitableObject {
 	var objs []deployer.WaitableObject
 	if mf.ConfigMap != nil {
 		objs = append(objs, deployer.WaitableObject{
@@ -204,16 +204,16 @@ func (mf Manifests) ToCreatableObjects(hp *deployer.Helper, log logr.Logger) []d
 		deployer.WaitableObject{Obj: mf.ServiceAccount},
 		deployer.WaitableObject{
 			Obj:  mf.DaemonSet,
-			Wait: func() error { return wait.DaemonSetToBeRunning(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
+			Wait: func() error { return wait.DaemonSetToBeRunning(cli, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
 		},
 	)
 }
 
-func (mf Manifests) ToDeletableObjects(hp *deployer.Helper, log logr.Logger) []deployer.WaitableObject {
+func (mf Manifests) ToDeletableObjects(cli client.Client, log logr.Logger) []deployer.WaitableObject {
 	objs := []deployer.WaitableObject{
 		{
 			Obj:  mf.DaemonSet,
-			Wait: func() error { return wait.DaemonSetToBeGone(hp, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
+			Wait: func() error { return wait.DaemonSetToBeGone(cli, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name) },
 		},
 		{Obj: mf.Role},
 		{Obj: mf.RoleBinding},

@@ -130,10 +130,7 @@ func PostSetupOptions(commonOpts *CommonOptions) error {
 		commonOpts.RTEConfigData = string(data)
 		commonOpts.DebugLog.Info("RTE config: read", "bytes", len(commonOpts.RTEConfigData))
 	}
-	if err := validateUpdaterType(commonOpts.UpdaterType); err != nil {
-		return err
-	}
-	return nil
+	return validateUpdaterType(commonOpts.UpdaterType)
 }
 
 func validateUpdaterType(updaterType string) error {
