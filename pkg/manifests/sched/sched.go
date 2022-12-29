@@ -17,6 +17,9 @@
 package sched
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/go-logr/logr"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -78,18 +81,25 @@ func (mf Manifests) Clone() Manifests {
 }
 
 type RenderOptions struct {
-	Replicas         int32
-	PullIfNotPresent bool
+	Replicas          int32
+	PullIfNotPresent  bool
+	ProfileName       string
+	CacheResyncPeriod time.Duration
 }
 
 func (mf Manifests) Render(logger logr.Logger, options RenderOptions) (Manifests, error) {
 	ret := mf.Clone()
 	replicas := options.Replicas
 	if replicas <= 0 {
-		replicas = int32(1)
+		return ret, fmt.Errorf("negative replicas: %d", replicas)
 	}
 	ret.DPScheduler.Spec.Replicas = newInt32(replicas)
 	ret.DPController.Spec.Replicas = newInt32(replicas)
+
+	err := manifests.UpdateSchedulerConfig(ret.ConfigMap, options.ProfileName, options.CacheResyncPeriod)
+	if err != nil {
+		return ret, err
+	}
 
 	manifests.UpdateSchedulerPluginSchedulerDeployment(ret.DPScheduler, options.PullIfNotPresent)
 	manifests.UpdateSchedulerPluginControllerDeployment(ret.DPController, options.PullIfNotPresent)

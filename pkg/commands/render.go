@@ -172,8 +172,10 @@ func RenderManifests(commonOpts *CommonOptions) error {
 	}
 
 	schedRenderOpts := sched.RenderOptions{
-		Replicas:         int32(commonOpts.Replicas),
-		PullIfNotPresent: commonOpts.PullIfNotPresent,
+		Replicas:          int32(commonOpts.Replicas),
+		PullIfNotPresent:  commonOpts.PullIfNotPresent,
+		ProfileName:       commonOpts.schedProfileName,
+		CacheResyncPeriod: commonOpts.schedResyncPeriod,
 	}
 
 	schedObjs, err := schedManifests.Render(commonOpts.Log, schedRenderOpts)
