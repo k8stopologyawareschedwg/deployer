@@ -44,6 +44,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/nfd"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
@@ -52,7 +53,6 @@ import (
 
 	e2enodes "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/nodes"
 	e2epods "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/pods"
-	e2ewait "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/wait"
 )
 
 var _ = ginkgo.Describe("[PositiveFlow] Deployer version", func() {
@@ -452,7 +452,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 				go func(dp *appsv1.Deployment) {
 					defer ginkgo.GinkgoRecover()
 					defer wg.Done()
-					err = e2ewait.ForDeploymentComplete(cli, dp, 10*time.Second, 3*time.Minute)
+					_, err = wait.ForDeploymentComplete(cli, logr.Discard(), dp, 10*time.Second, 3*time.Minute)
 					gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				}(dp)
 			}
