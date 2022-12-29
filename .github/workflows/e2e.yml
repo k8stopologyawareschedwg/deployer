@@ -41,6 +41,7 @@ jobs:
         # see image listing in https://github.com/kubernetes-sigs/kind/releases/tag/v0.11.1
         kind create cluster --config=hack/kind-config-e2e-positive.yaml --image kindest/node:v1.24.7@sha256:577c630ce8e509131eab1aea12c022190978dd2f745aac5eb1fe65c0807eb315
         kubectl label node kind-worker node-role.kubernetes.io/worker=''
+        hack/wait-nodes-ready.sh
 
     - name: run E2E tests
       run: |
@@ -75,6 +76,7 @@ jobs:
         # see image listing in https://github.com/kubernetes-sigs/kind/releases/tag/v0.11.1
         kind create cluster --config=hack/kind-config-e2e-negative.yaml --image kindest/node:v1.24.7@sha256:577c630ce8e509131eab1aea12c022190978dd2f745aac5eb1fe65c0807eb315
         kubectl label node kind-worker node-role.kubernetes.io/worker=''
+        hack/wait-nodes-ready.sh
 
     - name: run E2E tests
       run: |
