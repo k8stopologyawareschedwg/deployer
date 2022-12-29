@@ -22,6 +22,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/stdr"
@@ -32,6 +33,12 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
+)
+
+// TODO: move elsewhere
+const (
+	DefaultSchedulerProfileName  = "topology-aware-scheduler"
+	DefaultSchedulerResyncPeriod = 0 * time.Second
 )
 
 type CommonOptions struct {
@@ -47,6 +54,8 @@ type CommonOptions struct {
 	rteConfigFile       string
 	plat                string
 	platVer             string
+	schedProfileName    string
+	schedResyncPeriod   time.Duration
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -99,6 +108,8 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
 	flags.BoolVar(&commonOpts.PullIfNotPresent, "pull-if-not-present", false, "force pull policies to IfNotPresent.")
 	flags.StringVar(&commonOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
 	flags.StringVar(&commonOpts.UpdaterType, "updater-type", "RTE", "type of updater to deploy - RTE or NFD")
+	flags.StringVar(&commonOpts.schedProfileName, "sched-profile-name", DefaultSchedulerProfileName, "inject scheduler profile name.")
+	flags.DurationVar(&commonOpts.schedResyncPeriod, "sched-resync-period", DefaultSchedulerResyncPeriod, "inject scheduler resync period.")
 }
 
 func PostSetupOptions(commonOpts *CommonOptions) error {
