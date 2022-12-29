@@ -77,6 +77,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			err = sched.Remove(env, sched.Options{
 				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
+				Replicas:         int32(commonOpts.Replicas),
 				RTEConfigData:    commonOpts.RTEConfigData,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			})
@@ -170,6 +171,7 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 			return sched.Deploy(env, sched.Options{
 				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
+				Replicas:         int32(commonOpts.Replicas),
 				RTEConfigData:    commonOpts.RTEConfigData,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			})
@@ -271,6 +273,7 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 			return sched.Remove(env, sched.Options{
 				Platform:         opts.clusterPlatform,
 				WaitCompletion:   opts.waitCompletion,
+				Replicas:         int32(commonOpts.Replicas),
 				RTEConfigData:    commonOpts.RTEConfigData,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			})
@@ -350,6 +353,7 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 	if err := sched.Deploy(env, sched.Options{
 		Platform:         opts.clusterPlatform,
 		WaitCompletion:   opts.waitCompletion,
+		Replicas:         int32(commonOpts.Replicas),
 		RTEConfigData:    commonOpts.RTEConfigData,
 		PullIfNotPresent: commonOpts.PullIfNotPresent,
 	}); err != nil {
