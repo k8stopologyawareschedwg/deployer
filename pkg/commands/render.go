@@ -63,7 +63,11 @@ func NewRenderAPICommand(commonOpts *CommonOptions, opts *RenderOptions) *cobra.
 			if err != nil {
 				return err
 			}
-			return renderObjects(apiManifests.Render().ToObjects())
+			apiObjs, err := apiManifests.Render()
+			if err != nil {
+				return err
+			}
+			return renderObjects(apiObjs.ToObjects())
 		},
 		Args: cobra.NoArgs,
 	}
@@ -93,7 +97,11 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *RenderOpti
 				Replicas:         int32(commonOpts.Replicas),
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			}
-			return renderObjects(schedManifests.Render(commonOpts.Log, renderOpts).ToObjects())
+			schedObjs, err := schedManifests.Render(commonOpts.Log, renderOpts)
+			if err != nil {
+				return err
+			}
+			return renderObjects(schedObjs.ToObjects())
 		},
 		Args: cobra.NoArgs,
 	}
@@ -146,7 +154,11 @@ func RenderManifests(commonOpts *CommonOptions) error {
 	if err != nil {
 		return err
 	}
-	objs = append(objs, apiManifests.Render().ToObjects()...)
+	apiObjs, err := apiManifests.Render()
+	if err != nil {
+		return err
+	}
+	objs = append(objs, apiObjs.ToObjects()...)
 
 	updaterObjs, updaterNs, err := makeUpdaterObjects(commonOpts)
 	if err != nil {
@@ -164,7 +176,11 @@ func RenderManifests(commonOpts *CommonOptions) error {
 		PullIfNotPresent: commonOpts.PullIfNotPresent,
 	}
 
-	objs = append(objs, schedManifests.Render(commonOpts.Log, schedRenderOpts).ToObjects()...)
+	schedObjs, err := schedManifests.Render(commonOpts.Log, schedRenderOpts)
+	if err != nil {
+		return err
+	}
+	objs = append(objs, schedObjs.ToObjects()...)
 
 	return renderObjects(objs)
 }

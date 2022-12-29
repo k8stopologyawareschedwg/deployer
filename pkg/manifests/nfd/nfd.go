@@ -82,7 +82,7 @@ type RenderOptions struct {
 	Namespace string
 }
 
-func (mf Manifests) Render(options RenderOptions) Manifests {
+func (mf Manifests) Render(options RenderOptions) (Manifests, error) {
 	ret := mf.Clone()
 
 	replicas := options.Replicas
@@ -104,7 +104,7 @@ func (mf Manifests) Render(options RenderOptions) Manifests {
 	manifests.UpdateNFDMasterDeployment(ret.DPMaster, options.PullIfNotPresent)
 	manifests.UpdateNFDTopologyUpdaterDaemonSet(ret.DSTopologyUpdater, options.PullIfNotPresent, options.NodeSelector)
 
-	return ret
+	return ret, nil
 }
 
 func (mf Manifests) ToObjects() []client.Object {

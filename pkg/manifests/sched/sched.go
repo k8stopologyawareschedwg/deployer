@@ -82,7 +82,7 @@ type RenderOptions struct {
 	PullIfNotPresent bool
 }
 
-func (mf Manifests) Render(logger logr.Logger, options RenderOptions) Manifests {
+func (mf Manifests) Render(logger logr.Logger, options RenderOptions) (Manifests, error) {
 	ret := mf.Clone()
 	replicas := options.Replicas
 	if replicas <= 0 {
@@ -108,7 +108,7 @@ func (mf Manifests) Render(logger logr.Logger, options RenderOptions) Manifests 
 	ret.DPScheduler.Namespace = ret.Namespace.Name
 	ret.ConfigMap.Namespace = ret.Namespace.Name
 
-	return ret
+	return ret, nil
 }
 
 func (mf Manifests) ToObjects() []client.Object {

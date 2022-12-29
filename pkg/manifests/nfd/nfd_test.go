@@ -111,7 +111,10 @@ func TestRender(t *testing.T) {
 	for _, tc := range testCases {
 		tc.mf, _ = GetManifests(tc.plat, "")
 		mfBeforeUpdate := tc.mf.Clone()
-		uMf := tc.mf.Render(RenderOptions{})
+		uMf, err := tc.mf.Render(RenderOptions{})
+		if err != nil {
+			t.Errorf("testcase %q, Render() failed: %v", tc.name, err)
+		}
 
 		if &uMf == &tc.mf {
 			t.Errorf("testcase %q, Render() should return a pristine copy of Manifests object, thus should have different addresses", tc.name)
