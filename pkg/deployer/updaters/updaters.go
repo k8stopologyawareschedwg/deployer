@@ -99,7 +99,6 @@ func Remove(env *deployer.Environment, updaterType string, opts Options) error {
 	for _, wo := range objs {
 		err = env.DeleteObject(wo.Obj)
 		if err != nil {
-			env.Log.Info("failed to remove: %v", err)
 			continue
 		}
 
