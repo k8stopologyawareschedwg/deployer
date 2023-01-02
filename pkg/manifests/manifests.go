@@ -57,7 +57,6 @@ const (
 const (
 	SubComponentSchedulerPluginScheduler            = "scheduler"
 	SubComponentSchedulerPluginController           = "controller"
-	SubComponentNodeFeatureDiscoveryMaster          = "master"
 	SubComponentNodeFeatureDiscoveryTopologyUpdater = "topologyupdater"
 )
 
@@ -77,7 +76,6 @@ const (
 const (
 	containerNameRTE                = "resource-topology-exporter"
 	containerNameNFDTopologyUpdater = "nfd-topology-updater"
-	containerNameNFDMaster          = "nfd-master"
 	rteNotifierVolumeName           = "host-run-rte"
 	rteSysVolumeName                = "host-sys"
 	rtePodresourcesSocketVolumeName = "host-podresources-socket"
@@ -613,7 +611,7 @@ func validateSubComponent(component, subComponent string) error {
 	if component == ComponentSchedulerPlugin && (subComponent == SubComponentSchedulerPluginController || subComponent == SubComponentSchedulerPluginScheduler) {
 		return nil
 	}
-	if component == ComponentNodeFeatureDiscovery && (subComponent == SubComponentNodeFeatureDiscoveryTopologyUpdater || subComponent == SubComponentNodeFeatureDiscoveryMaster) {
+	if component == ComponentNodeFeatureDiscovery && (subComponent == SubComponentNodeFeatureDiscoveryTopologyUpdater) {
 		return nil
 	}
 	return fmt.Errorf("unknown subComponent %q for component: %q", subComponent, component)
