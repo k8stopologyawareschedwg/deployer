@@ -91,7 +91,7 @@ type RenderOptions struct {
 	Name      string
 }
 
-func (mf Manifests) Render(options RenderOptions) Manifests {
+func (mf Manifests) Render(options RenderOptions) (Manifests, error) {
 	ret := mf.Clone()
 	if ret.plat == platform.Kubernetes {
 		if options.Namespace != "" {
@@ -129,7 +129,7 @@ func (mf Manifests) Render(options RenderOptions) Manifests {
 		manifests.UpdateSecurityContextConstraint(ret.SecurityContextConstraint, ret.ServiceAccount)
 	}
 
-	return ret
+	return ret, nil
 }
 
 func CreateConfigMap(namespace, name, configData string) *corev1.ConfigMap {

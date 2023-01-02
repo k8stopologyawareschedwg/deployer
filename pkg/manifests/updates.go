@@ -3,6 +3,7 @@ package manifests
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	securityv1 "github.com/openshift/api/security/v1"
 	machineconfigv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
@@ -11,13 +12,18 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	schedconfig "k8s.io/kubernetes/pkg/scheduler/apis/config"
+	pluginconfig "sigs.k8s.io/scheduler-plugins/apis/config"
+
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 )
 
 const (
-	metricsPort        = 2112
-	rteConfigMountName = "rte-config-volume"
-	RTEConfigMapName   = "rte-config"
+	metricsPort             = 2112
+	rteConfigMountName      = "rte-config-volume"
+	RTEConfigMapName        = "rte-config"
+	SchedulerConfigFileName = "scheduler-config.yaml" // TODO duplicate from yaml
+	schedulerPluginName     = "NodeResourceTopologyMatch"
 )
 
 func UpdateRoleBinding(rb *rbacv1.RoleBinding, serviceAccount, namespace string) {
@@ -151,6 +157,64 @@ func UpdateMetricsPort(ds *appsv1.DaemonSet, pNum int) {
 	},
 	}
 	ds.Spec.Template.Spec.Containers[0].Ports = cp
+}
+
+func UpdateSchedulerConfig(cm *corev1.ConfigMap, schedulerName string, cacheResyncPeriod time.Duration) error {
+	if cm.Data == nil {
+		return fmt.Errorf("no data found in ConfigMap: %s/%s", cm.Namespace, cm.Name)
+	}
+
+	data, ok := cm.Data[SchedulerConfigFileName]
+	if !ok {
+		return fmt.Errorf("no data key named: %s found in ConfigMap: %s/%s", SchedulerConfigFileName, cm.Namespace, cm.Name)
+	}
+
+	schedCfg, err := DecodeSchedulerConfigFromData([]byte(data))
+	if err != nil {
+		return err
+	}
+
+	schedProf, pluginConf := findKubeSchedulerProfileByName(schedCfg, schedulerPluginName)
+	if schedProf == nil || pluginConf == nil {
+		return fmt.Errorf("no profile or plugin configuration found for %q", schedulerPluginName)
+	}
+
+	if schedulerName != "" {
+		schedProf.SchedulerName = schedulerName
+	}
+
+	confObj := pluginConf.Args.DeepCopyObject()
+	cfg, ok := confObj.(*pluginconfig.NodeResourceTopologyMatchArgs)
+	if !ok {
+		return fmt.Errorf("unsupported plugin config type: %T", confObj)
+	}
+
+	period := int64(cacheResyncPeriod.Seconds())
+	cfg.CacheResyncPeriodSeconds = period
+
+	pluginConf.Args = cfg
+
+	newData, err := EncodeSchedulerConfigToData(schedCfg)
+	if err != nil {
+		return err
+	}
+
+	cm.Data[SchedulerConfigFileName] = string(newData)
+	return nil
+}
+
+func findKubeSchedulerProfileByName(sc *schedconfig.KubeSchedulerConfiguration, name string) (*schedconfig.KubeSchedulerProfile, *schedconfig.PluginConfig) {
+	for i := range sc.Profiles {
+		// if we have a configuration for the NodeResourceTopologyMatch
+		// this is a valid profile
+		for j := range sc.Profiles[i].PluginConfig {
+			if sc.Profiles[i].PluginConfig[j].Name == name {
+				return &sc.Profiles[i], &sc.Profiles[i].PluginConfig[j]
+			}
+		}
+	}
+
+	return nil, nil
 }
 
 func pullPolicy(pullIfNotPresent bool) corev1.PullPolicy {

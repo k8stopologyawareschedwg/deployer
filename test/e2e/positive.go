@@ -218,16 +218,19 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 
 				mf, err := rte.GetManifests(platform.Kubernetes, platform.Version("1.23"), ns.Name)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				mf = mf.Render(rte.RenderOptions{
+				mf, err = mf.Render(rte.RenderOptions{
 					Namespace: ns.Name,
 				})
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DaemonSet.Name))
 
 				ginkgo.By("checking that topo-aware-scheduler pod is running")
 				mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				// no need for options!
-				mfs = mfs.Render(logr.Discard(), sched.RenderOptions{})
+				mfs, err = mfs.Render(logr.Discard(), sched.RenderOptions{
+					Replicas: int32(1),
+				})
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
 
 				ginkgo.By("checking that noderesourcetopolgy has some information in it")
@@ -313,17 +316,20 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 
 				mf, err := nfd.GetManifests(platform.Kubernetes, ns.Name)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				mf = mf.Render(nfd.RenderOptions{
+				mf, err = mf.Render(nfd.RenderOptions{
 					Namespace: ns.Name,
 				})
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DPMaster.Name))
 				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DSTopologyUpdater.Name))
 
 				ginkgo.By("checking that topo-aware-scheduler pod is running")
 				mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				// no need for options!
-				mfs = mfs.Render(logr.Discard(), sched.RenderOptions{})
+				mfs, err = mfs.Render(logr.Discard(), sched.RenderOptions{
+					Replicas: int32(1),
+				})
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
 
 				ginkgo.By("checking that noderesourcetopolgy has some information in it")
@@ -437,8 +443,10 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 			// TODO: autodetect the platform
 			mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			// no need for options!
-			mfs = mfs.Render(logr.Discard(), sched.RenderOptions{})
+			mfs, err = mfs.Render(logr.Discard(), sched.RenderOptions{
+				Replicas: int32(1),
+			})
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 			cli, err := clientutil.New()
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())

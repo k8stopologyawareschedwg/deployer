@@ -60,10 +60,10 @@ func (mf Manifests) Clone() Manifests {
 	}
 }
 
-func (mf Manifests) Render() Manifests {
+func (mf Manifests) Render() (Manifests, error) {
 	ret := mf.Clone()
 	// nothing to do atm
-	return ret
+	return ret, nil
 }
 
 func New(plat platform.Platform) Manifests {

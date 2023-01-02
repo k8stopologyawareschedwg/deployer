@@ -35,14 +35,22 @@ func GetObjects(opts Options, updaterType, namespace string) ([]client.Object, e
 		if err != nil {
 			return nil, err
 		}
-		return mf.Render(rteOptionsFrom(opts, namespace)).ToObjects(), nil
+		ret, err := mf.Render(rteOptionsFrom(opts, namespace))
+		if err != nil {
+			return nil, err
+		}
+		return ret.ToObjects(), nil
 	}
 	if updaterType == NFD {
 		mf, err := nfdmanifests.GetManifests(opts.Platform, namespace)
 		if err != nil {
 			return nil, err
 		}
-		return mf.Render(nfdOptionsFrom(opts, namespace)).ToObjects(), nil
+		ret, err := mf.Render(nfdOptionsFrom(opts, namespace))
+		if err != nil {
+			return nil, err
+		}
+		return ret.ToObjects(), nil
 	}
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }
@@ -53,14 +61,22 @@ func getCreatableObjects(opts Options, cli client.Client, log logr.Logger, updat
 		if err != nil {
 			return nil, err
 		}
-		return mf.Render(rteOptionsFrom(opts, namespace)).ToCreatableObjects(cli, log), nil
+		ret, err := mf.Render(rteOptionsFrom(opts, namespace))
+		if err != nil {
+			return nil, err
+		}
+		return ret.ToCreatableObjects(cli, log), nil
 	}
 	if updaterType == NFD {
 		mf, err := nfdmanifests.GetManifests(opts.Platform, namespace)
 		if err != nil {
 			return nil, err
 		}
-		return mf.Render(nfdOptionsFrom(opts, namespace)).ToCreatableObjects(cli, log), nil
+		ret, err := mf.Render(nfdOptionsFrom(opts, namespace))
+		if err != nil {
+			return nil, err
+		}
+		return ret.ToCreatableObjects(cli, log), nil
 	}
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }
@@ -71,14 +87,22 @@ func getDeletableObjects(opts Options, cli client.Client, log logr.Logger, updat
 		if err != nil {
 			return nil, err
 		}
-		return mf.Render(rteOptionsFrom(opts, namespace)).ToDeletableObjects(cli, log), nil
+		ret, err := mf.Render(rteOptionsFrom(opts, namespace))
+		if err != nil {
+			return nil, err
+		}
+		return ret.ToDeletableObjects(cli, log), nil
 	}
 	if updaterType == NFD {
 		mf, err := nfdmanifests.GetManifests(opts.Platform, namespace)
 		if err != nil {
 			return nil, err
 		}
-		return mf.Render(nfdOptionsFrom(opts, namespace)).ToDeletableObjects(cli, log), nil
+		ret, err := mf.Render(nfdOptionsFrom(opts, namespace))
+		if err != nil {
+			return nil, err
+		}
+		return ret.ToDeletableObjects(cli, log), nil
 	}
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }

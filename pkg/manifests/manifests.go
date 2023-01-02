@@ -38,6 +38,10 @@ import (
 	"k8s.io/utils/pointer"
 	apiconfigv1beta2 "sigs.k8s.io/scheduler-plugins/apis/config/v1beta2"
 
+	k8sschedpluginsconf "sigs.k8s.io/scheduler-plugins/apis/config"
+	k8sschedpluginsconfv1beta2 "sigs.k8s.io/scheduler-plugins/apis/config/v1beta2"
+	k8sschedpluginsconfv1beta3 "sigs.k8s.io/scheduler-plugins/apis/config/v1beta3"
+
 	rteassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
@@ -89,6 +93,9 @@ func init() {
 	apiextensionv1.AddToScheme(scheme.Scheme)
 	apiconfigv1beta2.AddToScheme(scheme.Scheme)
 	kubeschedulerconfigv1beta2.AddToScheme(scheme.Scheme)
+	k8sschedpluginsconf.AddToScheme(scheme.Scheme)
+	k8sschedpluginsconfv1beta2.AddToScheme(scheme.Scheme)
+	k8sschedpluginsconfv1beta3.AddToScheme(scheme.Scheme)
 	machineconfigv1.Install(scheme.Scheme)
 	securityv1.Install(scheme.Scheme)
 }

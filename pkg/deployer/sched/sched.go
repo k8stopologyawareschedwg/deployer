@@ -48,10 +48,13 @@ func Deploy(env *deployer.Environment, opts Options) error {
 		return err
 	}
 
-	mf = mf.Render(env.Log, schedmanifests.RenderOptions{
+	mf, err = mf.Render(env.Log, schedmanifests.RenderOptions{
 		Replicas:         opts.Replicas,
 		PullIfNotPresent: opts.PullIfNotPresent,
 	})
+	if err != nil {
+		return err
+	}
 	env.Log.V(3).Info("manifests loaded")
 
 	for _, wo := range mf.ToCreatableObjects(env.Cli, env.Log) {
@@ -80,16 +83,18 @@ func Remove(env *deployer.Environment, opts Options) error {
 		return err
 	}
 
-	mf = mf.Render(env.Log, schedmanifests.RenderOptions{
+	mf, err = mf.Render(env.Log, schedmanifests.RenderOptions{
 		Replicas:         opts.Replicas,
 		PullIfNotPresent: opts.PullIfNotPresent,
 	})
+	if err != nil {
+		return err
+	}
 	env.Log.V(3).Info("manifests loaded")
 
 	for _, wo := range mf.ToDeletableObjects(env.Cli, env.Log) {
 		err = env.DeleteObject(wo.Obj)
 		if err != nil {
-			env.Log.Info("failed to remove: %v", err)
 			continue
 		}
 
