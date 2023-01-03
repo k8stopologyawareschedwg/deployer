@@ -4,7 +4,7 @@ set -eu
 
 VERSION="${1}"
 FILES="
-deployer-${VERSION}-linux-amd64
+deployer-${VERSION}-linux-amd64.gz
 deployer-${VERSION}-manifests-allinone.yaml
 "
 
