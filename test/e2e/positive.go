@@ -320,7 +320,6 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 					Namespace: ns.Name,
 				})
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DPMaster.Name))
 				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DSTopologyUpdater.Name))
 
 				ginkgo.By("checking that topo-aware-scheduler pod is running")

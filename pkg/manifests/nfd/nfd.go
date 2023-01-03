@@ -32,15 +32,7 @@ import (
 )
 
 type Manifests struct {
-	Namespace *corev1.Namespace
-	// master objects
-	SAMaster  *corev1.ServiceAccount
-	CRMaster  *rbacv1.ClusterRole
-	CRBMaster *rbacv1.ClusterRoleBinding
-	DPMaster  *appsv1.Deployment
-	SVMaster  *corev1.Service
-
-	// topology-updater objects
+	Namespace          *corev1.Namespace
 	SATopologyUpdater  *corev1.ServiceAccount
 	CRTopologyUpdater  *rbacv1.ClusterRole
 	CRBTopologyUpdater *rbacv1.ClusterRoleBinding
@@ -51,17 +43,8 @@ type Manifests struct {
 
 func (mf Manifests) Clone() Manifests {
 	ret := Manifests{
-		plat: mf.plat,
-
-		Namespace: mf.Namespace.DeepCopy(),
-		// master objects
-		CRMaster:  mf.CRMaster.DeepCopy(),
-		CRBMaster: mf.CRBMaster.DeepCopy(),
-		DPMaster:  mf.DPMaster.DeepCopy(),
-		SAMaster:  mf.SAMaster.DeepCopy(),
-		SVMaster:  mf.SVMaster.DeepCopy(),
-
-		// topology-updater objects
+		plat:               mf.plat,
+		Namespace:          mf.Namespace.DeepCopy(),
 		CRTopologyUpdater:  mf.CRTopologyUpdater.DeepCopy(),
 		CRBTopologyUpdater: mf.CRBTopologyUpdater.DeepCopy(),
 		DSTopologyUpdater:  mf.DSTopologyUpdater.DeepCopy(),
@@ -85,23 +68,14 @@ type RenderOptions struct {
 func (mf Manifests) Render(options RenderOptions) (Manifests, error) {
 	ret := mf.Clone()
 
-	replicas := options.Replicas
-	if replicas <= 0 {
-		replicas = int32(1)
-	}
-	ret.DPMaster.Spec.Replicas = &replicas
-
 	if options.Namespace != "" {
 		ret.Namespace.Name = options.Namespace
 	}
 
-	manifests.UpdateClusterRoleBinding(ret.CRBMaster, mf.SAMaster.Name, ret.Namespace.Name)
 	manifests.UpdateClusterRoleBinding(ret.CRBTopologyUpdater, mf.SATopologyUpdater.Name, ret.Namespace.Name)
 
-	ret.DPMaster.Spec.Template.Spec.ServiceAccountName = mf.SAMaster.Name
 	ret.DSTopologyUpdater.Spec.Template.Spec.ServiceAccountName = mf.SATopologyUpdater.Name
 
-	manifests.UpdateNFDMasterDeployment(ret.DPMaster, options.PullIfNotPresent)
 	manifests.UpdateNFDTopologyUpdaterDaemonSet(ret.DSTopologyUpdater, options.PullIfNotPresent, options.NodeSelector)
 
 	return ret, nil
@@ -110,12 +84,6 @@ func (mf Manifests) Render(options RenderOptions) (Manifests, error) {
 func (mf Manifests) ToObjects() []client.Object {
 	return []client.Object{
 		mf.Namespace,
-		// master objects
-		mf.CRMaster,
-		mf.CRBMaster,
-		mf.SAMaster,
-		mf.DPMaster,
-		mf.SVMaster,
 		// topology-updater objects
 		mf.SATopologyUpdater,
 		mf.CRTopologyUpdater,
@@ -126,17 +94,6 @@ func (mf Manifests) ToObjects() []client.Object {
 
 func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []deployer.WaitableObject {
 	return []deployer.WaitableObject{
-		{Obj: mf.CRMaster},
-		{Obj: mf.CRBMaster},
-		{Obj: mf.SAMaster},
-		{Obj: mf.SVMaster},
-		{
-			Obj: mf.DPMaster,
-			Wait: func() error {
-				_, err := wait.ForDeploymentComplete(cli, log, mf.DPMaster, wait.DefaultPollInterval, wait.DefaultPollTimeout)
-				return err
-			},
-		},
 		{Obj: mf.SATopologyUpdater},
 		{Obj: mf.CRTopologyUpdater},
 		{Obj: mf.CRBTopologyUpdater},
@@ -154,8 +111,6 @@ func (mf Manifests) ToDeletableObjects(cli client.Client, log logr.Logger) []dep
 	return []deployer.WaitableObject{
 		{Obj: mf.CRBTopologyUpdater},
 		{Obj: mf.CRTopologyUpdater},
-		{Obj: mf.CRBMaster},
-		{Obj: mf.CRMaster},
 	}
 }
 
@@ -176,22 +131,6 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 		return mf, err
 	}
 
-	mf.SAMaster, err = manifests.ServiceAccount(manifests.ComponentNodeFeatureDiscovery, manifests.SubComponentNodeFeatureDiscoveryMaster, namespace)
-	if err != nil {
-		return mf, err
-	}
-	mf.CRMaster, err = manifests.ClusterRole(manifests.ComponentNodeFeatureDiscovery, manifests.SubComponentNodeFeatureDiscoveryMaster)
-	if err != nil {
-		return mf, err
-	}
-	mf.CRBMaster, err = manifests.ClusterRoleBinding(manifests.ComponentNodeFeatureDiscovery, manifests.SubComponentNodeFeatureDiscoveryMaster)
-	if err != nil {
-		return mf, err
-	}
-	mf.DPMaster, err = manifests.Deployment(manifests.ComponentNodeFeatureDiscovery, manifests.SubComponentNodeFeatureDiscoveryMaster, namespace)
-	if err != nil {
-		return mf, err
-	}
 	mf.SATopologyUpdater, err = manifests.ServiceAccount(manifests.ComponentNodeFeatureDiscovery, manifests.SubComponentNodeFeatureDiscoveryTopologyUpdater, namespace)
 	if err != nil {
 		return mf, err
@@ -205,10 +144,6 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 		return mf, err
 	}
 	mf.DSTopologyUpdater, err = manifests.DaemonSet(manifests.ComponentNodeFeatureDiscovery, manifests.SubComponentNodeFeatureDiscoveryTopologyUpdater, plat, namespace)
-	if err != nil {
-		return mf, err
-	}
-	mf.SVMaster, err = manifests.Service(manifests.ComponentNodeFeatureDiscovery, manifests.SubComponentNodeFeatureDiscoveryMaster, namespace)
 	if err != nil {
 		return mf, err
 	}
