@@ -158,14 +158,24 @@ func UpdateSchedulerConfig(cm *corev1.ConfigMap, schedulerName string, cacheResy
 		return fmt.Errorf("no data key named: %s found in ConfigMap: %s/%s", SchedulerConfigFileName, cm.Namespace, cm.Name)
 	}
 
-	schedCfg, err := DecodeSchedulerConfigFromData([]byte(data))
+	newData, err := RenderSchedulerConfig(data, schedulerName, cacheResyncPeriod)
 	if err != nil {
 		return err
 	}
 
+	cm.Data[SchedulerConfigFileName] = string(newData)
+	return nil
+}
+
+func RenderSchedulerConfig(data, schedulerName string, cacheResyncPeriod time.Duration) (string, error) {
+	schedCfg, err := DecodeSchedulerConfigFromData([]byte(data))
+	if err != nil {
+		return data, err
+	}
+
 	schedProf, pluginConf := findKubeSchedulerProfileByName(schedCfg, schedulerPluginName)
 	if schedProf == nil || pluginConf == nil {
-		return fmt.Errorf("no profile or plugin configuration found for %q", schedulerPluginName)
+		return data, fmt.Errorf("no profile or plugin configuration found for %q", schedulerPluginName)
 	}
 
 	if schedulerName != "" {
@@ -175,7 +185,7 @@ func UpdateSchedulerConfig(cm *corev1.ConfigMap, schedulerName string, cacheResy
 	confObj := pluginConf.Args.DeepCopyObject()
 	cfg, ok := confObj.(*pluginconfig.NodeResourceTopologyMatchArgs)
 	if !ok {
-		return fmt.Errorf("unsupported plugin config type: %T", confObj)
+		return data, fmt.Errorf("unsupported plugin config type: %T", confObj)
 	}
 
 	period := int64(cacheResyncPeriod.Seconds())
@@ -184,12 +194,7 @@ func UpdateSchedulerConfig(cm *corev1.ConfigMap, schedulerName string, cacheResy
 	pluginConf.Args = cfg
 
 	newData, err := EncodeSchedulerConfigToData(schedCfg)
-	if err != nil {
-		return err
-	}
-
-	cm.Data[SchedulerConfigFileName] = string(newData)
-	return nil
+	return string(newData), err
 }
 
 func findKubeSchedulerProfileByName(sc *schedconfig.KubeSchedulerConfiguration, name string) (*schedconfig.KubeSchedulerProfile, *schedconfig.PluginConfig) {
