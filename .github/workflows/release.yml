@@ -11,7 +11,7 @@ defaults:
     shell: bash
 
 jobs:
-  release-build:
+  release:
     runs-on: ubuntu-20.04
     steps:
     - name: checkout sources
@@ -62,16 +62,17 @@ jobs:
       run: |
         cp _out/deployer _out/deployer-${{ env.RELEASE_VERSION }}-linux-amd64
         cp _out/deployer-manifests-allinone.yaml _out/deployer-${{ env.RELEASE_VERSION }}-manifests-allinone.yaml
+        gzip _out/deployer-${{ env.RELEASE_VERSION }}-linux-amd64
 
     - name: compute signature
       run: |
         hack/make-checksum.sh ${{ env.RELEASE_VERSION }}
 
-    - name: upload build artifacts
-      uses: actions/upload-artifact@v2
+    - name: create release
+      uses: ncipollo/release-action@v1
       with:
-        name: build-artifacts
-        path: _out/*
+        artifacts: "SHA256SUMS,deployer-v*-linux-amd64.gz,deployer-v*.yaml"
+        token: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
 
     - name: export kind logs
       if: ${{ failure() }}
@@ -84,25 +85,3 @@ jobs:
       with:
         name: kind-logs
         path: /tmp/kind-logs
-
-  release:
-    needs: [release-build]
-    runs-on: ubuntu-20.04
-    steps:
-    - name: checkout sources
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-
-    # todo: create changelog and/or release body
-
-    - name: download again the build artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: build-artifacts
-
-    - name: create release
-      uses: ncipollo/release-action@v1
-      with:
-        artifacts: "SHA256SUMS,deployer-v*-linux-amd64,deployer-v*.yaml"
-        token: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
