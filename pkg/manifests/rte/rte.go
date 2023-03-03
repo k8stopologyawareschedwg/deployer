@@ -17,6 +17,8 @@
 package rte
 
 import (
+	"context"
+
 	"github.com/go-logr/logr"
 
 	securityv1 "github.com/openshift/api/security/v1"
@@ -209,8 +211,8 @@ func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []dep
 		deployer.WaitableObject{Obj: mf.ServiceAccount},
 		deployer.WaitableObject{
 			Obj: mf.DaemonSet,
-			Wait: func() error {
-				_, err := wait.ForDaemonSetReadyByKey(cli, log, key, wait.DefaultPollInterval, wait.DefaultPollTimeout)
+			Wait: func(ctx context.Context) error {
+				_, err := wait.ForDaemonSetReadyByKey(ctx, cli, log, key, wait.DefaultPollInterval, wait.DefaultPollTimeout)
 				return err
 			},
 		},
@@ -221,8 +223,8 @@ func (mf Manifests) ToDeletableObjects(cli client.Client, log logr.Logger) []dep
 	objs := []deployer.WaitableObject{
 		{
 			Obj: mf.DaemonSet,
-			Wait: func() error {
-				return wait.ForDaemonSetDeleted(cli, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name, wait.DefaultPollTimeout)
+			Wait: func(ctx context.Context) error {
+				return wait.ForDaemonSetDeleted(ctx, cli, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name, wait.DefaultPollTimeout)
 			},
 		},
 		{Obj: mf.Role},

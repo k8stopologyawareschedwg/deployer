@@ -29,10 +29,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ForDeploymentCompleteByKey(cli client.Client, logger logr.Logger, key ObjectKey, replicas int32, pollInterval, pollTimeout time.Duration) (*appsv1.Deployment, error) {
+func ForDeploymentCompleteByKey(ctx context.Context, cli client.Client, logger logr.Logger, key ObjectKey, replicas int32, pollInterval, pollTimeout time.Duration) (*appsv1.Deployment, error) {
 	updatedDp := &appsv1.Deployment{}
 	err := k8swait.PollImmediate(pollInterval, pollTimeout, func() (bool, error) {
-		err := cli.Get(context.TODO(), key.AsKey(), updatedDp)
+		err := cli.Get(ctx, key.AsKey(), updatedDp)
 		if err != nil {
 			logger.Info("failed to get the deployment", "key", key.String(), "error", err)
 			return false, err
@@ -53,11 +53,11 @@ func ForDeploymentCompleteByKey(cli client.Client, logger logr.Logger, key Objec
 	return updatedDp, err
 }
 
-func ForDeploymentComplete(cli client.Client, logger logr.Logger, dp *appsv1.Deployment, pollInterval, pollTimeout time.Duration) (*appsv1.Deployment, error) {
+func ForDeploymentComplete(ctx context.Context, cli client.Client, logger logr.Logger, dp *appsv1.Deployment, pollInterval, pollTimeout time.Duration) (*appsv1.Deployment, error) {
 	if dp.Spec.Replicas == nil {
 		return nil, fmt.Errorf("unspecified replicas in %s/%s", dp.Namespace, dp.Name)
 	}
-	return ForDeploymentCompleteByKey(cli, logger, ObjectKeyFromObject(dp), *dp.Spec.Replicas, pollInterval, pollTimeout)
+	return ForDeploymentCompleteByKey(ctx, cli, logger, ObjectKeyFromObject(dp), *dp.Spec.Replicas, pollInterval, pollTimeout)
 }
 
 func areDeploymentReplicasAvailable(newStatus *appsv1.DeploymentStatus, replicas int32) bool {
@@ -66,11 +66,11 @@ func areDeploymentReplicasAvailable(newStatus *appsv1.DeploymentStatus, replicas
 		newStatus.AvailableReplicas == replicas
 }
 
-func ForDeploymentDeleted(cli client.Client, logger logr.Logger, namespace, name string, pollTimeout time.Duration) error {
+func ForDeploymentDeleted(ctx context.Context, cli client.Client, logger logr.Logger, namespace, name string, pollTimeout time.Duration) error {
 	return k8swait.PollImmediate(time.Second, pollTimeout, func() (bool, error) {
 		obj := appsv1.Deployment{}
 		key := ObjectKey{Name: name, Namespace: namespace}
-		err := cli.Get(context.TODO(), key.AsKey(), &obj)
+		err := cli.Get(ctx, key.AsKey(), &obj)
 		return deletionStatusFromError(logger, "Deployment", key, err)
 	})
 }

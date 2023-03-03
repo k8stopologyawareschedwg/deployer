@@ -160,7 +160,7 @@ func environFromOpts(commonOpts *CommonOptions) (*deployer.Environment, error) {
 		return nil, err
 	}
 	return &deployer.Environment{
-		Ctx: context.TODO(),
+		Ctx: context.Background(),
 		Cli: cli,
 		Log: commonOpts.Log,
 	}, nil

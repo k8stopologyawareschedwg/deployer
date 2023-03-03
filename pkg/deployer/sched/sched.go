@@ -62,7 +62,7 @@ func Deploy(env *deployer.Environment, opts Options) error {
 			return err
 		}
 		if opts.WaitCompletion && wo.Wait != nil {
-			err = wo.Wait()
+			err = wo.Wait(env.Ctx)
 			if err != nil {
 				return err
 			}
@@ -102,7 +102,7 @@ func Remove(env *deployer.Environment, opts Options) error {
 			continue
 		}
 
-		err = wo.Wait()
+		err = wo.Wait(env.Ctx)
 		if err != nil {
 			env.Log.Info("failed to wait for removal", "error", err)
 		}

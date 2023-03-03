@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -34,8 +35,10 @@ func NewDetectCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "detect",
 		Short: "detect the cluster platform (kubernetes, openshift...)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			platKind, kindReason, _ := detect.FindPlatform(commonOpts.UserPlatform)
-			platVer, verReason, _ := detect.FindVersion(platKind.Discovered, commonOpts.UserPlatformVersion)
+			ctx := context.Background()
+
+			platKind, kindReason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
+			platVer, verReason, _ := detect.FindVersion(ctx, platKind.Discovered, commonOpts.UserPlatformVersion)
 
 			commonOpts.DebugLog.Info("detection", "platform", platKind, "reason", kindReason, "version", platVer, "source", verReason)
 

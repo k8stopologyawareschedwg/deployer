@@ -58,13 +58,13 @@ func (ok ObjectKey) String() string {
 	return fmt.Sprintf("%s/%s", ok.Namespace, ok.Name)
 }
 
-func ForNamespaceDeleted(cli client.Client, log logr.Logger, namespace string) error {
+func ForNamespaceDeleted(ctx context.Context, cli client.Client, log logr.Logger, namespace string) error {
 	log = log.WithValues("namespace", namespace)
 	log.Info("wait for the namespace to be gone")
 	return k8swait.PollImmediate(1*time.Second, 3*time.Minute, func() (bool, error) {
 		nsKey := ObjectKey{Name: namespace}
 		ns := corev1.Namespace{} // unused
-		err := cli.Get(context.TODO(), nsKey.AsKey(), &ns)
+		err := cli.Get(ctx, nsKey.AsKey(), &ns)
 		return deletionStatusFromError(log, "Namespace", nsKey, err)
 	})
 }
