@@ -17,6 +17,7 @@
 package sched
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -150,8 +151,8 @@ func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []dep
 		{Obj: mf.ConfigMap},
 		{
 			Obj: mf.DPScheduler,
-			Wait: func() error {
-				_, err := wait.ForDeploymentComplete(cli, log, mf.DPScheduler, wait.DefaultPollInterval, wait.DefaultPollTimeout)
+			Wait: func(ctx context.Context) error {
+				_, err := wait.ForDeploymentComplete(ctx, cli, log, mf.DPScheduler, wait.DefaultPollInterval, wait.DefaultPollTimeout)
 				return err
 			},
 		},
@@ -161,8 +162,8 @@ func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []dep
 		{Obj: mf.RBController},
 		{
 			Obj: mf.DPController,
-			Wait: func() error {
-				_, err := wait.ForDeploymentComplete(cli, log, mf.DPController, wait.DefaultPollInterval, wait.DefaultPollTimeout)
+			Wait: func(ctx context.Context) error {
+				_, err := wait.ForDeploymentComplete(ctx, cli, log, mf.DPController, wait.DefaultPollInterval, wait.DefaultPollTimeout)
 				return err
 			},
 		},
@@ -173,7 +174,7 @@ func (mf Manifests) ToDeletableObjects(cli client.Client, log logr.Logger) []dep
 	return []deployer.WaitableObject{
 		{
 			Obj:  mf.Namespace,
-			Wait: func() error { return wait.ForNamespaceDeleted(cli, log, mf.Namespace.Name) },
+			Wait: func(ctx context.Context) error { return wait.ForNamespaceDeleted(ctx, cli, log, mf.Namespace.Name) },
 		},
 		// no need to remove objects created inside the namespace we just removed
 		{Obj: mf.CRBScheduler},

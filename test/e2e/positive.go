@@ -450,6 +450,8 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 			cli, err := clientutil.New()
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
+			ctx := context.Background()
+
 			var wg sync.WaitGroup
 			for _, dp := range []*appsv1.Deployment{
 				mfs.DPScheduler,
@@ -459,7 +461,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 				go func(dp *appsv1.Deployment) {
 					defer ginkgo.GinkgoRecover()
 					defer wg.Done()
-					_, err = wait.ForDeploymentComplete(cli, logr.Discard(), dp, 10*time.Second, 3*time.Minute)
+					_, err = wait.ForDeploymentComplete(ctx, cli, logr.Discard(), dp, 10*time.Second, 3*time.Minute)
 					gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				}(dp)
 			}

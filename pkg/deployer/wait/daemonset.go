@@ -27,10 +27,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ForDaemonSetReadyByKey(cli client.Client, logger logr.Logger, key ObjectKey, pollInterval, pollTimeout time.Duration) (*appsv1.DaemonSet, error) {
+func ForDaemonSetReadyByKey(ctx context.Context, cli client.Client, logger logr.Logger, key ObjectKey, pollInterval, pollTimeout time.Duration) (*appsv1.DaemonSet, error) {
 	updatedDs := &appsv1.DaemonSet{}
 	err := k8swait.PollImmediate(pollInterval, pollTimeout, func() (bool, error) {
-		err := cli.Get(context.TODO(), key.AsKey(), updatedDs)
+		err := cli.Get(ctx, key.AsKey(), updatedDs)
 		if err != nil {
 			logger.Info("failed to get the daemonset", "key", key.String(), "error", err)
 			return false, err
@@ -51,8 +51,8 @@ func ForDaemonSetReadyByKey(cli client.Client, logger logr.Logger, key ObjectKey
 	return updatedDs, err
 }
 
-func ForDaemonSetReady(cli client.Client, logger logr.Logger, ds *appsv1.DaemonSet, pollInterval, pollTimeout time.Duration) (*appsv1.DaemonSet, error) {
-	return ForDaemonSetReadyByKey(cli, logger, ObjectKeyFromObject(ds), pollInterval, pollTimeout)
+func ForDaemonSetReady(ctx context.Context, cli client.Client, logger logr.Logger, ds *appsv1.DaemonSet, pollInterval, pollTimeout time.Duration) (*appsv1.DaemonSet, error) {
+	return ForDaemonSetReadyByKey(ctx, cli, logger, ObjectKeyFromObject(ds), pollInterval, pollTimeout)
 }
 
 func AreDaemonSetPodsReady(newStatus *appsv1.DaemonSetStatus) bool {
@@ -60,11 +60,11 @@ func AreDaemonSetPodsReady(newStatus *appsv1.DaemonSetStatus) bool {
 		newStatus.DesiredNumberScheduled == newStatus.NumberReady
 }
 
-func ForDaemonSetDeleted(cli client.Client, logger logr.Logger, namespace, name string, pollTimeout time.Duration) error {
+func ForDaemonSetDeleted(ctx context.Context, cli client.Client, logger logr.Logger, namespace, name string, pollTimeout time.Duration) error {
 	return k8swait.PollImmediate(time.Second, pollTimeout, func() (bool, error) {
 		obj := appsv1.DaemonSet{}
 		key := ObjectKey{Name: name, Namespace: namespace}
-		err := cli.Get(context.TODO(), key.AsKey(), &obj)
+		err := cli.Get(ctx, key.AsKey(), &obj)
 		return deletionStatusFromError(logger, "DaemonSet", key, err)
 	})
 }

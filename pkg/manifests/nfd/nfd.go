@@ -17,6 +17,8 @@
 package nfd
 
 import (
+	"context"
+
 	"github.com/go-logr/logr"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -99,8 +101,8 @@ func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []dep
 		{Obj: mf.CRBTopologyUpdater},
 		{
 			Obj: mf.DSTopologyUpdater,
-			Wait: func() error {
-				_, err := wait.ForDaemonSetReady(cli, log, mf.DSTopologyUpdater, wait.DefaultPollInterval, wait.DefaultPollTimeout)
+			Wait: func(ctx context.Context) error {
+				_, err := wait.ForDaemonSetReady(ctx, cli, log, mf.DSTopologyUpdater, wait.DefaultPollInterval, wait.DefaultPollTimeout)
 				return err
 			},
 		},

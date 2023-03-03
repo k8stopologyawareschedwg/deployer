@@ -17,6 +17,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -62,12 +63,14 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 				return err
 			}
 
-			platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
+			ctx := context.Background()
+
+			platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			versionDetect, source, _ := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+			versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 			opts.clusterVersion = versionDetect.Discovered
 			if opts.clusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
@@ -124,12 +127,14 @@ func NewDeployAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.
 				return err
 			}
 
-			platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
+			ctx := context.Background()
+
+			platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			versionDetect, source, _ := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+			versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 			opts.clusterVersion = versionDetect.Discovered
 			if opts.clusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
@@ -156,12 +161,14 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 				return err
 			}
 
-			platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
+			ctx := context.Background()
+
+			platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			versionDetect, source, _ := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+			versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 			opts.clusterVersion = versionDetect.Discovered
 			if opts.clusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
@@ -191,12 +198,14 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 				return err
 			}
 
-			platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
+			ctx := context.Background()
+
+			platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			versionDetect, source, _ := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+			versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 			opts.clusterVersion = versionDetect.Discovered
 			if opts.clusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
@@ -226,12 +235,14 @@ func NewRemoveAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.
 				return err
 			}
 
-			platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
+			ctx := context.Background()
+
+			platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			versionDetect, source, _ := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+			versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 			opts.clusterVersion = versionDetect.Discovered
 			if opts.clusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
@@ -258,12 +269,14 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 				return err
 			}
 
-			platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
+			ctx := context.Background()
+
+			platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			versionDetect, source, _ := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+			versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 			opts.clusterVersion = versionDetect.Discovered
 			if opts.clusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
@@ -293,12 +306,14 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 				return err
 			}
 
-			platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
+			ctx := context.Background()
+
+			platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			versionDetect, source, _ := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+			versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 			opts.clusterVersion = versionDetect.Discovered
 			if opts.clusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
@@ -324,12 +339,14 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 		return err
 	}
 
-	platDetect, reason, _ := detect.FindPlatform(commonOpts.UserPlatform)
+	ctx := context.Background()
+
+	platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
 	opts.clusterPlatform = platDetect.Discovered
 	if opts.clusterPlatform == platform.Unknown {
 		return fmt.Errorf("cannot autodetect the platform, and no platform given")
 	}
-	versionDetect, source, _ := detect.FindVersion(platDetect.Discovered, commonOpts.UserPlatformVersion)
+	versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 	opts.clusterVersion = versionDetect.Discovered
 	if opts.clusterVersion == platform.MissingVersion {
 		return fmt.Errorf("cannot autodetect the platform version, and no version given")
