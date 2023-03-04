@@ -95,7 +95,7 @@ func Remove(env *deployer.Environment, updaterType string, opts Options) error {
 
 	objs = append(objs, deployer.WaitableObject{
 		Obj:  ns,
-		Wait: func(ctx context.Context) error { return wait.ForNamespaceDeleted(ctx, env.Cli, env.Log, ns.Name) },
+		Wait: func(ctx context.Context) error { return wait.With(env.Cli, env.Log).ForNamespaceDeleted(ctx, ns.Name) },
 	})
 	for _, wo := range objs {
 		err = env.DeleteObject(wo.Obj)
