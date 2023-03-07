@@ -33,6 +33,9 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	ocpupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/ocp"
+	rbacupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/rbac"
+	rteupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/rte"
 )
 
 const (
@@ -110,25 +113,29 @@ func (mf Manifests) Render(options RenderOptions) (Manifests, error) {
 		ret.ClusterRoleBinding.Name = options.Name
 	}
 
-	manifests.UpdateRoleBinding(ret.RoleBinding, mf.ServiceAccount.Name, ret.ServiceAccount.Namespace)
-	manifests.UpdateClusterRoleBinding(ret.ClusterRoleBinding, mf.ServiceAccount.Name, mf.ServiceAccount.Namespace)
+	rbacupdate.RoleBinding(ret.RoleBinding, mf.ServiceAccount.Name, ret.ServiceAccount.Namespace)
+	rbacupdate.ClusterRoleBinding(ret.ClusterRoleBinding, mf.ServiceAccount.Name, mf.ServiceAccount.Namespace)
 
 	ret.DaemonSet.Spec.Template.Spec.ServiceAccountName = mf.ServiceAccount.Name
 
 	rteConfigMapName := ""
 	if len(options.ConfigData) > 0 {
-		ret.ConfigMap = CreateConfigMap(ret.DaemonSet.Namespace, manifests.RTEConfigMapName, options.ConfigData)
+		ret.ConfigMap = CreateConfigMap(ret.DaemonSet.Namespace, rteupdate.RTEConfigMapName, options.ConfigData)
 	}
 
 	if ret.ConfigMap != nil {
 		rteConfigMapName = ret.ConfigMap.Name
 	}
-	manifests.UpdateResourceTopologyExporterDaemonSet(
-		ret.DaemonSet, rteConfigMapName, options.PullIfNotPresent, options.NodeSelector)
+	rteupdate.DaemonSet(ret.DaemonSet, rteConfigMapName, options.PullIfNotPresent, options.NodeSelector)
 
 	if mf.plat == platform.OpenShift {
-		manifests.UpdateMachineConfig(ret.MachineConfig, options.Name, options.MachineConfigPoolSelector)
-		manifests.UpdateSecurityContextConstraint(ret.SecurityContextConstraint, ret.ServiceAccount)
+		if options.Name != "" {
+			ret.MachineConfig.Name = ocpupdate.MakeMachineConfigName(options.Name)
+		}
+		if options.MachineConfigPoolSelector != nil {
+			ret.MachineConfig.Labels = options.MachineConfigPoolSelector.MatchLabels
+		}
+		ocpupdate.SecurityContextConstraint(ret.SecurityContextConstraint, ret.ServiceAccount)
 	}
 
 	return ret, nil

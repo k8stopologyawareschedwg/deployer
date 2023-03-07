@@ -31,6 +31,8 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	nfdupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/nfd"
+	rbacupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/rbac"
 )
 
 type Manifests struct {
@@ -74,11 +76,11 @@ func (mf Manifests) Render(options RenderOptions) (Manifests, error) {
 		ret.Namespace.Name = options.Namespace
 	}
 
-	manifests.UpdateClusterRoleBinding(ret.CRBTopologyUpdater, mf.SATopologyUpdater.Name, ret.Namespace.Name)
+	rbacupdate.ClusterRoleBinding(ret.CRBTopologyUpdater, mf.SATopologyUpdater.Name, ret.Namespace.Name)
 
 	ret.DSTopologyUpdater.Spec.Template.Spec.ServiceAccountName = mf.SATopologyUpdater.Name
 
-	manifests.UpdateNFDTopologyUpdaterDaemonSet(ret.DSTopologyUpdater, options.PullIfNotPresent, options.NodeSelector)
+	nfdupdate.UpdaterDaemonSet(ret.DSTopologyUpdater, options.PullIfNotPresent, options.NodeSelector)
 
 	return ret, nil
 }
