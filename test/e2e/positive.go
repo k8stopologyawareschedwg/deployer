@@ -461,7 +461,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 				go func(dp *appsv1.Deployment) {
 					defer ginkgo.GinkgoRecover()
 					defer wg.Done()
-					_, err = wait.ForDeploymentComplete(ctx, cli, logr.Discard(), dp, 10*time.Second, 3*time.Minute)
+					_, err = wait.With(cli, logr.Discard()).Interval(10*time.Second).Timeout(3*time.Minute).ForDeploymentComplete(ctx, dp)
 					gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				}(dp)
 			}

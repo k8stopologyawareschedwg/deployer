@@ -212,7 +212,7 @@ func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []dep
 		deployer.WaitableObject{
 			Obj: mf.DaemonSet,
 			Wait: func(ctx context.Context) error {
-				_, err := wait.ForDaemonSetReadyByKey(ctx, cli, log, key, wait.DefaultPollInterval, wait.DefaultPollTimeout)
+				_, err := wait.With(cli, log).ForDaemonSetReadyByKey(ctx, key)
 				return err
 			},
 		},
@@ -224,7 +224,7 @@ func (mf Manifests) ToDeletableObjects(cli client.Client, log logr.Logger) []dep
 		{
 			Obj: mf.DaemonSet,
 			Wait: func(ctx context.Context) error {
-				return wait.ForDaemonSetDeleted(ctx, cli, log, mf.DaemonSet.Namespace, mf.DaemonSet.Name, wait.DefaultPollTimeout)
+				return wait.With(cli, log).ForDaemonSetDeleted(ctx, mf.DaemonSet.Namespace, mf.DaemonSet.Name)
 			},
 		},
 		{Obj: mf.Role},

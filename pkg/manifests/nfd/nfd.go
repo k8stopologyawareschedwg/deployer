@@ -102,7 +102,7 @@ func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []dep
 		{
 			Obj: mf.DSTopologyUpdater,
 			Wait: func(ctx context.Context) error {
-				_, err := wait.ForDaemonSetReady(ctx, cli, log, mf.DSTopologyUpdater, wait.DefaultPollInterval, wait.DefaultPollTimeout)
+				_, err := wait.With(cli, log).ForDaemonSetReady(ctx, mf.DSTopologyUpdater)
 				return err
 			},
 		},
