@@ -14,19 +14,16 @@
  * Copyright 2021 Red Hat, Inc.
  */
 
-package manifests
+package rte
 
 import (
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 )
 
-func TestUpdateMetricsPort(t *testing.T) {
+func TestMetricsPort(t *testing.T) {
 	ds := &appsv1.DaemonSet{
 		Spec: appsv1.DaemonSetSpec{
 			Template: v1.PodTemplateSpec{
@@ -75,7 +72,7 @@ func TestUpdateMetricsPort(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run("update metrics", func(t *testing.T) {
-			UpdateMetricsPort(ds, tc.port)
+			MetricsPort(ds, tc.port)
 			for _, env := range ds.Spec.Template.Spec.Containers[0].Env {
 				if env.Name == "METRICS_PORT" && env.Value != tc.sPort {
 					t.Errorf("expected port number to be %q got %q", tc.sPort, env.Value)
@@ -110,7 +107,7 @@ func TestAddConfigMapToDaemonSet(t *testing.T) {
 		t.Errorf("unexpected volume declaration")
 	}
 
-	UpdateResourceTopologyExporterContainerConfig(&ds.Spec.Template.Spec, &ds.Spec.Template.Spec.Containers[0], "test-cfg")
+	ContainerConfig(&ds.Spec.Template.Spec, &ds.Spec.Template.Spec.Containers[0], "test-cfg")
 	if len(ds.Spec.Template.Spec.Containers[0].VolumeMounts) != 1 {
 		t.Errorf("missing volume mount")
 	}
@@ -134,57 +131,11 @@ func TestAddConfigMapToPod(t *testing.T) {
 		t.Errorf("unexpected volume declaration")
 	}
 
-	UpdateResourceTopologyExporterContainerConfig(&pod.Spec, &pod.Spec.Containers[0], "test-cfg")
+	ContainerConfig(&pod.Spec, &pod.Spec.Containers[0], "test-cfg")
 	if len(pod.Spec.Containers[0].VolumeMounts) != 1 {
 		t.Errorf("missing volume mount")
 	}
 	if len(pod.Spec.Volumes) != 1 {
 		t.Errorf("missing volume declaration")
-	}
-}
-
-func TestUpdateNFDTopologyUpdaterDaemonSet(t *testing.T) {
-	ds := &appsv1.DaemonSet{
-		Spec: appsv1.DaemonSetSpec{
-			Template: v1.PodTemplateSpec{
-				Spec: v1.PodSpec{
-					Containers: []v1.Container{
-						{},
-					},
-				},
-			},
-		},
-	}
-
-	testCases := []struct {
-		cntName          string
-		pullIfNotPresent bool
-		nodeSelector     *metav1.LabelSelector
-	}{
-		{
-			cntName:          containerNameNFDTopologyUpdater,
-			pullIfNotPresent: false,
-			nodeSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"foo": "bar"},
-			},
-		},
-	}
-	for _, tc := range testCases {
-		mutatedDs := ds.DeepCopy()
-		pSpec := &mutatedDs.Spec.Template.Spec
-		pSpec.Containers[0].Name = tc.cntName
-		UpdateNFDTopologyUpdaterDaemonSet(mutatedDs, tc.pullIfNotPresent, tc.nodeSelector)
-		if tc.cntName == containerNameNFDTopologyUpdater {
-			if pSpec.Containers[0].ImagePullPolicy != pullPolicy(tc.pullIfNotPresent) {
-				t.Errorf("expected container ImagePullPolicy to be: %q; got: %q", pullPolicy(tc.pullIfNotPresent), pSpec.Containers[0].ImagePullPolicy)
-			}
-			if !cmp.Equal(pSpec.NodeSelector, tc.nodeSelector.MatchLabels) {
-				t.Errorf("expected NodeSelector to be: %v; got: %v", tc.nodeSelector.MatchLabels, pSpec.NodeSelector)
-			}
-		} else {
-			if pSpec.Containers[0].ImagePullPolicy != "" {
-				t.Errorf("container name is other than %q, no changes to container are expected", containerNameNFDTopologyUpdater)
-			}
-		}
 	}
 }

@@ -34,6 +34,8 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	rbacupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/rbac"
+	schedupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/sched"
 )
 
 const (
@@ -97,25 +99,25 @@ func (mf Manifests) Render(logger logr.Logger, options RenderOptions) (Manifests
 	ret.DPScheduler.Spec.Replicas = newInt32(replicas)
 	ret.DPController.Spec.Replicas = newInt32(replicas)
 
-	err := manifests.UpdateSchedulerConfig(ret.ConfigMap, options.ProfileName, options.CacheResyncPeriod)
+	err := schedupdate.SchedulerConfig(ret.ConfigMap, options.ProfileName, options.CacheResyncPeriod)
 	if err != nil {
 		return ret, err
 	}
 
-	manifests.UpdateSchedulerPluginSchedulerDeployment(ret.DPScheduler, options.PullIfNotPresent)
-	manifests.UpdateSchedulerPluginControllerDeployment(ret.DPController, options.PullIfNotPresent)
+	schedupdate.SchedulerDeployment(ret.DPScheduler, options.PullIfNotPresent)
+	schedupdate.ControllerDeployment(ret.DPController, options.PullIfNotPresent)
 	if mf.plat == platform.OpenShift {
 		ret.Namespace.Name = NamespaceOpenShift
 	}
 
 	ret.SAController.Namespace = ret.Namespace.Name
-	manifests.UpdateClusterRoleBinding(ret.CRBController, ret.SAController.Name, ret.Namespace.Name)
-	manifests.UpdateRoleBinding(ret.RBController, ret.SAController.Name, ret.Namespace.Name)
+	rbacupdate.ClusterRoleBinding(ret.CRBController, ret.SAController.Name, ret.Namespace.Name)
+	rbacupdate.RoleBinding(ret.RBController, ret.SAController.Name, ret.Namespace.Name)
 	ret.DPController.Namespace = ret.Namespace.Name
 
 	ret.SAScheduler.Namespace = ret.Namespace.Name
-	manifests.UpdateClusterRoleBinding(ret.CRBScheduler, ret.SAScheduler.Name, ret.Namespace.Name)
-	manifests.UpdateRoleBinding(ret.RBScheduler, ret.SAScheduler.Name, ret.Namespace.Name)
+	rbacupdate.ClusterRoleBinding(ret.CRBScheduler, ret.SAScheduler.Name, ret.Namespace.Name)
+	rbacupdate.RoleBinding(ret.RBScheduler, ret.SAScheduler.Name, ret.Namespace.Name)
 	ret.DPScheduler.Namespace = ret.Namespace.Name
 	ret.ConfigMap.Namespace = ret.Namespace.Name
 
