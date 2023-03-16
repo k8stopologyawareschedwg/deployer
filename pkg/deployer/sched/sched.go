@@ -18,6 +18,7 @@ package sched
 
 import (
 	"fmt"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -27,11 +28,12 @@ import (
 )
 
 type Options struct {
-	Platform         platform.Platform
-	WaitCompletion   bool
-	Replicas         int32
-	RTEConfigData    string
-	PullIfNotPresent bool
+	Platform          platform.Platform
+	WaitCompletion    bool
+	Replicas          int32
+	RTEConfigData     string
+	PullIfNotPresent  bool
+	CacheResyncPeriod time.Duration
 }
 
 func SetupNamespace(plat platform.Platform) (*corev1.Namespace, string, error) {
@@ -49,8 +51,9 @@ func Deploy(env *deployer.Environment, opts Options) error {
 	}
 
 	mf, err = mf.Render(env.Log, schedmanifests.RenderOptions{
-		Replicas:         opts.Replicas,
-		PullIfNotPresent: opts.PullIfNotPresent,
+		Replicas:          opts.Replicas,
+		PullIfNotPresent:  opts.PullIfNotPresent,
+		CacheResyncPeriod: opts.CacheResyncPeriod,
 	})
 	if err != nil {
 		return err
@@ -84,8 +87,9 @@ func Remove(env *deployer.Environment, opts Options) error {
 	}
 
 	mf, err = mf.Render(env.Log, schedmanifests.RenderOptions{
-		Replicas:         opts.Replicas,
-		PullIfNotPresent: opts.PullIfNotPresent,
+		Replicas:          opts.Replicas,
+		PullIfNotPresent:  opts.PullIfNotPresent,
+		CacheResyncPeriod: opts.CacheResyncPeriod,
 	})
 	if err != nil {
 		return err

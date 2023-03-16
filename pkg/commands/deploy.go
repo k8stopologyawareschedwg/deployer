@@ -78,11 +78,12 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			commonOpts.DebugLog.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
 
 			err = sched.Remove(env, sched.Options{
-				Platform:         opts.clusterPlatform,
-				WaitCompletion:   opts.waitCompletion,
-				Replicas:         int32(commonOpts.Replicas),
-				RTEConfigData:    commonOpts.RTEConfigData,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
+				Platform:          opts.clusterPlatform,
+				WaitCompletion:    opts.waitCompletion,
+				Replicas:          int32(commonOpts.Replicas),
+				RTEConfigData:     commonOpts.RTEConfigData,
+				PullIfNotPresent:  commonOpts.PullIfNotPresent,
+				CacheResyncPeriod: commonOpts.schedResyncPeriod,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
@@ -176,11 +177,12 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 
 			commonOpts.DebugLog.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
 			return sched.Deploy(env, sched.Options{
-				Platform:         opts.clusterPlatform,
-				WaitCompletion:   opts.waitCompletion,
-				Replicas:         int32(commonOpts.Replicas),
-				RTEConfigData:    commonOpts.RTEConfigData,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
+				Platform:          opts.clusterPlatform,
+				WaitCompletion:    opts.waitCompletion,
+				Replicas:          int32(commonOpts.Replicas),
+				RTEConfigData:     commonOpts.RTEConfigData,
+				PullIfNotPresent:  commonOpts.PullIfNotPresent,
+				CacheResyncPeriod: commonOpts.schedResyncPeriod,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -284,11 +286,12 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 
 			commonOpts.DebugLog.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
 			return sched.Remove(env, sched.Options{
-				Platform:         opts.clusterPlatform,
-				WaitCompletion:   opts.waitCompletion,
-				Replicas:         int32(commonOpts.Replicas),
-				RTEConfigData:    commonOpts.RTEConfigData,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
+				Platform:          opts.clusterPlatform,
+				WaitCompletion:    opts.waitCompletion,
+				Replicas:          int32(commonOpts.Replicas),
+				RTEConfigData:     commonOpts.RTEConfigData,
+				PullIfNotPresent:  commonOpts.PullIfNotPresent,
+				CacheResyncPeriod: commonOpts.schedResyncPeriod,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -368,11 +371,12 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 		return err
 	}
 	if err := sched.Deploy(env, sched.Options{
-		Platform:         opts.clusterPlatform,
-		WaitCompletion:   opts.waitCompletion,
-		Replicas:         int32(commonOpts.Replicas),
-		RTEConfigData:    commonOpts.RTEConfigData,
-		PullIfNotPresent: commonOpts.PullIfNotPresent,
+		Platform:          opts.clusterPlatform,
+		WaitCompletion:    opts.waitCompletion,
+		Replicas:          int32(commonOpts.Replicas),
+		RTEConfigData:     commonOpts.RTEConfigData,
+		PullIfNotPresent:  commonOpts.PullIfNotPresent,
+		CacheResyncPeriod: commonOpts.schedResyncPeriod,
 	}); err != nil {
 		return err
 	}
