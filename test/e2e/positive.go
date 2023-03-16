@@ -35,7 +35,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha1"
+	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
@@ -470,12 +470,12 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 	})
 })
 
-func getNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name string) *v1alpha1.NodeResourceTopology {
+func getNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name string) *v1alpha2.NodeResourceTopology {
 	var err error
-	var nrt *v1alpha1.NodeResourceTopology
+	var nrt *v1alpha2.NodeResourceTopology
 	fmt.Fprintf(ginkgo.GinkgoWriter, "looking for noderesourcetopology %q in namespace %q\n", name, namespace)
 	gomega.EventuallyWithOffset(1, func() error {
-		nrt, err = tc.TopologyV1alpha1().NodeResourceTopologies().Get(context.TODO(), name, metav1.GetOptions{})
+		nrt, err = tc.TopologyV1alpha2().NodeResourceTopologies().Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}

@@ -9,7 +9,7 @@ require (
 	github.com/go-logr/stdr v1.2.2
 	github.com/google/go-cmp v0.5.8
 	github.com/hashicorp/go-version v1.6.0
-	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.0.12
+	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.1
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.1
 	github.com/openshift/api v0.0.0-20221021112143-4226c2167e40

@@ -22,7 +22,7 @@ import (
 
 	"github.com/onsi/ginkgo"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -43,12 +43,12 @@ const (
 )
 
 // GetWorkerNodes returns all nodes labeled as worker
-func GetWorkerNodes(cli *kubernetes.Clientset) ([]v1.Node, error) {
+func GetWorkerNodes(cli *kubernetes.Clientset) ([]corev1.Node, error) {
 	return GetNodesByRole(cli, RoleWorker)
 }
 
 // GetByRole returns all nodes with the specified role
-func GetNodesByRole(cli *kubernetes.Clientset, role string) ([]v1.Node, error) {
+func GetNodesByRole(cli *kubernetes.Clientset, role string) ([]corev1.Node, error) {
 	selector, err := labels.Parse(fmt.Sprintf("%s/%s=", LabelRole, role))
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func GetNodesByRole(cli *kubernetes.Clientset, role string) ([]v1.Node, error) {
 }
 
 // GetBySelector returns all nodes with the specified selector
-func GetNodesBySelector(cli *kubernetes.Clientset, selector labels.Selector) ([]v1.Node, error) {
+func GetNodesBySelector(cli *kubernetes.Clientset, selector labels.Selector) ([]corev1.Node, error) {
 	nodes, err := cli.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: selector.String()})
 	if err != nil {
 		return nil, err
@@ -66,13 +66,13 @@ func GetNodesBySelector(cli *kubernetes.Clientset, selector labels.Selector) ([]
 }
 
 // FilterNodesWithEnoughCores returns all nodes with at least the amount of given CPU allocatable
-func FilterNodesWithEnoughCores(nodes []v1.Node, cpuAmount string) ([]v1.Node, error) {
+func FilterNodesWithEnoughCores(nodes []corev1.Node, cpuAmount string) ([]corev1.Node, error) {
 	requestCpu := resource.MustParse(cpuAmount)
 	fmt.Fprintf(ginkgo.GinkgoWriter, "checking request %v on %d nodes\n", requestCpu, len(nodes))
 
-	resNodes := []v1.Node{}
+	resNodes := []corev1.Node{}
 	for _, node := range nodes {
-		availCpu, ok := node.Status.Allocatable[v1.ResourceCPU]
+		availCpu, ok := node.Status.Allocatable[corev1.ResourceCPU]
 		if !ok || availCpu.IsZero() {
 			return nil, fmt.Errorf("node %q has no allocatable CPU", node.Name)
 		}
