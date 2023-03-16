@@ -391,12 +391,10 @@ func DaemonSet(component, subComponent string, plat platform.Platform, namespace
 			c := &ds.Spec.Template.Spec.Containers[i]
 			if c.Name == ContainerNameRTE {
 				c.Image = images.ResourceTopologyExporterImage
-				// we do this explicitely, but should be already OK from the YAML manifest
-				c.Command = []string{
-					"/bin/resource-topology-exporter",
-				}
+
 				c.Args = []string{
 					"--sleep-interval=10s",
+					"--pods-fingerprint",
 					fmt.Sprintf("--sysfs=%s", containerHostSysDir),
 					fmt.Sprintf("--podresources-socket=unix://%s", containerPodResourcesSocket),
 					fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
