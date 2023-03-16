@@ -60,13 +60,11 @@ jobs:
 
     - name: fix build artifacts
       run: |
-        cp _out/deployer _out/deployer-${{ env.RELEASE_VERSION }}-linux-amd64
-        cp _out/deployer-manifests-allinone.yaml _out/deployer-${{ env.RELEASE_VERSION }}-manifests-allinone.yaml
-        gzip _out/deployer-${{ env.RELEASE_VERSION }}-linux-amd64
+        hack/make-release-binaries.sh ${{ env.RELEASE_VERSION }}
 
     - name: compute signature
       run: |
-        hack/make-checksum.sh ${{ env.RELEASE_VERSION }}
+        hack/make-release-checksum.sh ${{ env.RELEASE_VERSION }}
 
     - name: create release
       uses: ncipollo/release-action@v1
