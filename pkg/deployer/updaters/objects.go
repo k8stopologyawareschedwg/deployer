@@ -19,8 +19,6 @@ package updaters
 import (
 	"fmt"
 
-	"github.com/go-logr/logr"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
@@ -55,7 +53,7 @@ func GetObjects(opts Options, updaterType, namespace string) ([]client.Object, e
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }
 
-func getCreatableObjects(opts Options, cli client.Client, log logr.Logger, updaterType, namespace string) ([]deployer.WaitableObject, error) {
+func getCreatableObjects(env *deployer.Environment, opts Options, updaterType, namespace string) ([]deployer.WaitableObject, error) {
 	if updaterType == RTE {
 		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
 		if err != nil {
@@ -65,7 +63,7 @@ func getCreatableObjects(opts Options, cli client.Client, log logr.Logger, updat
 		if err != nil {
 			return nil, err
 		}
-		return ret.ToCreatableObjects(cli, log), nil
+		return ret.ToCreatableObjects(env.Cli, env.Log), nil
 	}
 	if updaterType == NFD {
 		mf, err := nfdmanifests.GetManifests(opts.Platform, namespace)
@@ -76,12 +74,12 @@ func getCreatableObjects(opts Options, cli client.Client, log logr.Logger, updat
 		if err != nil {
 			return nil, err
 		}
-		return ret.ToCreatableObjects(cli, log), nil
+		return ret.ToCreatableObjects(env.Cli, env.Log), nil
 	}
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }
 
-func getDeletableObjects(opts Options, cli client.Client, log logr.Logger, updaterType, namespace string) ([]deployer.WaitableObject, error) {
+func getDeletableObjects(env *deployer.Environment, opts Options, updaterType, namespace string) ([]deployer.WaitableObject, error) {
 	if updaterType == RTE {
 		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
 		if err != nil {
@@ -91,7 +89,7 @@ func getDeletableObjects(opts Options, cli client.Client, log logr.Logger, updat
 		if err != nil {
 			return nil, err
 		}
-		return ret.ToDeletableObjects(cli, log), nil
+		return ret.ToDeletableObjects(env.Cli, env.Log), nil
 	}
 	if updaterType == NFD {
 		mf, err := nfdmanifests.GetManifests(opts.Platform, namespace)
@@ -102,7 +100,7 @@ func getDeletableObjects(opts Options, cli client.Client, log logr.Logger, updat
 		if err != nil {
 			return nil, err
 		}
-		return ret.ToDeletableObjects(cli, log), nil
+		return ret.ToDeletableObjects(env.Cli, env.Log), nil
 	}
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }
@@ -112,6 +110,7 @@ func rteOptionsFrom(opts Options, namespace string) rtemanifests.RenderOptions {
 		ConfigData:       opts.RTEConfigData,
 		PullIfNotPresent: opts.PullIfNotPresent,
 		Namespace:        namespace,
+		PFPEnable:        opts.PFPEnable,
 	}
 }
 
@@ -119,5 +118,6 @@ func nfdOptionsFrom(opts Options, namespace string) nfdmanifests.RenderOptions {
 	return nfdmanifests.RenderOptions{
 		PullIfNotPresent: opts.PullIfNotPresent,
 		Namespace:        namespace,
+		PFPEnable:        opts.PFPEnable,
 	}
 }

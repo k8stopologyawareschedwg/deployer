@@ -138,6 +138,7 @@ func makeUpdaterObjects(commonOpts *CommonOptions) ([]client.Object, string, err
 		Platform:         commonOpts.UserPlatform,
 		PullIfNotPresent: commonOpts.PullIfNotPresent,
 		RTEConfigData:    commonOpts.RTEConfigData,
+		PFPEnable:        commonOpts.UpdaterPFPEnable,
 	}
 	objs, err := updaters.GetObjects(opts, commonOpts.UpdaterType, namespace)
 	if err != nil {

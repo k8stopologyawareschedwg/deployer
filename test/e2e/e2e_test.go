@@ -17,16 +17,29 @@
 package e2e
 
 import (
+	"context"
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/validator"
+	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
+	nrtattrv1alpha2 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2/helper/attribute"
+	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
+	"github.com/k8stopologyawareschedwg/podfingerprint"
 )
 
 var (
@@ -72,4 +85,126 @@ type imageOutput struct {
 
 func waitForReasource(body interface{}) {
 	gomega.Eventually(body)
+}
+
+func alwaysPass(nrt *v1alpha2.NodeResourceTopology) error {
+	return nil
+}
+
+func checkHasCPU(nrt *v1alpha2.NodeResourceTopology) error {
+	// we check CPUs because that's the only resource we know it will always be available
+	ok := false
+	for _, zone := range nrt.Zones {
+		for _, resource := range zone.Resources {
+			if resource.Name == string(corev1.ResourceCPU) && resource.Capacity.Size() >= 1 {
+				ok = true
+			}
+		}
+	}
+	if !ok {
+		return fmt.Errorf("missing CPUs in %q", nrt.Name)
+	}
+	return nil
+}
+
+func checkHasPFP(nrt *v1alpha2.NodeResourceTopology) error {
+	_, hasAttr := nrtattrv1alpha2.Get(nrt.Attributes, podfingerprint.Attribute)
+	if !hasAttr {
+		return fmt.Errorf("PFP attribute missing in %q", nrt.Name)
+	}
+	// TODO: check annotation _only for RTE_?
+	return nil
+}
+
+func checkLacksPFP(nrt *v1alpha2.NodeResourceTopology) error {
+	attr, hasAttr := nrtattrv1alpha2.Get(nrt.Attributes, podfingerprint.Attribute)
+	if hasAttr {
+		return fmt.Errorf("PFP attribute found: %v in %q", attr.Value, nrt.Name)
+	}
+	valAnn, hasAnn := nrt.Annotations[podfingerprint.Annotation]
+	if hasAnn {
+		return fmt.Errorf("PFP annotation found: %v in %q", valAnn, nrt.Name)
+	}
+	return nil
+}
+
+func getNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name string, filterFunc func(nrt *v1alpha2.NodeResourceTopology) error) *v1alpha2.NodeResourceTopology {
+	var err error
+	var nrt *v1alpha2.NodeResourceTopology
+	fmt.Fprintf(ginkgo.GinkgoWriter, "looking for noderesourcetopology %q in namespace %q\n", name, namespace)
+	gomega.EventuallyWithOffset(1, func() error {
+		nrt, err = tc.TopologyV1alpha2().NodeResourceTopologies().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		return filterFunc(nrt)
+	}).WithTimeout(1 * time.Minute).WithPolling(5 * time.Second).ShouldNot(gomega.HaveOccurred())
+	return nrt
+}
+
+func ensureNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name string, filterFunc func(nrt *v1alpha2.NodeResourceTopology) error) {
+	fmt.Fprintf(ginkgo.GinkgoWriter, "ensuring predicate for noderesourcetopology %q in namespace %q\n", name, namespace)
+	gomega.ConsistentlyWithOffset(1, func() error {
+		nrt, err := tc.TopologyV1alpha2().NodeResourceTopologies().Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		return filterFunc(nrt)
+	}).WithTimeout(1 * time.Minute).WithPolling(5 * time.Second).ShouldNot(gomega.HaveOccurred())
+}
+
+func deploy(updaterType string, pfpEnable bool) error {
+	cmdline := []string{
+		filepath.Join(binariesPath, "deployer"),
+		"--debug",
+		"deploy",
+		"--rte-config-file=" + filepath.Join(deployerBaseDir, "hack", "rte.yaml"),
+		"--updater-pfp-enable=" + strconv.FormatBool(pfpEnable),
+		"--wait",
+	}
+	if updaterType != "" {
+		updaterArg := fmt.Sprintf("--updater-type=%s", updaterType)
+		cmdline = append(cmdline, updaterArg)
+	}
+	// TODO: use error wrapping
+	return runCmdline(cmdline, "failed to deploy components before test started")
+}
+
+func remove(updaterType string) error {
+	cmdline := []string{
+		filepath.Join(binariesPath, "deployer"),
+		"--debug",
+		"remove",
+		"--wait",
+	}
+	if updaterType != "" {
+		updaterArg := fmt.Sprintf("--updater-type=%s", updaterType)
+		cmdline = append(cmdline, updaterArg)
+	}
+	// TODO: use error wrapping
+	return runCmdline(cmdline, "failed to remove components after test finished")
+}
+
+func runCmdline(cmdline []string, errMsg string) error {
+	fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
+
+	cmd := exec.Command(cmdline[0], cmdline[1:]...)
+	cmd.Stdout = ginkgo.GinkgoWriter
+	cmd.Stderr = ginkgo.GinkgoWriter
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%s: %w", errMsg, err)
+	}
+	return nil
+}
+
+func NullEnv() *deployer.Environment {
+	cli, err := clientutil.New()
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+	env := deployer.Environment{
+		Ctx: context.TODO(),
+		Cli: cli,
+		Log: logr.Discard(),
+	}
+	return &env
 }

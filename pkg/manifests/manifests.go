@@ -394,7 +394,6 @@ func DaemonSet(component, subComponent string, plat platform.Platform, namespace
 
 				c.Args = []string{
 					"--sleep-interval=10s",
-					"--pods-fingerprint",
 					fmt.Sprintf("--sysfs=%s", containerHostSysDir),
 					fmt.Sprintf("--podresources-socket=unix://%s", containerPodResourcesSocket),
 					fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),

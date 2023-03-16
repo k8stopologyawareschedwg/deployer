@@ -58,7 +58,7 @@ func TestUpdaterDaemonSet(t *testing.T) {
 		mutatedDs := ds.DeepCopy()
 		pSpec := &mutatedDs.Spec.Template.Spec
 		pSpec.Containers[0].Name = tc.cntName
-		UpdaterDaemonSet(mutatedDs, tc.pullIfNotPresent, tc.nodeSelector)
+		UpdaterDaemonSet(mutatedDs, tc.pullIfNotPresent, true, tc.nodeSelector)
 		if tc.cntName == manifests.ContainerNameNFDTopologyUpdater {
 			if pSpec.Containers[0].ImagePullPolicy != pullPolicy(tc.pullIfNotPresent) {
 				t.Errorf("expected container ImagePullPolicy to be: %q; got: %q", pullPolicy(tc.pullIfNotPresent), pSpec.Containers[0].ImagePullPolicy)

@@ -53,7 +53,7 @@ func ContainerConfig(podSpec *corev1.PodSpec, cnt *corev1.Container, configMapNa
 	)
 }
 
-func DaemonSet(ds *appsv1.DaemonSet, configMapName string, pullIfNotPresent bool, nodeSelector *metav1.LabelSelector) {
+func DaemonSet(ds *appsv1.DaemonSet, configMapName string, pullIfNotPresent, pfpEnable bool, nodeSelector *metav1.LabelSelector) {
 	for i := range ds.Spec.Template.Spec.Containers {
 		c := &ds.Spec.Template.Spec.Containers[i]
 		if c.Name != manifests.ContainerNameRTE {
@@ -63,6 +63,10 @@ func DaemonSet(ds *appsv1.DaemonSet, configMapName string, pullIfNotPresent bool
 		c.ImagePullPolicy = corev1.PullAlways
 		if pullIfNotPresent {
 			c.ImagePullPolicy = corev1.PullIfNotPresent
+		}
+
+		if pfpEnable {
+			c.Args = append([]string{"--pods-fingerprint"}, c.Args...)
 		}
 
 		if configMapName != "" {
