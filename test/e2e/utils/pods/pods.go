@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -76,9 +75,9 @@ func WaitForPodToBeRunning(cli *kubernetes.Clientset, podNamespace, podName stri
 			return err
 		}
 		switch pod.Status.Phase {
-		case v1.PodFailed, v1.PodSucceeded:
+		case corev1.PodFailed, corev1.PodSucceeded:
 			return fmt.Errorf("pod %q status %q which is unexpected", podName, pod.Status.Phase)
-		case v1.PodRunning:
+		case corev1.PodRunning:
 			fmt.Fprintf(ginkgo.GinkgoWriter, "Pod %q is running!\n", podName)
 			return nil
 		}
@@ -121,7 +120,7 @@ func GetByRegex(cs client.Client, reg string) ([]*corev1.Pod, error) {
 		return nil, err
 	}
 
-	ret := []*v1.Pod{}
+	ret := []*corev1.Pod{}
 	for _, pod := range podList.Items {
 		if match := podNameRgx.FindString(pod.Name); len(match) != 0 {
 			ret = append(ret, &pod)
