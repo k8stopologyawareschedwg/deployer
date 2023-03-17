@@ -18,12 +18,19 @@ the `deployer` project wants to help anyone which want to work with the topology
 - a set of reusable golang packages which can be used by other golang projects to deploy/undeploy or in general
   interact with the topology-aware stack components (e.g. operators)
 
-
 ## requirements
 
 * kubernetes >= 1.21
 * a valid `kubeconfig`
 * **validation only** `kubectl` >= 1.21 in your `PATH`
+
+## compatibility matrix
+
+| Deployer | NodeResourceTopology CRD version | Scheduler plugins version | RTE version | NFD version           |
+|----------|----------------------------------|---------------------------|-------------|-----------------------|
+| 0.12.0   | v0.1.1                           | dev snapshot 20230315     | v0.10.z     | dev snapshot 20230315 |
+| 0.11.0   | v0.1.1                           | dev snapshot 20230315     | v0.10.z     | dev snapshot 20230315 |
+| 0.10.0   | v0.0.12                          | v0.24.9                   | v0.9.z      | v0.12.z               |
 
 ## how does it work?
 
