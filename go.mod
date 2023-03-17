@@ -10,6 +10,7 @@ require (
 	github.com/google/go-cmp v0.5.8
 	github.com/hashicorp/go-version v1.6.0
 	github.com/k8stopologyawareschedwg/noderesourcetopology-api v0.1.1
+	github.com/k8stopologyawareschedwg/podfingerprint v0.1.2
 	github.com/onsi/ginkgo/v2 v2.4.0
 	github.com/onsi/gomega v1.22.1
 	github.com/openshift/api v0.0.0-20221021112143-4226c2167e40
@@ -31,6 +32,7 @@ require (
 )
 
 require (
+	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect

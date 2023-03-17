@@ -94,6 +94,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 				PlatformVersion:  opts.clusterVersion,
 				WaitCompletion:   opts.waitCompletion,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
+				PFPEnable:        commonOpts.UpdaterPFPEnable,
 				RTEConfigData:    commonOpts.RTEConfigData,
 			})
 			if err != nil {
@@ -219,6 +220,7 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 				PlatformVersion:  opts.clusterVersion,
 				WaitCompletion:   opts.waitCompletion,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
+				PFPEnable:        commonOpts.UpdaterPFPEnable,
 				RTEConfigData:    commonOpts.RTEConfigData,
 			})
 		},
@@ -328,6 +330,7 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 				PlatformVersion:  opts.clusterVersion,
 				WaitCompletion:   opts.waitCompletion,
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
+				PFPEnable:        commonOpts.UpdaterPFPEnable,
 				RTEConfigData:    commonOpts.RTEConfigData,
 			})
 		},
@@ -366,6 +369,7 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 		PlatformVersion:  opts.clusterVersion,
 		WaitCompletion:   opts.waitCompletion,
 		PullIfNotPresent: commonOpts.PullIfNotPresent,
+		PFPEnable:        commonOpts.UpdaterPFPEnable,
 		RTEConfigData:    commonOpts.RTEConfigData,
 	}); err != nil {
 		return err

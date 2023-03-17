@@ -25,7 +25,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 )
 
-func UpdaterDaemonSet(ds *appsv1.DaemonSet, pullIfNotPresent bool, nodeSelector *metav1.LabelSelector) {
+func UpdaterDaemonSet(ds *appsv1.DaemonSet, pullIfNotPresent, pfpEnable bool, nodeSelector *metav1.LabelSelector) {
 	for i := range ds.Spec.Template.Spec.Containers {
 		c := &ds.Spec.Template.Spec.Containers[i]
 		if c.Name != manifests.ContainerNameNFDTopologyUpdater {
@@ -35,6 +35,11 @@ func UpdaterDaemonSet(ds *appsv1.DaemonSet, pullIfNotPresent bool, nodeSelector 
 		if pullIfNotPresent {
 			c.ImagePullPolicy = corev1.PullIfNotPresent
 		}
+
+		if pfpEnable {
+			c.Args = append([]string{"--pods-fingerprint"}, c.Args...)
+		}
+
 		c.Image = images.NodeFeatureDiscoveryImage
 
 	}

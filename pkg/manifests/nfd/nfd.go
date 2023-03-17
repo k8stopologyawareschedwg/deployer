@@ -67,6 +67,7 @@ type RenderOptions struct {
 
 	// General options
 	Namespace string
+	PFPEnable bool
 }
 
 func (mf Manifests) Render(options RenderOptions) (Manifests, error) {
@@ -80,7 +81,7 @@ func (mf Manifests) Render(options RenderOptions) (Manifests, error) {
 
 	ret.DSTopologyUpdater.Spec.Template.Spec.ServiceAccountName = mf.SATopologyUpdater.Name
 
-	nfdupdate.UpdaterDaemonSet(ret.DSTopologyUpdater, options.PullIfNotPresent, options.NodeSelector)
+	nfdupdate.UpdaterDaemonSet(ret.DSTopologyUpdater, options.PullIfNotPresent, options.PFPEnable, options.NodeSelector)
 
 	return ret, nil
 }

@@ -94,6 +94,7 @@ type RenderOptions struct {
 	// General options
 	Namespace string
 	Name      string
+	PFPEnable bool
 }
 
 func (mf Manifests) Render(options RenderOptions) (Manifests, error) {
@@ -126,7 +127,7 @@ func (mf Manifests) Render(options RenderOptions) (Manifests, error) {
 	if ret.ConfigMap != nil {
 		rteConfigMapName = ret.ConfigMap.Name
 	}
-	rteupdate.DaemonSet(ret.DaemonSet, rteConfigMapName, options.PullIfNotPresent, options.NodeSelector)
+	rteupdate.DaemonSet(ret.DaemonSet, rteConfigMapName, options.PullIfNotPresent, options.PFPEnable, options.NodeSelector)
 
 	if mf.plat == platform.OpenShift {
 		if options.Name != "" {

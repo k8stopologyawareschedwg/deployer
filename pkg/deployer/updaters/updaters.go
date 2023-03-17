@@ -39,6 +39,7 @@ type Options struct {
 	WaitCompletion   bool
 	PullIfNotPresent bool
 	RTEConfigData    string
+	PFPEnable        bool
 }
 
 func Deploy(env *deployer.Environment, updaterType string, opts Options) error {
@@ -50,7 +51,7 @@ func Deploy(env *deployer.Environment, updaterType string, opts Options) error {
 		return err
 	}
 
-	objs, err := getCreatableObjects(opts, env.Cli, env.Log, updaterType, namespace)
+	objs, err := getCreatableObjects(env, opts, updaterType, namespace)
 	if err != nil {
 		return err
 	}
@@ -86,7 +87,7 @@ func Remove(env *deployer.Environment, updaterType string, opts Options) error {
 	}
 	namespace := ns.Name
 
-	objs, err := getDeletableObjects(opts, env.Cli, env.Log, updaterType, namespace)
+	objs, err := getDeletableObjects(env, opts, updaterType, namespace)
 	if err != nil {
 		return err
 	}
