@@ -86,14 +86,6 @@ type imageOutput struct {
 	SchedulerController string `json:"scheduler_controller"`
 }
 
-func waitForReasource(body interface{}) {
-	gomega.Eventually(body)
-}
-
-func alwaysPass(nrt *v1alpha2.NodeResourceTopology) error {
-	return nil
-}
-
 func checkHasCPU(nrt *v1alpha2.NodeResourceTopology) error {
 	// we check CPUs because that's the only resource we know it will always be available
 	ok := false
