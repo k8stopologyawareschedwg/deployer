@@ -30,16 +30,19 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
+	nrtattrv1alpha2 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2/helper/attribute"
+	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
+
+	"github.com/k8stopologyawareschedwg/podfingerprint"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/validator"
-	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
-	nrtattrv1alpha2 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2/helper/attribute"
-	topologyclientset "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/generated/clientset/versioned"
-	"github.com/k8stopologyawareschedwg/podfingerprint"
 )
 
 var (
@@ -81,14 +84,6 @@ type imageOutput struct {
 	TopologyUpdater     string `json:"topology_updater"`
 	SchedulerPlugin     string `json:"scheduler_plugin"`
 	SchedulerController string `json:"scheduler_controller"`
-}
-
-func waitForReasource(body interface{}) {
-	gomega.Eventually(body)
-}
-
-func alwaysPass(nrt *v1alpha2.NodeResourceTopology) error {
-	return nil
 }
 
 func checkHasCPU(nrt *v1alpha2.NodeResourceTopology) error {
