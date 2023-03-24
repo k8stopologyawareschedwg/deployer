@@ -591,7 +591,10 @@ func TestMachineConfig(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			mc, err := MachineConfig(ComponentResourceTopologyExporter, platform.Version(tc.platformVersion))
+			mcOpts := MachineConfigOptions{
+				EnableNotifier: true,
+			}
+			mc, err := MachineConfig(ComponentResourceTopologyExporter, platform.Version(tc.platformVersion), mcOpts)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}

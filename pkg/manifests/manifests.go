@@ -428,7 +428,11 @@ func DaemonSet(component, subComponent string, plat platform.Platform, namespace
 	return ds, nil
 }
 
-func MachineConfig(component string, ver platform.Version) (*machineconfigv1.MachineConfig, error) {
+type MachineConfigOptions struct {
+	EnableNotifier bool
+}
+
+func MachineConfig(component string, ver platform.Version, opts MachineConfigOptions) (*machineconfigv1.MachineConfig, error) {
 	if component != ComponentResourceTopologyExporter {
 		return nil, fmt.Errorf("component %q is not an %q component", component, ComponentResourceTopologyExporter)
 	}
@@ -443,7 +447,7 @@ func MachineConfig(component string, ver platform.Version) (*machineconfigv1.Mac
 		return nil, fmt.Errorf("unexpected type, got %t", obj)
 	}
 
-	ignitionConfig, err := getIgnitionConfig(ver)
+	ignitionConfig, err := getIgnitionConfig(ver, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -452,7 +456,7 @@ func MachineConfig(component string, ver platform.Version) (*machineconfigv1.Mac
 	return mc, nil
 }
 
-func getIgnitionConfig(ver platform.Version) ([]byte, error) {
+func getIgnitionConfig(ver platform.Version, opts MachineConfigOptions) ([]byte, error) {
 	var files []igntypes.File
 
 	// get SELinux policy
@@ -464,29 +468,6 @@ func getIgnitionConfig(ver platform.Version) ([]byte, error) {
 	// load SELinux policy
 	files = addFileToIgnitionConfig(files, selinuxPolicy, 0644, seLinuxRTEPolicyDst)
 
-	// load RTE notifier OCI hook config
-	notifierHookConfigContent, err := getTemplateContent(rteassets.HookConfigRTENotifier, map[string]string{
-		templateNotifierBinaryDst: filepath.Join(defaultScriptsDir, "rte-notifier.sh"),
-		templateNotifierFilePath:  filepath.Join(hostNotifierDir, rteNotifierFileName),
-	})
-	if err != nil {
-		return nil, err
-	}
-	files = addFileToIgnitionConfig(
-		files,
-		notifierHookConfigContent,
-		0644,
-		filepath.Join(defaultOCIHooksDir, "rte-notifier.json"),
-	)
-
-	// load RTE notifier script
-	files = addFileToIgnitionConfig(
-		files,
-		rteassets.NotifierScript,
-		0755,
-		filepath.Join(defaultScriptsDir, "rte-notifier.sh"),
-	)
-
 	// load systemd service to install SELinux policy
 	systemdServiceContent, err := getTemplateContent(
 		rteassets.SELinuxInstallSystemdServiceTemplate,
@@ -496,6 +477,39 @@ func getIgnitionConfig(ver platform.Version) ([]byte, error) {
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	if opts.EnableNotifier {
+		// load RTE notifier OCI hook config
+		hooknotifierConfig, err := rteassets.GetOCIHookNotifierConfig()
+		if err != nil {
+			return nil, err
+		}
+		notifierHookConfigContent, err := getTemplateContent(hooknotifierConfig, map[string]string{
+			templateNotifierBinaryDst: filepath.Join(defaultScriptsDir, rteassets.NotifierName),
+			templateNotifierFilePath:  filepath.Join(hostNotifierDir, rteNotifierFileName),
+		})
+		if err != nil {
+			return nil, err
+		}
+		files = addFileToIgnitionConfig(
+			files,
+			notifierHookConfigContent,
+			0644,
+			filepath.Join(defaultOCIHooksDir, "rte-notifier.json"),
+		)
+
+		notifierScript, err := rteassets.GetOCIHookNotifier()
+		if err != nil {
+			return nil, err
+		}
+		// load RTE notifier script
+		files = addFileToIgnitionConfig(
+			files,
+			notifierScript,
+			0755,
+			filepath.Join(defaultScriptsDir, rteassets.NotifierName),
+		)
 	}
 
 	ignitionConfig := &igntypes.Config{

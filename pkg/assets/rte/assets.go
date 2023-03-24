@@ -8,12 +8,17 @@ import (
 )
 
 const (
+	NotifierName = "rte-notifier.sh"
+)
+
+const (
 	// OCPVersion4.11 is DEPRECATED and will be removed in the next versions
 	OCPVersion411 = "v4.11"
 )
 
 const (
 	selinuxPolicyDir = "selinuxpolicy"
+	ocihooksDir      = "ocihooks"
 
 	ocpVersion410 = "v4.10"
 	// TODO: demote public constant here once we can remove from the public API
@@ -21,17 +26,22 @@ const (
 	ocpVersion413 = "v4.13"
 )
 
-//go:embed selinuxinstall.service.template
-var SELinuxInstallSystemdServiceTemplate []byte
+//go:embed ocihooks
+var ocihooks embed.FS
 
-//go:embed hookconfigrtenotifier.json.template
-var HookConfigRTENotifier []byte
+func GetOCIHookNotifierConfig() ([]byte, error) {
+	return ocihooks.ReadFile(filepath.Join(ocihooksDir, "hookconfigrtenotifier.json.template"))
+}
 
-//go:embed rte-notifier.sh
-var NotifierScript []byte
+func GetOCIHookNotifier() ([]byte, error) {
+	return ocihooks.ReadFile(filepath.Join(ocihooksDir, NotifierName))
+}
 
 //go:embed selinuxpolicy
 var selinuxpolicy embed.FS
+
+//go:embed selinuxinstall.service.template
+var SELinuxInstallSystemdServiceTemplate []byte
 
 func GetSELinuxPolicy(ver platform.Version) ([]byte, error) {
 	// keep it ordered from most recent supported to the oldest supported
