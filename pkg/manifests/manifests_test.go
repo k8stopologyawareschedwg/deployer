@@ -593,6 +593,7 @@ func TestMachineConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mcOpts := MachineConfigOptions{
 				EnableNotifier: true,
+				EnableListing:  false, // TODO: add tests
 			}
 			mc, err := MachineConfig(ComponentResourceTopologyExporter, platform.Version(tc.platformVersion), mcOpts)
 			if err != nil {

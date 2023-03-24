@@ -8,7 +8,9 @@ import (
 )
 
 const (
-	NotifierName = "rte-notifier.sh"
+	NotifierName   = "rte-notifier.sh"
+	ListCreateName = "rte-create.sh"
+	ListDeleteName = "rte-delete.sh"
 )
 
 const (
@@ -33,8 +35,23 @@ func GetOCIHookNotifierConfig() ([]byte, error) {
 	return ocihooks.ReadFile(filepath.Join(ocihooksDir, "hookconfigrtenotifier.json.template"))
 }
 
+func GetOCIHookListCreateConfig() ([]byte, error) {
+	return ocihooks.ReadFile(filepath.Join(ocihooksDir, "hookconfigrtecreate.json.template"))
+}
+
+func GetOCIHookListDeleteConfig() ([]byte, error) {
+	return ocihooks.ReadFile(filepath.Join(ocihooksDir, "hookconfigrtedelete.json.template"))
+}
+
 func GetOCIHookNotifier() ([]byte, error) {
 	return ocihooks.ReadFile(filepath.Join(ocihooksDir, NotifierName))
+}
+func GetOCIHookListCreate() ([]byte, error) {
+	return ocihooks.ReadFile(filepath.Join(ocihooksDir, ListCreateName))
+}
+
+func GetOCIHookListDelete() ([]byte, error) {
+	return ocihooks.ReadFile(filepath.Join(ocihooksDir, ListDeleteName))
 }
 
 //go:embed selinuxpolicy

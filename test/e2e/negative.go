@@ -96,7 +96,11 @@ var _ = ginkgo.Describe("[NegativeFlow] Deployer execution with PFP disabled", f
 				ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-				mf, err := rte.GetManifests(platform.Kubernetes, platform.Version("1.23"), ns.Name)
+				mcOpts := manifests.MachineConfigOptions{
+					EnableNotifier: true,
+					EnableListing:  true,
+				}
+				mf, err := rte.GetManifests(platform.Kubernetes, platform.Version("1.23"), ns.Name, mcOpts)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				mf, err = mf.Render(rte.RenderOptions{
 					Namespace: ns.Name,

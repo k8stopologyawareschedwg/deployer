@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "when": {
+    "always": true
+  },
+  "hook": {
+    "path": "{{.rteDeleteScriptPath}}",
+    "args": ["rte-delete.sh", "{{.rteListingDirPath}}"]
+  },
+  "stages": ["poststop"]
+}

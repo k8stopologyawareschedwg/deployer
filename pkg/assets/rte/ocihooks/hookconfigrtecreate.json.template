@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "when": {
+    "always": true
+  },
+  "hook": {
+    "path": "{{.rteCreateScriptPath}}",
+    "args": ["rte-create.sh", "{{.rteListingDirPath}}"]
+  },
+  "stages": ["poststart"]
+}

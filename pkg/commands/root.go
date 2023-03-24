@@ -52,6 +52,8 @@ type CommonOptions struct {
 	PullIfNotPresent    bool
 	UpdaterType         string
 	UpdaterPFPEnable    bool
+	OCIHookNotifier     bool
+	OCIHookListing      bool
 	rteConfigFile       string
 	plat                string
 	platVer             string
@@ -112,6 +114,8 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
 	flags.BoolVar(&commonOpts.UpdaterPFPEnable, "updater-pfp-enable", true, "toggle PFP support on the updater side.")
 	flags.StringVar(&commonOpts.schedProfileName, "sched-profile-name", DefaultSchedulerProfileName, "inject scheduler profile name.")
 	flags.DurationVar(&commonOpts.schedResyncPeriod, "sched-resync-period", DefaultSchedulerResyncPeriod, "inject scheduler resync period.")
+	flags.BoolVar(&commonOpts.OCIHookNotifier, "oci-hook-notifier", true, "toggle support for the notifier OCI hook.")
+	flags.BoolVar(&commonOpts.OCIHookListing, "oci-hook-listing", false, "toggle support for the listing OCI hook.")
 }
 
 func PostSetupOptions(commonOpts *CommonOptions) error {

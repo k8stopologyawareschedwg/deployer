@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 )
 
 func TestClone(t *testing.T) {
@@ -54,8 +55,12 @@ func TestClone(t *testing.T) {
 		},
 	}
 
+	mcOpts := manifests.MachineConfigOptions{
+		EnableNotifier: true,
+		EnableListing:  true,
+	}
 	for _, tc := range testCases {
-		tc.mf, _ = GetManifests(tc.plat, tc.platVersion, "")
+		tc.mf, _ = GetManifests(tc.plat, tc.platVersion, "", mcOpts)
 		cMf := tc.mf.Clone()
 
 		if &cMf == &tc.mf {
@@ -95,8 +100,12 @@ func TestRender(t *testing.T) {
 		},
 	}
 
+	mcOpts := manifests.MachineConfigOptions{
+		EnableNotifier: true,
+		EnableListing:  true,
+	}
 	for _, tc := range testCases {
-		tc.mf, _ = GetManifests(tc.plat, tc.platVersion, "")
+		tc.mf, _ = GetManifests(tc.plat, tc.platVersion, "", mcOpts)
 		mfBeforeRender := tc.mf.Clone()
 		uMf, err := tc.mf.Render(RenderOptions{})
 		if err != nil {
@@ -132,8 +141,12 @@ func TestGetManifestsOpenShift(t *testing.T) {
 			platVersion: platform.Version("v4.11"),
 		},
 	}
+	mcOpts := manifests.MachineConfigOptions{
+		EnableNotifier: true,
+		EnableListing:  true,
+	}
 	for _, tc := range testCases {
-		mf, err := GetManifests(tc.plat, tc.platVersion, "test")
+		mf, err := GetManifests(tc.plat, tc.platVersion, "test", mcOpts)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

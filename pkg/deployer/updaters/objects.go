@@ -22,14 +22,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	nfdmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/nfd"
 	rtemanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 )
 
-func GetObjects(opts Options, updaterType, namespace string) ([]client.Object, error) {
+func GetObjects(opts Options, updaterType, namespace string, mcOpts manifests.MachineConfigOptions) ([]client.Object, error) {
 
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
+		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, mcOpts)
 		if err != nil {
 			return nil, err
 		}
@@ -53,9 +54,9 @@ func GetObjects(opts Options, updaterType, namespace string) ([]client.Object, e
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }
 
-func getCreatableObjects(env *deployer.Environment, opts Options, updaterType, namespace string) ([]deployer.WaitableObject, error) {
+func getCreatableObjects(env *deployer.Environment, opts Options, updaterType, namespace string, mcOpts manifests.MachineConfigOptions) ([]deployer.WaitableObject, error) {
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
+		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, mcOpts)
 		if err != nil {
 			return nil, err
 		}
@@ -79,9 +80,9 @@ func getCreatableObjects(env *deployer.Environment, opts Options, updaterType, n
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }
 
-func getDeletableObjects(env *deployer.Environment, opts Options, updaterType, namespace string) ([]deployer.WaitableObject, error) {
+func getDeletableObjects(env *deployer.Environment, opts Options, updaterType, namespace string, mcOpts manifests.MachineConfigOptions) ([]deployer.WaitableObject, error) {
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
+		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, mcOpts)
 		if err != nil {
 			return nil, err
 		}

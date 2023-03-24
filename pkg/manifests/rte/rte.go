@@ -266,14 +266,11 @@ func New(plat platform.Platform) Manifests {
 	return mf
 }
 
-func GetManifests(plat platform.Platform, version platform.Version, namespace string) (Manifests, error) {
+func GetManifests(plat platform.Platform, version platform.Version, namespace string, mcOpts manifests.MachineConfigOptions) (Manifests, error) {
 	var err error
 	mf := New(plat)
 
 	if plat == platform.OpenShift {
-		mcOpts := manifests.MachineConfigOptions{
-			EnableNotifier: true,
-		}
 		mf.MachineConfig, err = manifests.MachineConfig(manifests.ComponentResourceTopologyExporter, version, mcOpts)
 		if err != nil {
 			return mf, err

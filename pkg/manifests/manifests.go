@@ -76,6 +76,9 @@ const (
 	templateSELinuxPolicyDst     = "selinuxPolicyDst"
 	templateNotifierBinaryDst    = "notifierScriptPath"
 	templateNotifierFilePath     = "notifierFilePath"
+	templateCreateBinaryDst      = "rteCreateScriptPath"
+	templateDeleteBinaryDst      = "rteCreateScriptPath"
+	templateListingDirPath       = "rteListingDirPath"
 )
 
 const (
@@ -430,6 +433,7 @@ func DaemonSet(component, subComponent string, plat platform.Platform, namespace
 
 type MachineConfigOptions struct {
 	EnableNotifier bool
+	EnableListing  bool
 }
 
 func MachineConfig(component string, ver platform.Version, opts MachineConfigOptions) (*machineconfigv1.MachineConfig, error) {
@@ -509,6 +513,67 @@ func getIgnitionConfig(ver platform.Version, opts MachineConfigOptions) ([]byte,
 			notifierScript,
 			0755,
 			filepath.Join(defaultScriptsDir, rteassets.NotifierName),
+		)
+	}
+
+	if opts.EnableListing {
+		hookcreateConfig, err := rteassets.GetOCIHookListCreateConfig()
+		if err != nil {
+			return nil, err
+		}
+		hookcreateConfigContent, err := getTemplateContent(hookcreateConfig, map[string]string{
+			templateCreateBinaryDst: filepath.Join(defaultScriptsDir, rteassets.ListCreateName),
+			templateListingDirPath:  hostNotifierDir,
+		})
+		if err != nil {
+			return nil, err
+		}
+		files = addFileToIgnitionConfig(
+			files,
+			hookcreateConfigContent,
+			0644,
+			filepath.Join(defaultOCIHooksDir, "rte-create.json"),
+		)
+
+		hookcreateScript, err := rteassets.GetOCIHookListCreate()
+		if err != nil {
+			return nil, err
+		}
+		files = addFileToIgnitionConfig(
+			files,
+			hookcreateScript,
+			0755,
+			filepath.Join(defaultScriptsDir, rteassets.ListCreateName),
+		)
+
+		hookdeleteConfig, err := rteassets.GetOCIHookListDeleteConfig()
+		if err != nil {
+			return nil, err
+		}
+		hookdeleteConfigContent, err := getTemplateContent(hookdeleteConfig, map[string]string{
+			templateDeleteBinaryDst: filepath.Join(defaultScriptsDir, rteassets.ListDeleteName),
+			templateListingDirPath:  hostNotifierDir,
+		})
+		if err != nil {
+			return nil, err
+		}
+		files = addFileToIgnitionConfig(
+			files,
+			hookdeleteConfigContent,
+			0644,
+			filepath.Join(defaultOCIHooksDir, "rte-delete.json"),
+		)
+
+		hookdeleteScript, err := rteassets.GetOCIHookListDelete()
+		if err != nil {
+			return nil, err
+		}
+		// load RTE notifier script
+		files = addFileToIgnitionConfig(
+			files,
+			hookdeleteScript,
+			0755,
+			filepath.Join(defaultScriptsDir, rteassets.ListDeleteName),
 		)
 	}
 
