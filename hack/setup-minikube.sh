@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eux
+set -eu
 
 RESERVED_CPUS=${RESERVED_CPUS:-0,8}
 TM_POLICY=${TM_POLICY:-single-numa-node}
@@ -17,11 +17,12 @@ minikube start \
 kubectl label node minikube-m02 node-role.kubernetes.io/worker=''
 kubectl label node minikube-m03 node-role.kubernetes.io/worker=''
 
-echo <<< EOF > rte-minikube.yaml
+cat << EOF > rte-minikube.yaml
 kubelet:
   topologyManagerPolicy: ${TM_POLICY}
   topologyManagerScope: ${TM_SCOPE}
 EOF
 
+echo "# setup done! now run:"
 echo "deployer deploy api"
 echo "deployer deploy topology-updater --rte-config-file ./rte-minikube.yaml"
