@@ -464,8 +464,8 @@ func getIgnitionConfig(ver platform.Version) ([]byte, error) {
 
 	// load RTE notifier OCI hook config
 	notifierHookConfigContent, err := getTemplateContent(rteassets.HookConfigRTENotifier, map[string]string{
-		templateNotifierBinaryDst: filepath.Join(defaultScriptsDir, "rte-notifier.sh"),
-		templateNotifierFilePath:  filepath.Join(hostNotifierDir, rteNotifierFileName),
+		templateNotifierBinaryDst: filepath.Join(defaultScriptsDir, rteassets.NotifierScriptName),
+		templateNotifierFilePath:  filepath.Join(rteassets.HostNotifierDir, rteassets.NotifierFileName),
 	})
 	if err != nil {
 		return nil, err
@@ -474,7 +474,7 @@ func getIgnitionConfig(ver platform.Version) ([]byte, error) {
 		files,
 		notifierHookConfigContent,
 		0644,
-		filepath.Join(defaultOCIHooksDir, "rte-notifier.json"),
+		filepath.Join(defaultOCIHooksDir, rteassets.NotifierOCIHookConfig),
 	)
 
 	// load RTE notifier script
@@ -482,7 +482,7 @@ func getIgnitionConfig(ver platform.Version) ([]byte, error) {
 		files,
 		rteassets.NotifierScript,
 		0755,
-		filepath.Join(defaultScriptsDir, "rte-notifier.sh"),
+		filepath.Join(defaultScriptsDir, rteassets.NotifierScriptName),
 	)
 
 	// load systemd service to install SELinux policy
