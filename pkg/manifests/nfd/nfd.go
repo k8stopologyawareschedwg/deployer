@@ -24,13 +24,13 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 	nfdupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/nfd"
 	rbacupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/rbac"
 )
@@ -59,15 +59,13 @@ func (mf Manifests) Clone() Manifests {
 }
 
 type RenderOptions struct {
-	PullIfNotPresent bool
-	// DaemonSet option
-	NodeSelector *metav1.LabelSelector
+	DaemonSet objectupdate.DaemonSetOptions
+
 	// Deployment option
 	Replicas int32
 
 	// General options
 	Namespace string
-	PFPEnable bool
 }
 
 func (mf Manifests) Render(options RenderOptions) (Manifests, error) {
@@ -81,7 +79,7 @@ func (mf Manifests) Render(options RenderOptions) (Manifests, error) {
 
 	ret.DSTopologyUpdater.Spec.Template.Spec.ServiceAccountName = mf.SATopologyUpdater.Name
 
-	nfdupdate.UpdaterDaemonSet(ret.DSTopologyUpdater, options.PullIfNotPresent, options.PFPEnable, options.NodeSelector)
+	nfdupdate.UpdaterDaemonSet(ret.DSTopologyUpdater, options.DaemonSet)
 
 	return ret, nil
 }

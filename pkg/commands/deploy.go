@@ -90,12 +90,11 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 				commonOpts.Log.Info("while removing", "error", err)
 			}
 			err = updaters.Remove(env, commonOpts.UpdaterType, updaters.Options{
-				Platform:         opts.clusterPlatform,
-				PlatformVersion:  opts.clusterVersion,
-				WaitCompletion:   opts.waitCompletion,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
-				PFPEnable:        commonOpts.UpdaterPFPEnable,
-				RTEConfigData:    commonOpts.RTEConfigData,
+				Platform:        opts.clusterPlatform,
+				PlatformVersion: opts.clusterVersion,
+				WaitCompletion:  opts.waitCompletion,
+				RTEConfigData:   commonOpts.RTEConfigData,
+				DaemonSet:       daemonSetOptionsFromCommonOptions(commonOpts),
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
@@ -216,12 +215,11 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 
 			commonOpts.DebugLog.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
 			return updaters.Deploy(env, commonOpts.UpdaterType, updaters.Options{
-				Platform:         opts.clusterPlatform,
-				PlatformVersion:  opts.clusterVersion,
-				WaitCompletion:   opts.waitCompletion,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
-				PFPEnable:        commonOpts.UpdaterPFPEnable,
-				RTEConfigData:    commonOpts.RTEConfigData,
+				Platform:        opts.clusterPlatform,
+				PlatformVersion: opts.clusterVersion,
+				WaitCompletion:  opts.waitCompletion,
+				RTEConfigData:   commonOpts.RTEConfigData,
+				DaemonSet:       daemonSetOptionsFromCommonOptions(commonOpts),
 			})
 		},
 		Args: cobra.NoArgs,
@@ -326,12 +324,11 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 
 			commonOpts.DebugLog.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
 			return updaters.Remove(env, commonOpts.UpdaterType, updaters.Options{
-				Platform:         opts.clusterPlatform,
-				PlatformVersion:  opts.clusterVersion,
-				WaitCompletion:   opts.waitCompletion,
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
-				PFPEnable:        commonOpts.UpdaterPFPEnable,
-				RTEConfigData:    commonOpts.RTEConfigData,
+				Platform:        opts.clusterPlatform,
+				PlatformVersion: opts.clusterVersion,
+				WaitCompletion:  opts.waitCompletion,
+				RTEConfigData:   commonOpts.RTEConfigData,
+				DaemonSet:       daemonSetOptionsFromCommonOptions(commonOpts),
 			})
 		},
 		Args: cobra.NoArgs,
@@ -365,12 +362,11 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 		return err
 	}
 	if err := updaters.Deploy(env, commonOpts.UpdaterType, updaters.Options{
-		Platform:         opts.clusterPlatform,
-		PlatformVersion:  opts.clusterVersion,
-		WaitCompletion:   opts.waitCompletion,
-		PullIfNotPresent: commonOpts.PullIfNotPresent,
-		PFPEnable:        commonOpts.UpdaterPFPEnable,
-		RTEConfigData:    commonOpts.RTEConfigData,
+		Platform:        opts.clusterPlatform,
+		PlatformVersion: opts.clusterVersion,
+		WaitCompletion:  opts.waitCompletion,
+		RTEConfigData:   commonOpts.RTEConfigData,
+		DaemonSet:       daemonSetOptionsFromCommonOptions(commonOpts),
 	}); err != nil {
 		return err
 	}

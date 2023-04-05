@@ -19,31 +19,31 @@ package nfd
 import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 )
 
-func UpdaterDaemonSet(ds *appsv1.DaemonSet, pullIfNotPresent, pfpEnable bool, nodeSelector *metav1.LabelSelector) {
+func UpdaterDaemonSet(ds *appsv1.DaemonSet, opts objectupdate.DaemonSetOptions) {
 	for i := range ds.Spec.Template.Spec.Containers {
 		c := &ds.Spec.Template.Spec.Containers[i]
 		if c.Name != manifests.ContainerNameNFDTopologyUpdater {
 			continue
 		}
 		c.ImagePullPolicy = corev1.PullAlways
-		if pullIfNotPresent {
+		if opts.PullIfNotPresent {
 			c.ImagePullPolicy = corev1.PullIfNotPresent
 		}
 
-		if pfpEnable {
+		if opts.PFPEnable {
 			c.Args = append([]string{"--pods-fingerprint"}, c.Args...)
 		}
 
 		c.Image = images.NodeFeatureDiscoveryImage
 
 	}
-	if nodeSelector != nil {
-		ds.Spec.Template.Spec.NodeSelector = nodeSelector.MatchLabels
+	if opts.NodeSelector != nil {
+		ds.Spec.Template.Spec.NodeSelector = opts.NodeSelector.MatchLabels
 	}
 }

@@ -26,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 )
 
 func TestUpdaterDaemonSet(t *testing.T) {
@@ -58,7 +59,11 @@ func TestUpdaterDaemonSet(t *testing.T) {
 		mutatedDs := ds.DeepCopy()
 		pSpec := &mutatedDs.Spec.Template.Spec
 		pSpec.Containers[0].Name = tc.cntName
-		UpdaterDaemonSet(mutatedDs, tc.pullIfNotPresent, true, tc.nodeSelector)
+		UpdaterDaemonSet(mutatedDs, objectupdate.DaemonSetOptions{
+			PullIfNotPresent: tc.pullIfNotPresent,
+			PFPEnable:        true,
+			NodeSelector:     tc.nodeSelector,
+		})
 		if tc.cntName == manifests.ContainerNameNFDTopologyUpdater {
 			if pSpec.Containers[0].ImagePullPolicy != pullPolicy(tc.pullIfNotPresent) {
 				t.Errorf("expected container ImagePullPolicy to be: %q; got: %q", pullPolicy(tc.pullIfNotPresent), pSpec.Containers[0].ImagePullPolicy)
