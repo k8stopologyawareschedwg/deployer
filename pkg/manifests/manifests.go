@@ -71,9 +71,6 @@ const (
 	defaultIgnitionContentSource = "data:text/plain;charset=utf-8;base64"
 	defaultOCIHooksDir           = "/etc/containers/oci/hooks.d"
 	defaultScriptsDir            = "/usr/local/bin"
-	seLinuxRTEPolicyDst          = "/etc/selinux/rte.cil"
-	seLinuxRTEContextType        = "rte.process"
-	seLinuxRTEContextLevel       = "s0"
 	templateSELinuxPolicyDst     = "selinuxPolicyDst"
 	templateNotifierBinaryDst    = "notifierScriptPath"
 	templateNotifierFilePath     = "notifierFilePath"
@@ -407,8 +404,8 @@ func DaemonSet(component, subComponent string, plat platform.Platform, namespace
 						c.SecurityContext = &corev1.SecurityContext{}
 					}
 					c.SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
-						Type:  seLinuxRTEContextType,
-						Level: seLinuxRTEContextLevel,
+						Type:  selinuxassets.RTEContextType,
+						Level: selinuxassets.RTEContextLevel,
 					}
 				}
 
@@ -463,7 +460,7 @@ func getIgnitionConfig(ver platform.Version) ([]byte, error) {
 	}
 
 	// load SELinux policy
-	files = addFileToIgnitionConfig(files, selinuxPolicy, 0644, seLinuxRTEPolicyDst)
+	files = addFileToIgnitionConfig(files, selinuxPolicy, 0644, selinuxassets.RTEPolicyFileName)
 
 	// load RTE notifier OCI hook config
 	notifierHookConfigContent, err := getTemplateContent(rteassets.HookConfigRTENotifier, map[string]string{
@@ -492,7 +489,7 @@ func getIgnitionConfig(ver platform.Version) ([]byte, error) {
 	systemdServiceContent, err := getTemplateContent(
 		selinuxassets.InstallSystemdServiceTemplate,
 		map[string]string{
-			templateSELinuxPolicyDst: seLinuxRTEPolicyDst,
+			templateSELinuxPolicyDst: selinuxassets.RTEPolicyFileName,
 		},
 	)
 	if err != nil {
@@ -509,7 +506,7 @@ func getIgnitionConfig(ver platform.Version) ([]byte, error) {
 				{
 					Contents: pointer.StringPtr(string(systemdServiceContent)),
 					Enabled:  pointer.BoolPtr(true),
-					Name:     "rte-selinux-policy-install.service",
+					Name:     selinuxassets.RTEPolicyInstallServiceName,
 				},
 			},
 		},
@@ -573,8 +570,8 @@ func SecurityContextConstraint(component string) (*securityv1.SecurityContextCon
 	scc.SELinuxContext = securityv1.SELinuxContextStrategyOptions{
 		Type: securityv1.SELinuxStrategyMustRunAs,
 		SELinuxOptions: &corev1.SELinuxOptions{
-			Type:  seLinuxRTEContextType,
-			Level: seLinuxRTEContextLevel,
+			Type:  selinuxassets.RTEContextType,
+			Level: selinuxassets.RTEContextLevel,
 		},
 	}
 
