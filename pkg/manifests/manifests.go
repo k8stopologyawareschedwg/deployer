@@ -43,6 +43,7 @@ import (
 	k8sschedpluginsconfv1beta3 "sigs.k8s.io/scheduler-plugins/apis/config/v1beta3"
 
 	rteassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/rte"
+	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 )
@@ -70,9 +71,6 @@ const (
 	defaultIgnitionContentSource = "data:text/plain;charset=utf-8;base64"
 	defaultOCIHooksDir           = "/etc/containers/oci/hooks.d"
 	defaultScriptsDir            = "/usr/local/bin"
-	seLinuxRTEPolicyDst          = "/etc/selinux/rte.cil"
-	seLinuxRTEContextType        = "rte.process"
-	seLinuxRTEContextLevel       = "s0"
 	templateSELinuxPolicyDst     = "selinuxPolicyDst"
 	templateNotifierBinaryDst    = "notifierScriptPath"
 	templateNotifierFilePath     = "notifierFilePath"
@@ -406,8 +404,8 @@ func DaemonSet(component, subComponent string, plat platform.Platform, namespace
 						c.SecurityContext = &corev1.SecurityContext{}
 					}
 					c.SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
-						Type:  seLinuxRTEContextType,
-						Level: seLinuxRTEContextLevel,
+						Type:  selinuxassets.RTEContextType,
+						Level: selinuxassets.RTEContextLevel,
 					}
 				}
 
@@ -456,18 +454,18 @@ func getIgnitionConfig(ver platform.Version) ([]byte, error) {
 	var files []igntypes.File
 
 	// get SELinux policy
-	selinuxPolicy, err := rteassets.GetSELinuxPolicy(ver)
+	selinuxPolicy, err := selinuxassets.GetPolicy(ver)
 	if err != nil {
 		return nil, err
 	}
 
 	// load SELinux policy
-	files = addFileToIgnitionConfig(files, selinuxPolicy, 0644, seLinuxRTEPolicyDst)
+	files = addFileToIgnitionConfig(files, selinuxPolicy, 0644, selinuxassets.RTEPolicyFileName)
 
 	// load RTE notifier OCI hook config
 	notifierHookConfigContent, err := getTemplateContent(rteassets.HookConfigRTENotifier, map[string]string{
-		templateNotifierBinaryDst: filepath.Join(defaultScriptsDir, "rte-notifier.sh"),
-		templateNotifierFilePath:  filepath.Join(hostNotifierDir, rteNotifierFileName),
+		templateNotifierBinaryDst: filepath.Join(defaultScriptsDir, rteassets.NotifierScriptName),
+		templateNotifierFilePath:  filepath.Join(rteassets.HostNotifierDir, rteassets.NotifierFileName),
 	})
 	if err != nil {
 		return nil, err
@@ -476,7 +474,7 @@ func getIgnitionConfig(ver platform.Version) ([]byte, error) {
 		files,
 		notifierHookConfigContent,
 		0644,
-		filepath.Join(defaultOCIHooksDir, "rte-notifier.json"),
+		filepath.Join(defaultOCIHooksDir, rteassets.NotifierOCIHookConfig),
 	)
 
 	// load RTE notifier script
@@ -484,14 +482,14 @@ func getIgnitionConfig(ver platform.Version) ([]byte, error) {
 		files,
 		rteassets.NotifierScript,
 		0755,
-		filepath.Join(defaultScriptsDir, "rte-notifier.sh"),
+		filepath.Join(defaultScriptsDir, rteassets.NotifierScriptName),
 	)
 
 	// load systemd service to install SELinux policy
 	systemdServiceContent, err := getTemplateContent(
-		rteassets.SELinuxInstallSystemdServiceTemplate,
+		selinuxassets.InstallSystemdServiceTemplate,
 		map[string]string{
-			templateSELinuxPolicyDst: seLinuxRTEPolicyDst,
+			templateSELinuxPolicyDst: selinuxassets.RTEPolicyFileName,
 		},
 	)
 	if err != nil {
@@ -508,7 +506,7 @@ func getIgnitionConfig(ver platform.Version) ([]byte, error) {
 				{
 					Contents: pointer.StringPtr(string(systemdServiceContent)),
 					Enabled:  pointer.BoolPtr(true),
-					Name:     "rte-selinux-policy-install.service",
+					Name:     selinuxassets.RTEPolicyInstallServiceName,
 				},
 			},
 		},
@@ -572,8 +570,8 @@ func SecurityContextConstraint(component string) (*securityv1.SecurityContextCon
 	scc.SELinuxContext = securityv1.SELinuxContextStrategyOptions{
 		Type: securityv1.SELinuxStrategyMustRunAs,
 		SELinuxOptions: &corev1.SELinuxOptions{
-			Type:  seLinuxRTEContextType,
-			Level: seLinuxRTEContextLevel,
+			Type:  selinuxassets.RTEContextType,
+			Level: selinuxassets.RTEContextLevel,
 		},
 	}
 
