@@ -43,6 +43,7 @@ import (
 	k8sschedpluginsconfv1beta3 "sigs.k8s.io/scheduler-plugins/apis/config/v1beta3"
 
 	rteassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/rte"
+	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 )
@@ -456,7 +457,7 @@ func getIgnitionConfig(ver platform.Version) ([]byte, error) {
 	var files []igntypes.File
 
 	// get SELinux policy
-	selinuxPolicy, err := rteassets.GetSELinuxPolicy(ver)
+	selinuxPolicy, err := selinuxassets.GetPolicy(ver)
 	if err != nil {
 		return nil, err
 	}
@@ -489,7 +490,7 @@ func getIgnitionConfig(ver platform.Version) ([]byte, error) {
 
 	// load systemd service to install SELinux policy
 	systemdServiceContent, err := getTemplateContent(
-		rteassets.SELinuxInstallSystemdServiceTemplate,
+		selinuxassets.InstallSystemdServiceTemplate,
 		map[string]string{
 			templateSELinuxPolicyDst: seLinuxRTEPolicyDst,
 		},
