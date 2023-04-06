@@ -45,9 +45,6 @@ import (
 	rteassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/rte"
 	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/flagcodec"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 )
 
 const (
@@ -76,15 +73,6 @@ const (
 	templateSELinuxPolicyDst     = "selinuxPolicyDst"
 	templateNotifierBinaryDst    = "notifierScriptPath"
 	templateNotifierFilePath     = "notifierFilePath"
-)
-
-const (
-	rteNotifierVolumeName           = "host-run-rte"
-	rteSysVolumeName                = "host-sys"
-	rtePodresourcesSocketVolumeName = "host-podresources-socket"
-	rteKubeletDirVolumeName         = "host-var-lib-kubelet"
-	rteNotifierFileName             = "notify"
-	hostNotifierDir                 = "/run/rte"
 )
 
 //go:embed yaml
@@ -298,7 +286,7 @@ func Deployment(component, subComponent, namespace string) (*appsv1.Deployment, 
 	return dp, nil
 }
 
-func DaemonSet(component, subComponent string, plat platform.Platform, namespace string) (*appsv1.DaemonSet, error) {
+func DaemonSet(component, subComponent string, namespace string) (*appsv1.DaemonSet, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
@@ -313,80 +301,6 @@ func DaemonSet(component, subComponent string, plat platform.Platform, namespace
 	ds, ok := obj.(*appsv1.DaemonSet)
 	if !ok {
 		return nil, fmt.Errorf("unexpected type, got %t", obj)
-	}
-
-	if component == ComponentResourceTopologyExporter {
-		hostPathDirectory := corev1.HostPathDirectory
-		hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
-
-		rtePodVolumes := []corev1.Volume{
-			{
-				// notifier file volume
-				Name: rteNotifierVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					HostPath: &corev1.HostPathVolumeSource{
-						Path: hostNotifierDir,
-						Type: &hostPathDirectoryOrCreate,
-					},
-				},
-			},
-		}
-
-		rteContainerVolumeMounts := []corev1.VolumeMount{
-			{
-				Name:      rteNotifierVolumeName,
-				MountPath: filepath.Join("/", rteNotifierVolumeName),
-			},
-		}
-
-		if plat == platform.Kubernetes {
-			rtePodVolumes = append(rtePodVolumes, corev1.Volume{
-				Name: rteKubeletDirVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/var/lib/kubelet",
-						Type: &hostPathDirectory,
-					},
-				},
-			})
-			rteContainerVolumeMounts = append(rteContainerVolumeMounts, corev1.VolumeMount{
-				Name:      rteKubeletDirVolumeName,
-				ReadOnly:  true,
-				MountPath: filepath.Join("/", rteKubeletDirVolumeName),
-			})
-		}
-
-		c := objectupdate.FindContainerByName(ds.Spec.Template.Spec.Containers, ContainerNameRTE)
-		if c == nil {
-			return nil, fmt.Errorf("container not defined: %q", ContainerNameRTE)
-		}
-
-		c.Image = images.ResourceTopologyExporterImage
-
-		flags := flagcodec.ParseArgvKeyValue(c.Args)
-		flags.SetOption("--sleep-interval", "10s")
-		flags.SetOption("--notify-file", fmt.Sprintf("/%s/%s", rteNotifierVolumeName, rteNotifierFileName))
-		if plat == platform.Kubernetes {
-			flags.SetOption("--kubelet-config-file", fmt.Sprintf("/%s/config.yaml", rteKubeletDirVolumeName))
-			flags.SetOption("--kubelet-state-dir", fmt.Sprintf("/%s", rteKubeletDirVolumeName))
-		}
-		c.Args = flags.Argv()
-
-		c.VolumeMounts = append(c.VolumeMounts, rteContainerVolumeMounts...)
-
-		if plat == platform.OpenShift {
-			// this is needed to put watches in the kubelet state dirs AND
-			// to open the podresources socket in R/W mode
-			if c.SecurityContext == nil {
-				c.SecurityContext = &corev1.SecurityContext{}
-			}
-			c.SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
-				Type:  selinuxassets.RTEContextType,
-				Level: selinuxassets.RTEContextLevel,
-			}
-		}
-
-		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, rtePodVolumes...)
 	}
 
 	ds.Namespace = namespace

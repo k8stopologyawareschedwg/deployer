@@ -146,7 +146,7 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
-	mf.DSTopologyUpdater, err = manifests.DaemonSet(manifests.ComponentNodeFeatureDiscovery, manifests.SubComponentNodeFeatureDiscoveryTopologyUpdater, plat, namespace)
+	mf.DSTopologyUpdater, err = manifests.DaemonSet(manifests.ComponentNodeFeatureDiscovery, manifests.SubComponentNodeFeatureDiscoveryTopologyUpdater, namespace)
 	if err != nil {
 		return mf, err
 	}
