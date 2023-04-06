@@ -126,6 +126,7 @@ func DaemonSet(ds *appsv1.DaemonSet, plat platform.Platform, configMapName strin
 		}
 
 		flags := flagcodec.ParseArgvKeyValue(cntSpec.Args)
+		flags.SetOption("-v", fmt.Sprintf("%d", opts.Verbose))
 		if opts.UpdateInterval > 0 {
 			flags.SetOption("--sleep-interval", fmt.Sprintf("%v", opts.UpdateInterval))
 		} else {
