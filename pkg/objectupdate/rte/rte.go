@@ -116,13 +116,11 @@ func DaemonSet(ds *appsv1.DaemonSet, plat platform.Platform, configMapName strin
 					},
 				},
 			})
-			if opts.NotificationEnable {
-				rteContainerVolumeMounts = append(rteContainerVolumeMounts, corev1.VolumeMount{
-					Name:      rteKubeletDirVolumeName,
-					ReadOnly:  true,
-					MountPath: filepath.Join("/", rteKubeletDirVolumeName),
-				})
-			}
+			rteContainerVolumeMounts = append(rteContainerVolumeMounts, corev1.VolumeMount{
+				Name:      rteKubeletDirVolumeName,
+				ReadOnly:  true,
+				MountPath: filepath.Join("/", rteKubeletDirVolumeName),
+			})
 		}
 
 		flags := flagcodec.ParseArgvKeyValue(cntSpec.Args)
