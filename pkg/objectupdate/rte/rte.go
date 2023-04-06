@@ -84,11 +84,12 @@ func DaemonSet(ds *appsv1.DaemonSet, plat platform.Platform, configMapName strin
 			ContainerConfig(podSpec, cntSpec, configMapName)
 		}
 
-		hostPathDirectory := corev1.HostPathDirectory
-		hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
+		var rtePodVolumes []corev1.Volume
+		var rteContainerVolumeMounts []corev1.VolumeMount
 
-		rtePodVolumes := []corev1.Volume{
-			{
+		if opts.NotificationEnable {
+			hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
+			rtePodVolumes = append(rtePodVolumes, corev1.Volume{
 				// notifier file volume
 				Name: rteNotifierVolumeName,
 				VolumeSource: corev1.VolumeSource{
@@ -97,17 +98,15 @@ func DaemonSet(ds *appsv1.DaemonSet, plat platform.Platform, configMapName strin
 						Type: &hostPathDirectoryOrCreate,
 					},
 				},
-			},
-		}
-
-		rteContainerVolumeMounts := []corev1.VolumeMount{
-			{
+			})
+			rteContainerVolumeMounts = append(rteContainerVolumeMounts, corev1.VolumeMount{
 				Name:      rteNotifierVolumeName,
 				MountPath: filepath.Join("/", rteNotifierVolumeName),
-			},
+			})
 		}
 
 		if plat == platform.Kubernetes {
+			hostPathDirectory := corev1.HostPathDirectory
 			rtePodVolumes = append(rtePodVolumes, corev1.Volume{
 				Name: rteKubeletDirVolumeName,
 				VolumeSource: corev1.VolumeSource{
@@ -117,22 +116,32 @@ func DaemonSet(ds *appsv1.DaemonSet, plat platform.Platform, configMapName strin
 					},
 				},
 			})
-			rteContainerVolumeMounts = append(rteContainerVolumeMounts, corev1.VolumeMount{
-				Name:      rteKubeletDirVolumeName,
-				ReadOnly:  true,
-				MountPath: filepath.Join("/", rteKubeletDirVolumeName),
-			})
+			if opts.NotificationEnable {
+				rteContainerVolumeMounts = append(rteContainerVolumeMounts, corev1.VolumeMount{
+					Name:      rteKubeletDirVolumeName,
+					ReadOnly:  true,
+					MountPath: filepath.Join("/", rteKubeletDirVolumeName),
+				})
+			}
 		}
 
 		flags := flagcodec.ParseArgvKeyValue(cntSpec.Args)
-		flags.SetOption("--sleep-interval", "10s")
-		flags.SetOption("--notify-file", fmt.Sprintf("/%s/%s", rteNotifierVolumeName, rteNotifierFileName))
+		if opts.UpdateInterval > 0 {
+			flags.SetOption("--sleep-interval", fmt.Sprintf("%v", opts.UpdateInterval))
+		} else {
+			flags.Delete("--sleep-interval")
+		}
+		if opts.NotificationEnable {
+			flags.SetOption("--notify-file", fmt.Sprintf("/%s/%s", rteNotifierVolumeName, rteNotifierFileName))
+		}
 		if opts.PFPEnable {
 			flags.SetToggle("--pods-fingerprint")
 		}
 		if plat == platform.Kubernetes {
 			flags.SetOption("--kubelet-config-file", fmt.Sprintf("/%s/config.yaml", rteKubeletDirVolumeName))
-			flags.SetOption("--kubelet-state-dir", fmt.Sprintf("/%s", rteKubeletDirVolumeName))
+			if opts.NotificationEnable {
+				flags.SetOption("--kubelet-state-dir", fmt.Sprintf("/%s", rteKubeletDirVolumeName))
+			}
 		}
 		cntSpec.Args = flags.Argv()
 

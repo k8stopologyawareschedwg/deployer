@@ -17,11 +17,15 @@
 package objectupdate
 
 import (
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type DaemonSetOptions struct {
-	PullIfNotPresent bool
-	PFPEnable        bool
-	NodeSelector     *metav1.LabelSelector
+	PullIfNotPresent   bool
+	PFPEnable          bool
+	NotificationEnable bool
+	NodeSelector       *metav1.LabelSelector
+	UpdateInterval     time.Duration
 }

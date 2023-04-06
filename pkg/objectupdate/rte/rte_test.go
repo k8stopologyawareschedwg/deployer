@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
@@ -209,7 +210,11 @@ func TestDaemonSet(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error getting the manifests: %v", err)
 			}
-			DaemonSet(ds, tc.plat, "", objectupdate.DaemonSetOptions{})
+			DaemonSet(ds, tc.plat, "", objectupdate.DaemonSetOptions{
+				PFPEnable:          true,
+				NotificationEnable: true,
+				UpdateInterval:     10 * time.Second,
+			})
 
 			// we are expecting 3 volumes
 			// 1. Host sys
