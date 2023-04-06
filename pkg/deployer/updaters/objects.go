@@ -107,17 +107,15 @@ func getDeletableObjects(env *deployer.Environment, opts Options, updaterType, n
 
 func rteOptionsFrom(opts Options, namespace string) rtemanifests.RenderOptions {
 	return rtemanifests.RenderOptions{
-		ConfigData:       opts.RTEConfigData,
-		PullIfNotPresent: opts.PullIfNotPresent,
-		Namespace:        namespace,
-		PFPEnable:        opts.PFPEnable,
+		ConfigData: opts.RTEConfigData,
+		DaemonSet:  opts.DaemonSet,
+		Namespace:  namespace,
 	}
 }
 
 func nfdOptionsFrom(opts Options, namespace string) nfdmanifests.RenderOptions {
 	return nfdmanifests.RenderOptions{
-		PullIfNotPresent: opts.PullIfNotPresent,
-		Namespace:        namespace,
-		PFPEnable:        opts.PFPEnable,
+		Namespace: namespace,
+		DaemonSet: opts.DaemonSet,
 	}
 }

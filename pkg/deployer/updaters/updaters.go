@@ -26,6 +26,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 )
 
 const (
@@ -34,12 +35,11 @@ const (
 )
 
 type Options struct {
-	Platform         platform.Platform
-	PlatformVersion  platform.Version
-	WaitCompletion   bool
-	PullIfNotPresent bool
-	RTEConfigData    string
-	PFPEnable        bool
+	Platform        platform.Platform
+	PlatformVersion platform.Version
+	WaitCompletion  bool
+	RTEConfigData   string
+	DaemonSet       objectupdate.DaemonSetOptions
 }
 
 func Deploy(env *deployer.Environment, updaterType string, opts Options) error {

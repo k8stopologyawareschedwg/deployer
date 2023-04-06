@@ -33,6 +33,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 )
 
 // TODO: move elsewhere
@@ -166,4 +167,11 @@ func environFromOpts(commonOpts *CommonOptions) (*deployer.Environment, error) {
 		Cli: cli,
 		Log: commonOpts.Log,
 	}, nil
+}
+
+func daemonSetOptionsFromCommonOptions(commonOpts *CommonOptions) objectupdate.DaemonSetOptions {
+	return objectupdate.DaemonSetOptions{
+		PullIfNotPresent: commonOpts.PullIfNotPresent,
+		PFPEnable:        commonOpts.UpdaterPFPEnable,
+	}
 }

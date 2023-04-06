@@ -19,10 +19,11 @@ package rte
 import (
 	"strconv"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/flagcodec"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -53,29 +54,32 @@ func ContainerConfig(podSpec *corev1.PodSpec, cnt *corev1.Container, configMapNa
 	)
 }
 
-func DaemonSet(ds *appsv1.DaemonSet, configMapName string, pullIfNotPresent, pfpEnable bool, nodeSelector *metav1.LabelSelector) {
+func DaemonSet(ds *appsv1.DaemonSet, configMapName string, opts objectupdate.DaemonSetOptions) {
+	podSpec := &ds.Spec.Template.Spec
 	for i := range ds.Spec.Template.Spec.Containers {
-		c := &ds.Spec.Template.Spec.Containers[i]
-		if c.Name != manifests.ContainerNameRTE {
+		cntSpec := &ds.Spec.Template.Spec.Containers[i]
+		if cntSpec.Name != manifests.ContainerNameRTE {
 			continue
 		}
 
-		c.ImagePullPolicy = corev1.PullAlways
-		if pullIfNotPresent {
-			c.ImagePullPolicy = corev1.PullIfNotPresent
+		cntSpec.ImagePullPolicy = corev1.PullAlways
+		if opts.PullIfNotPresent {
+			cntSpec.ImagePullPolicy = corev1.PullIfNotPresent
 		}
 
-		if pfpEnable {
-			c.Args = append([]string{"--pods-fingerprint"}, c.Args...)
+		flags := flagcodec.ParseArgvKeyValue(cntSpec.Args)
+		if opts.PFPEnable {
+			flags.SetToggle("--pods-fingerprint")
 		}
+		cntSpec.Args = flags.Argv()
 
 		if configMapName != "" {
-			ContainerConfig(&ds.Spec.Template.Spec, c, configMapName)
+			ContainerConfig(podSpec, cntSpec, configMapName)
 		}
 	}
 
-	if nodeSelector != nil {
-		ds.Spec.Template.Spec.NodeSelector = nodeSelector.MatchLabels
+	if opts.NodeSelector != nil {
+		podSpec.NodeSelector = opts.NodeSelector.MatchLabels
 	}
 	MetricsPort(ds, metricsPort)
 }
