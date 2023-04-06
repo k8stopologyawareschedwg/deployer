@@ -17,6 +17,8 @@
 package nfd
 
 import (
+	"fmt"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
@@ -34,6 +36,11 @@ func UpdaterDaemonSet(ds *appsv1.DaemonSet, opts objectupdate.DaemonSetOptions) 
 		}
 
 		flags := flagcodec.ParseArgvKeyValue(c.Args)
+		if opts.UpdateInterval > 0 {
+			flags.SetOption("--sleep-interval", fmt.Sprintf("%v", opts.UpdateInterval))
+		} else {
+			flags.Delete("--sleep-interval")
+		}
 		if opts.PFPEnable {
 			flags.SetToggle("--pods-fingerprint")
 		}

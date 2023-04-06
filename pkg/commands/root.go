@@ -40,6 +40,7 @@ import (
 const (
 	DefaultSchedulerProfileName  = "topology-aware-scheduler"
 	DefaultSchedulerResyncPeriod = 0 * time.Second
+	DefaultUpdaterSyncPeriod     = 10 * time.Second
 )
 
 type CommonOptions struct {
@@ -53,6 +54,8 @@ type CommonOptions struct {
 	PullIfNotPresent    bool
 	UpdaterType         string
 	UpdaterPFPEnable    bool
+	UpdaterNotifEnable  bool
+	UpdaterSyncPeriod   time.Duration
 	rteConfigFile       string
 	plat                string
 	platVer             string
@@ -111,6 +114,8 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
 	flags.StringVar(&commonOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
 	flags.StringVar(&commonOpts.UpdaterType, "updater-type", "RTE", "type of updater to deploy - RTE or NFD")
 	flags.BoolVar(&commonOpts.UpdaterPFPEnable, "updater-pfp-enable", true, "toggle PFP support on the updater side.")
+	flags.BoolVar(&commonOpts.UpdaterNotifEnable, "updater-notif-enable", true, "toggle event-based notification support on the updater side.")
+	flags.DurationVar(&commonOpts.UpdaterSyncPeriod, "updater-sync-period", DefaultUpdaterSyncPeriod, "tune the updater synchronization (nrt update) interval. Use 0 to disable.")
 	flags.StringVar(&commonOpts.schedProfileName, "sched-profile-name", DefaultSchedulerProfileName, "inject scheduler profile name.")
 	flags.DurationVar(&commonOpts.schedResyncPeriod, "sched-resync-period", DefaultSchedulerResyncPeriod, "inject scheduler resync period.")
 }
@@ -171,7 +176,9 @@ func environFromOpts(commonOpts *CommonOptions) (*deployer.Environment, error) {
 
 func daemonSetOptionsFromCommonOptions(commonOpts *CommonOptions) objectupdate.DaemonSetOptions {
 	return objectupdate.DaemonSetOptions{
-		PullIfNotPresent: commonOpts.PullIfNotPresent,
-		PFPEnable:        commonOpts.UpdaterPFPEnable,
+		PullIfNotPresent:   commonOpts.PullIfNotPresent,
+		PFPEnable:          commonOpts.UpdaterPFPEnable,
+		NotificationEnable: commonOpts.UpdaterNotifEnable,
+		UpdateInterval:     commonOpts.UpdaterSyncPeriod,
 	}
 }
