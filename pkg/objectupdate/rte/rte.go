@@ -17,19 +17,34 @@
 package rte
 
 import (
+	"fmt"
+	"path/filepath"
 	"strconv"
 
-	"github.com/k8stopologyawareschedwg/deployer/pkg/flagcodec"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+
+	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/flagcodec"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 )
 
 const (
 	metricsPort        = 2112
 	rteConfigMountName = "rte-config-volume"
 	RTEConfigMapName   = "rte-config"
+)
+
+const (
+	rteNotifierVolumeName           = "host-run-rte"
+	rteSysVolumeName                = "host-sys"
+	rtePodresourcesSocketVolumeName = "host-podresources-socket"
+	rteKubeletDirVolumeName         = "host-var-lib-kubelet"
+	rteNotifierFileName             = "notify"
+	hostNotifierDir                 = "/run/rte"
 )
 
 func ContainerConfig(podSpec *corev1.PodSpec, cnt *corev1.Container, configMapName string) {
@@ -54,24 +69,75 @@ func ContainerConfig(podSpec *corev1.PodSpec, cnt *corev1.Container, configMapNa
 	)
 }
 
-func DaemonSet(ds *appsv1.DaemonSet, configMapName string, opts objectupdate.DaemonSetOptions) {
+func DaemonSet(ds *appsv1.DaemonSet, plat platform.Platform, configMapName string, opts objectupdate.DaemonSetOptions) {
 	podSpec := &ds.Spec.Template.Spec
 	if cntSpec := objectupdate.FindContainerByName(ds.Spec.Template.Spec.Containers, manifests.ContainerNameRTE); cntSpec != nil {
+
+		cntSpec.Image = images.ResourceTopologyExporterImage
 
 		cntSpec.ImagePullPolicy = corev1.PullAlways
 		if opts.PullIfNotPresent {
 			cntSpec.ImagePullPolicy = corev1.PullIfNotPresent
 		}
 
-		flags := flagcodec.ParseArgvKeyValue(cntSpec.Args)
-		if opts.PFPEnable {
-			flags.SetToggle("--pods-fingerprint")
-		}
-		cntSpec.Args = flags.Argv()
-
 		if configMapName != "" {
 			ContainerConfig(podSpec, cntSpec, configMapName)
 		}
+
+		hostPathDirectory := corev1.HostPathDirectory
+		hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
+
+		rtePodVolumes := []corev1.Volume{
+			{
+				// notifier file volume
+				Name: rteNotifierVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: hostNotifierDir,
+						Type: &hostPathDirectoryOrCreate,
+					},
+				},
+			},
+		}
+
+		rteContainerVolumeMounts := []corev1.VolumeMount{
+			{
+				Name:      rteNotifierVolumeName,
+				MountPath: filepath.Join("/", rteNotifierVolumeName),
+			},
+		}
+
+		if plat == platform.Kubernetes {
+			rtePodVolumes = append(rtePodVolumes, corev1.Volume{
+				Name: rteKubeletDirVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/var/lib/kubelet",
+						Type: &hostPathDirectory,
+					},
+				},
+			})
+			rteContainerVolumeMounts = append(rteContainerVolumeMounts, corev1.VolumeMount{
+				Name:      rteKubeletDirVolumeName,
+				ReadOnly:  true,
+				MountPath: filepath.Join("/", rteKubeletDirVolumeName),
+			})
+		}
+
+		flags := flagcodec.ParseArgvKeyValue(cntSpec.Args)
+		flags.SetOption("--sleep-interval", "10s")
+		flags.SetOption("--notify-file", fmt.Sprintf("/%s/%s", rteNotifierVolumeName, rteNotifierFileName))
+		if opts.PFPEnable {
+			flags.SetToggle("--pods-fingerprint")
+		}
+		if plat == platform.Kubernetes {
+			flags.SetOption("--kubelet-config-file", fmt.Sprintf("/%s/config.yaml", rteKubeletDirVolumeName))
+			flags.SetOption("--kubelet-state-dir", fmt.Sprintf("/%s", rteKubeletDirVolumeName))
+		}
+		cntSpec.Args = flags.Argv()
+
+		cntSpec.VolumeMounts = append(cntSpec.VolumeMounts, rteContainerVolumeMounts...)
+		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, rtePodVolumes...)
 	}
 
 	if opts.NodeSelector != nil {
@@ -100,6 +166,23 @@ func MetricsPort(ds *appsv1.DaemonSet, pNum int) {
 	},
 	}
 	cntSpec.Ports = cp
+}
+
+func SecurityContext(ds *appsv1.DaemonSet) {
+	cntSpec := objectupdate.FindContainerByName(ds.Spec.Template.Spec.Containers, manifests.ContainerNameRTE)
+	if cntSpec == nil {
+		return
+	}
+
+	// this is needed to put watches in the kubelet state dirs AND
+	// to open the podresources socket in R/W mode
+	if cntSpec.SecurityContext == nil {
+		cntSpec.SecurityContext = &corev1.SecurityContext{}
+	}
+	cntSpec.SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
+		Type:  selinuxassets.RTEContextType,
+		Level: selinuxassets.RTEContextLevel,
+	}
 }
 
 func newBool(val bool) *bool {

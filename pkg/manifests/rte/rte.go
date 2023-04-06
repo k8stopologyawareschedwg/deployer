@@ -126,9 +126,11 @@ func (mf Manifests) Render(options RenderOptions) (Manifests, error) {
 	if ret.ConfigMap != nil {
 		rteConfigMapName = ret.ConfigMap.Name
 	}
-	rteupdate.DaemonSet(ret.DaemonSet, rteConfigMapName, options.DaemonSet)
+	rteupdate.DaemonSet(ret.DaemonSet, mf.plat, rteConfigMapName, options.DaemonSet)
 
 	if mf.plat == platform.OpenShift {
+		rteupdate.SecurityContext(ret.DaemonSet)
+
 		if options.Name != "" {
 			ret.MachineConfig.Name = ocpupdate.MakeMachineConfigName(options.Name)
 		}
@@ -301,7 +303,7 @@ func GetManifests(plat platform.Platform, version platform.Version, namespace st
 	if err != nil {
 		return mf, err
 	}
-	mf.DaemonSet, err = manifests.DaemonSet(manifests.ComponentResourceTopologyExporter, "", plat, namespace)
+	mf.DaemonSet, err = manifests.DaemonSet(manifests.ComponentResourceTopologyExporter, "", namespace)
 	if err != nil {
 		return mf, err
 	}
