@@ -30,10 +30,11 @@ func TestMetricsPort(t *testing.T) {
 				Spec: v1.PodSpec{
 					Containers: []v1.Container{
 						{
+							Name: "resource-topology-exporter",
 							Env: []v1.EnvVar{
 								{
 									Name:  "METRIC_PORTS",
-									Value: "${METRIC_PORTS}",
+									Value: "9999",
 								},
 							},
 							Ports: []v1.ContainerPort{

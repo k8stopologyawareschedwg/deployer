@@ -56,11 +56,7 @@ func ContainerConfig(podSpec *corev1.PodSpec, cnt *corev1.Container, configMapNa
 
 func DaemonSet(ds *appsv1.DaemonSet, configMapName string, opts objectupdate.DaemonSetOptions) {
 	podSpec := &ds.Spec.Template.Spec
-	for i := range ds.Spec.Template.Spec.Containers {
-		cntSpec := &ds.Spec.Template.Spec.Containers[i]
-		if cntSpec.Name != manifests.ContainerNameRTE {
-			continue
-		}
+	if cntSpec := objectupdate.FindContainerByName(ds.Spec.Template.Spec.Containers, manifests.ContainerNameRTE); cntSpec != nil {
 
 		cntSpec.ImagePullPolicy = corev1.PullAlways
 		if opts.PullIfNotPresent {
@@ -85,11 +81,16 @@ func DaemonSet(ds *appsv1.DaemonSet, configMapName string, opts objectupdate.Dae
 }
 
 func MetricsPort(ds *appsv1.DaemonSet, pNum int) {
+	cntSpec := objectupdate.FindContainerByName(ds.Spec.Template.Spec.Containers, manifests.ContainerNameRTE)
+	if cntSpec == nil {
+		return
+	}
+
 	pNumAsStr := strconv.Itoa(pNum)
 
-	for idx, env := range ds.Spec.Template.Spec.Containers[0].Env {
+	for idx, env := range cntSpec.Env {
 		if env.Name == "METRICS_PORT" {
-			ds.Spec.Template.Spec.Containers[0].Env[idx].Value = pNumAsStr
+			cntSpec.Env[idx].Value = pNumAsStr
 		}
 	}
 
@@ -98,7 +99,7 @@ func MetricsPort(ds *appsv1.DaemonSet, pNum int) {
 		ContainerPort: int32(pNum),
 	},
 	}
-	ds.Spec.Template.Spec.Containers[0].Ports = cp
+	cntSpec.Ports = cp
 }
 
 func newBool(val bool) *bool {

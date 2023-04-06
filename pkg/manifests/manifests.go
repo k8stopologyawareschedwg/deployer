@@ -47,6 +47,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/flagcodec"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 )
 
 const (
@@ -316,28 +317,9 @@ func DaemonSet(component, subComponent string, plat platform.Platform, namespace
 
 	if component == ComponentResourceTopologyExporter {
 		hostPathDirectory := corev1.HostPathDirectory
-		hostPathSocket := corev1.HostPathSocket
 		hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
-		ds.Spec.Template.Spec.Volumes = []corev1.Volume{
-			{
-				// needed to get the CPU, PCI devices and memory information
-				Name: rteSysVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/sys",
-						Type: &hostPathDirectory,
-					},
-				},
-			},
-			{
-				Name: rtePodresourcesSocketVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					HostPath: &corev1.HostPathVolumeSource{
-						Path: "/var/lib/kubelet/pod-resources/kubelet.sock",
-						Type: &hostPathSocket,
-					},
-				},
-			},
+
+		rtePodVolumes := []corev1.Volume{
 			{
 				// notifier file volume
 				Name: rteNotifierVolumeName,
@@ -350,35 +332,23 @@ func DaemonSet(component, subComponent string, plat platform.Platform, namespace
 			},
 		}
 
-		containerPodResourcesSocket := filepath.Join("/", rtePodresourcesSocketVolumeName, "kubelet.sock")
-		containerHostSysDir := filepath.Join("/", rteSysVolumeName)
 		rteContainerVolumeMounts := []corev1.VolumeMount{
-			{
-				Name:      rteSysVolumeName,
-				ReadOnly:  true,
-				MountPath: containerHostSysDir,
-			},
-			{
-				Name:      rtePodresourcesSocketVolumeName,
-				MountPath: containerPodResourcesSocket,
-			},
 			{
 				Name:      rteNotifierVolumeName,
 				MountPath: filepath.Join("/", rteNotifierVolumeName),
 			},
 		}
+
 		if plat == platform.Kubernetes {
-			ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes,
-				corev1.Volume{
-					Name: rteKubeletDirVolumeName,
-					VolumeSource: corev1.VolumeSource{
-						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/var/lib/kubelet",
-							Type: &hostPathDirectory,
-						},
+			rtePodVolumes = append(rtePodVolumes, corev1.Volume{
+				Name: rteKubeletDirVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: "/var/lib/kubelet",
+						Type: &hostPathDirectory,
 					},
 				},
-			)
+			})
 			rteContainerVolumeMounts = append(rteContainerVolumeMounts, corev1.VolumeMount{
 				Name:      rteKubeletDirVolumeName,
 				ReadOnly:  true,
@@ -386,41 +356,37 @@ func DaemonSet(component, subComponent string, plat platform.Platform, namespace
 			})
 		}
 
-		for i := range ds.Spec.Template.Spec.Containers {
-			c := &ds.Spec.Template.Spec.Containers[i]
-			if c.Name == ContainerNameRTE {
-				c.Image = images.ResourceTopologyExporterImage
+		c := objectupdate.FindContainerByName(ds.Spec.Template.Spec.Containers, ContainerNameRTE)
+		if c == nil {
+			return nil, fmt.Errorf("container not defined: %q", ContainerNameRTE)
+		}
 
-				// intentionally override
-				c.Args = []string{
-					"--sleep-interval=10s",
-					fmt.Sprintf("--sysfs=%s", containerHostSysDir),
-					fmt.Sprintf("--podresources-socket=unix://%s", containerPodResourcesSocket),
-					fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
-				}
+		c.Image = images.ResourceTopologyExporterImage
 
-				if plat == platform.OpenShift {
-					// this is needed to put watches in the kubelet state dirs AND
-					// to open the podresources socket in R/W mode
-					if c.SecurityContext == nil {
-						c.SecurityContext = &corev1.SecurityContext{}
-					}
-					c.SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
-						Type:  selinuxassets.RTEContextType,
-						Level: selinuxassets.RTEContextLevel,
-					}
-				}
+		flags := flagcodec.ParseArgvKeyValue(c.Args)
+		flags.SetOption("--sleep-interval", "10s")
+		flags.SetOption("--notify-file", fmt.Sprintf("/%s/%s", rteNotifierVolumeName, rteNotifierFileName))
+		if plat == platform.Kubernetes {
+			flags.SetOption("--kubelet-config-file", fmt.Sprintf("/%s/config.yaml", rteKubeletDirVolumeName))
+			flags.SetOption("--kubelet-state-dir", fmt.Sprintf("/%s", rteKubeletDirVolumeName))
+		}
+		c.Args = flags.Argv()
 
-				if plat == platform.Kubernetes {
-					flags := flagcodec.ParseArgvKeyValue(c.Args)
-					flags.SetOption("--kubelet-config-file", fmt.Sprintf("/%s/config.yaml", rteKubeletDirVolumeName))
-					flags.SetOption("--kubelet-state-dir", fmt.Sprintf("/%s", rteKubeletDirVolumeName))
-					c.Args = flags.Argv()
-				}
+		c.VolumeMounts = append(c.VolumeMounts, rteContainerVolumeMounts...)
 
-				c.VolumeMounts = rteContainerVolumeMounts
+		if plat == platform.OpenShift {
+			// this is needed to put watches in the kubelet state dirs AND
+			// to open the podresources socket in R/W mode
+			if c.SecurityContext == nil {
+				c.SecurityContext = &corev1.SecurityContext{}
+			}
+			c.SecurityContext.SELinuxOptions = &corev1.SELinuxOptions{
+				Type:  selinuxassets.RTEContextType,
+				Level: selinuxassets.RTEContextLevel,
 			}
 		}
+
+		ds.Spec.Template.Spec.Volumes = append(ds.Spec.Template.Spec.Volumes, rtePodVolumes...)
 	}
 
 	ds.Namespace = namespace

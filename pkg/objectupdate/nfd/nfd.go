@@ -27,11 +27,7 @@ import (
 )
 
 func UpdaterDaemonSet(ds *appsv1.DaemonSet, opts objectupdate.DaemonSetOptions) {
-	for i := range ds.Spec.Template.Spec.Containers {
-		c := &ds.Spec.Template.Spec.Containers[i]
-		if c.Name != manifests.ContainerNameNFDTopologyUpdater {
-			continue
-		}
+	if c := objectupdate.FindContainerByName(ds.Spec.Template.Spec.Containers, manifests.ContainerNameNFDTopologyUpdater); c != nil {
 		c.ImagePullPolicy = corev1.PullAlways
 		if opts.PullIfNotPresent {
 			c.ImagePullPolicy = corev1.PullIfNotPresent
@@ -44,8 +40,8 @@ func UpdaterDaemonSet(ds *appsv1.DaemonSet, opts objectupdate.DaemonSetOptions) 
 		c.Args = flags.Argv()
 
 		c.Image = images.NodeFeatureDiscoveryImage
-
 	}
+
 	if opts.NodeSelector != nil {
 		ds.Spec.Template.Spec.NodeSelector = opts.NodeSelector.MatchLabels
 	}
