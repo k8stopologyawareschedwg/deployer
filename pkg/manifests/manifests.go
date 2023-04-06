@@ -45,6 +45,7 @@ import (
 	rteassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/rte"
 	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/flagcodec"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 )
 
@@ -390,6 +391,7 @@ func DaemonSet(component, subComponent string, plat platform.Platform, namespace
 			if c.Name == ContainerNameRTE {
 				c.Image = images.ResourceTopologyExporterImage
 
+				// intentionally override
 				c.Args = []string{
 					"--sleep-interval=10s",
 					fmt.Sprintf("--sysfs=%s", containerHostSysDir),
@@ -410,11 +412,10 @@ func DaemonSet(component, subComponent string, plat platform.Platform, namespace
 				}
 
 				if plat == platform.Kubernetes {
-					c.Args = append(
-						c.Args,
-						fmt.Sprintf("--kubelet-config-file=/%s/config.yaml", rteKubeletDirVolumeName),
-						fmt.Sprintf("--kubelet-state-dir=/%s", rteKubeletDirVolumeName),
-					)
+					flags := flagcodec.ParseArgvKeyValue(c.Args)
+					flags.SetOption("--kubelet-config-file", fmt.Sprintf("/%s/config.yaml", rteKubeletDirVolumeName))
+					flags.SetOption("--kubelet-state-dir", fmt.Sprintf("/%s", rteKubeletDirVolumeName))
+					c.Args = flags.Argv()
 				}
 
 				c.VolumeMounts = rteContainerVolumeMounts

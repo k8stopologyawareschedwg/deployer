@@ -20,6 +20,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/flagcodec"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
@@ -36,9 +37,11 @@ func UpdaterDaemonSet(ds *appsv1.DaemonSet, opts objectupdate.DaemonSetOptions) 
 			c.ImagePullPolicy = corev1.PullIfNotPresent
 		}
 
+		flags := flagcodec.ParseArgvKeyValue(c.Args)
 		if opts.PFPEnable {
-			c.Args = append([]string{"--pods-fingerprint"}, c.Args...)
+			flags.SetToggle("--pods-fingerprint")
 		}
+		c.Args = flags.Argv()
 
 		c.Image = images.NodeFeatureDiscoveryImage
 
