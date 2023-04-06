@@ -34,7 +34,7 @@ func TestMetricsPort(t *testing.T) {
 							Env: []v1.EnvVar{
 								{
 									Name:  "METRIC_PORTS",
-									Value: "${METRIC_PORTS}",
+									Value: "9999",
 								},
 							},
 							Ports: []v1.ContainerPort{
