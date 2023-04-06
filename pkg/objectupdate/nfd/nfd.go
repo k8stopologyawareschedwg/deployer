@@ -36,6 +36,7 @@ func UpdaterDaemonSet(ds *appsv1.DaemonSet, opts objectupdate.DaemonSetOptions) 
 		}
 
 		flags := flagcodec.ParseArgvKeyValue(c.Args)
+		flags.SetOption("-v", fmt.Sprintf("%d", opts.Verbose))
 		if opts.UpdateInterval > 0 {
 			flags.SetOption("--sleep-interval", fmt.Sprintf("%v", opts.UpdateInterval))
 		} else {

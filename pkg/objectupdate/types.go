@@ -23,6 +23,7 @@ import (
 )
 
 type DaemonSetOptions struct {
+	Verbose            int
 	PullIfNotPresent   bool
 	PFPEnable          bool
 	NotificationEnable bool
