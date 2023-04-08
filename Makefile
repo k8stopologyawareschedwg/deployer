@@ -42,6 +42,10 @@ release-manifests-k8s: deployer
 test-unit:
 	go test ./pkg/...
 
+.PHONY: test-unit-cover
+test-unit-cover:
+	go test -coverprofile=coverage.out ./pkg/...
+
 .PHONY: test-e2e-positive
 test-e2e-positive: build-e2e
 	_out/e2e.test -ginkgo.focus='\[PositiveFlow\]'

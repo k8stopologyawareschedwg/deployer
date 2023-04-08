@@ -1,2 +1,3 @@
 _out
 pkg/version/version.go
+coverage.out
