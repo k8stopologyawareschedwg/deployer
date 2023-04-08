@@ -17,11 +17,7 @@
 package commands
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -40,21 +36,17 @@ func NewImagesCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "images",
 		Short: "dump the container images used to deploy",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			imo := newImageOutput(commonOpts.UpdaterType)
-			if opts.rawOutput {
-				il := imo.ToList()
-				if opts.jsonOutput {
-					il.EncodeJSON(os.Stdout)
-				} else {
-					il.EncodeText(os.Stdout)
-				}
-			} else {
-				if opts.jsonOutput {
-					imo.EncodeJSON(os.Stdout)
-				} else {
-					imo.EncodeText(os.Stdout)
-				}
+			updaterImage := getUpdaterImage(commonOpts.UpdaterType)
+			fk := images.FormatText
+			if opts.jsonOutput {
+				fk = images.FormatJSON
 			}
+			imo := images.NewOutput(updaterImage)
+			var of images.Formatter = imo
+			if opts.rawOutput {
+				of = imo.ToList()
+			}
+			of.Format(fk, os.Stdout)
 			return nil
 		},
 		Args: cobra.NoArgs,
@@ -64,50 +56,9 @@ func NewImagesCommand(commonOpts *CommonOptions) *cobra.Command {
 	return images
 }
 
-type imageOutput struct {
-	TopologyUpdater     string `json:"topology_updater"`
-	SchedulerPlugin     string `json:"scheduler_plugin"`
-	SchedulerController string `json:"scheduler_controller"`
-}
-
-func newImageOutput(updaterType string) imageOutput {
-	imo := imageOutput{
-		SchedulerPlugin:     images.SchedulerPluginSchedulerDefaultImageTag,
-		SchedulerController: images.SchedulerPluginControllerDefaultImageTag,
-	}
+func getUpdaterImage(updaterType string) string {
 	if updaterType == updaters.RTE {
-		imo.TopologyUpdater = images.ResourceTopologyExporterDefaultImageTag
+		return images.ResourceTopologyExporterDefaultImageTag
 	}
-	if updaterType == updaters.NFD {
-		imo.TopologyUpdater = images.NodeFeatureDiscoveryDefaultImageTag
-	}
-	return imo
-}
-
-type imageList []string
-
-func (imo imageOutput) ToList() imageList {
-	return []string{
-		imo.TopologyUpdater,
-		imo.SchedulerPlugin,
-		imo.SchedulerController,
-	}
-}
-
-func (il imageList) EncodeText(w io.Writer) {
-	fmt.Fprintf(w, "%s\n", strings.Join(il, "\n"))
-}
-
-func (il imageList) EncodeJSON(w io.Writer) {
-	json.NewEncoder(os.Stdout).Encode(il)
-}
-
-func (imo imageOutput) EncodeText(w io.Writer) {
-	fmt.Fprintf(w, "TAS_SCHEDULER_PLUGIN_IMAGE=%s\n", imo.SchedulerPlugin)
-	fmt.Fprintf(w, "TAS_SCHEDULER_PLUGIN_CONTROLLER_IMAGE=%s\n", imo.SchedulerController)
-	fmt.Fprintf(w, "TAS_RESOURCE_EXPORTER_IMAGE=%s\n", imo.TopologyUpdater)
-}
-
-func (imo imageOutput) EncodeJSON(w io.Writer) {
-	json.NewEncoder(w).Encode(imo)
+	return images.NodeFeatureDiscoveryDefaultImageTag
 }
