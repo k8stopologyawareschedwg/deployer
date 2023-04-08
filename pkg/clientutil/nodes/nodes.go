@@ -24,17 +24,26 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 )
 
+const (
+	// RoleWorker contains the worker role
+	RoleWorker = "worker"
+)
+
+const (
+	// LabelRole contains the key for the role label
+	LabelRole = "node-role.kubernetes.io"
+)
+
 func GetWorkers(env *deployer.Environment) ([]corev1.Node, error) {
-	return GetByRole(env, clientutil.RoleWorker)
+	return GetByRole(env, RoleWorker)
 }
 
 // GetByRole returns all nodes with the specified role
 func GetByRole(env *deployer.Environment, role string) ([]corev1.Node, error) {
-	selector, err := labels.Parse(fmt.Sprintf("%s/%s=", clientutil.LabelRole, role))
+	selector, err := labels.Parse(fmt.Sprintf("%s/%s=", LabelRole, role))
 	if err != nil {
 		return nil, err
 	}
