@@ -26,8 +26,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	k8sscheme "k8s.io/client-go/kubernetes/scheme"
-
 	schedconfig "k8s.io/kubernetes/pkg/scheduler/apis/config"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	schedscheme "sigs.k8s.io/scheduler-plugins/apis/config/scheme"
 	"sigs.k8s.io/scheduler-plugins/apis/config/v1beta2"
 )
@@ -106,4 +107,15 @@ func EncodeSchedulerConfigToData(schedCfg *schedconfig.KubeSchedulerConfiguratio
 	}
 
 	return buf.Bytes(), nil
+}
+
+func RenderObjects(objs []client.Object, w io.Writer) error {
+	for _, obj := range objs {
+		fmt.Fprintf(w, "---\n")
+		if err := SerializeObject(obj, w); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

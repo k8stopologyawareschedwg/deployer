@@ -67,7 +67,7 @@ func NewRenderAPICommand(commonOpts *CommonOptions, opts *RenderOptions) *cobra.
 			if err != nil {
 				return err
 			}
-			return renderObjects(apiObjs.ToObjects())
+			return manifests.RenderObjects(apiObjs.ToObjects(), os.Stdout)
 		},
 		Args: cobra.NoArgs,
 	}
@@ -101,7 +101,7 @@ func NewRenderSchedulerPluginCommand(commonOpts *CommonOptions, opts *RenderOpti
 			if err != nil {
 				return err
 			}
-			return renderObjects(schedObjs.ToObjects())
+			return manifests.RenderObjects(schedObjs.ToObjects(), os.Stdout)
 		},
 		Args: cobra.NoArgs,
 	}
@@ -120,7 +120,7 @@ func NewRenderTopologyUpdaterCommand(commonOpts *CommonOptions, opts *RenderOpti
 			if err != nil {
 				return err
 			}
-			return renderObjects(objs)
+			return manifests.RenderObjects(objs, os.Stdout)
 		},
 		Args: cobra.NoArgs,
 	}
@@ -184,16 +184,5 @@ func RenderManifests(commonOpts *CommonOptions) error {
 	}
 	objs = append(objs, schedObjs.ToObjects()...)
 
-	return renderObjects(objs)
-}
-
-func renderObjects(objs []client.Object) error {
-	for _, obj := range objs {
-		fmt.Printf("---\n")
-		if err := manifests.SerializeObject(obj, os.Stdout); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return manifests.RenderObjects(objs, os.Stdout)
 }
