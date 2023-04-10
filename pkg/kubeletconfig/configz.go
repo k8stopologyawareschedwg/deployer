@@ -92,6 +92,9 @@ func FindProxyPort(r io.Reader) (int, error) {
 		return -1, err
 	}
 	match := proxyRegexp.FindStringSubmatch(output)
+	if match == nil {
+		return -1, fmt.Errorf("cannot find port announcement")
+	}
 	return strconv.Atoi(match[1])
 }
 
