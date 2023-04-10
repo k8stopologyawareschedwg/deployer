@@ -94,7 +94,7 @@ func (mf Manifests) Render(logger logr.Logger, options RenderOptions) (Manifests
 	ret := mf.Clone()
 	replicas := options.Replicas
 	if replicas <= 0 {
-		return ret, fmt.Errorf("negative replicas: %d", replicas)
+		return ret, fmt.Errorf("non-positive replicas: %d", replicas)
 	}
 	ret.DPScheduler.Spec.Replicas = newInt32(replicas)
 	ret.DPController.Spec.Replicas = newInt32(replicas)
