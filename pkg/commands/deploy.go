@@ -83,7 +83,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 				Replicas:          int32(commonOpts.Replicas),
 				RTEConfigData:     commonOpts.RTEConfigData,
 				PullIfNotPresent:  commonOpts.PullIfNotPresent,
-				CacheResyncPeriod: commonOpts.schedResyncPeriod,
+				CacheResyncPeriod: commonOpts.SchedResyncPeriod,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
@@ -182,7 +182,7 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 				Replicas:          int32(commonOpts.Replicas),
 				RTEConfigData:     commonOpts.RTEConfigData,
 				PullIfNotPresent:  commonOpts.PullIfNotPresent,
-				CacheResyncPeriod: commonOpts.schedResyncPeriod,
+				CacheResyncPeriod: commonOpts.SchedResyncPeriod,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -291,7 +291,7 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 				Replicas:          int32(commonOpts.Replicas),
 				RTEConfigData:     commonOpts.RTEConfigData,
 				PullIfNotPresent:  commonOpts.PullIfNotPresent,
-				CacheResyncPeriod: commonOpts.schedResyncPeriod,
+				CacheResyncPeriod: commonOpts.SchedResyncPeriod,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -376,7 +376,7 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 		Replicas:          int32(commonOpts.Replicas),
 		RTEConfigData:     commonOpts.RTEConfigData,
 		PullIfNotPresent:  commonOpts.PullIfNotPresent,
-		CacheResyncPeriod: commonOpts.schedResyncPeriod,
+		CacheResyncPeriod: commonOpts.SchedResyncPeriod,
 	}); err != nil {
 		return err
 	}
