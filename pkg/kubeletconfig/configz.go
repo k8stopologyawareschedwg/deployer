@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -102,7 +101,7 @@ func decodeConfigz(resp *http.Response) (*kubeletconfigv1beta1.KubeletConfigurat
 	}
 
 	configz := configzWrapper{}
-	contentsBytes, err := ioutil.ReadAll(resp.Body)
+	contentsBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
