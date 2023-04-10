@@ -57,11 +57,11 @@ type CommonOptions struct {
 	UpdaterNotifEnable  bool
 	UpdaterSyncPeriod   time.Duration
 	UpdaterVerbose      int
+	SchedProfileName    string
+	SchedResyncPeriod   time.Duration
 	rteConfigFile       string
 	plat                string
 	platVer             string
-	schedProfileName    string
-	schedResyncPeriod   time.Duration
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -118,8 +118,8 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
 	flags.BoolVar(&commonOpts.UpdaterNotifEnable, "updater-notif-enable", true, "toggle event-based notification support on the updater side.")
 	flags.DurationVar(&commonOpts.UpdaterSyncPeriod, "updater-sync-period", DefaultUpdaterSyncPeriod, "tune the updater synchronization (nrt update) interval. Use 0 to disable.")
 	flags.IntVar(&commonOpts.UpdaterVerbose, "updater-verbose", 1, "set the updater verbosiness.")
-	flags.StringVar(&commonOpts.schedProfileName, "sched-profile-name", DefaultSchedulerProfileName, "inject scheduler profile name.")
-	flags.DurationVar(&commonOpts.schedResyncPeriod, "sched-resync-period", DefaultSchedulerResyncPeriod, "inject scheduler resync period.")
+	flags.StringVar(&commonOpts.SchedProfileName, "sched-profile-name", DefaultSchedulerProfileName, "inject scheduler profile name.")
+	flags.DurationVar(&commonOpts.SchedResyncPeriod, "sched-resync-period", DefaultSchedulerResyncPeriod, "inject scheduler resync period.")
 }
 
 func PostSetupOptions(commonOpts *CommonOptions) error {
