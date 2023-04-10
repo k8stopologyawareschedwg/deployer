@@ -64,7 +64,7 @@ func GetKubeletConfigForNodes(kc *Kubectl, nodeNames []string, logger logr.Logge
 			logger.Info("request creation failed - skipped", "endpoint", endpoint, "error", err)
 			continue
 		}
-		if resp.StatusCode != 200 {
+		if resp.StatusCode != http.StatusOK {
 			logger.Info("unexpected response status code - skipped", "endpoint", endpoint, "statusCode", resp.StatusCode)
 			continue
 		}
