@@ -37,7 +37,7 @@ func GetKubeletConfigForNodes(kc *Kubectl, nodeNames []string, logger logr.Logge
 	defer stderr.Close()
 	defer cmd.Process.Kill()
 
-	port, err := getKubeletProxyPort(stdout)
+	port, err := FindProxyPort(stdout)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func GetKubeletConfigForNodes(kc *Kubectl, nodeNames []string, logger logr.Logge
 	return kubeletConfs, nil
 }
 
-func getKubeletProxyPort(r io.Reader) (int, error) {
+func FindProxyPort(r io.Reader) (int, error) {
 	buf := make([]byte, 128)
 	n, err := r.Read(buf)
 	if err != nil {
