@@ -69,3 +69,4 @@ done
 echo "#>>> setup done! now run:"
 echo "deployer deploy api"
 echo "deployer deploy topology-updater --rte-config-file ./rte-minikube.yaml"
+echo "deployer deploy scheduler-plugin --sched-resync-period 5s"
