@@ -66,6 +66,9 @@ minikube ssh \
 	sudo bash /bin/fix-kubeletconf.sh
 done
 
+# to emphasize the reserve cache behavior:
+#     deployer deploy topology-updater --rte-config-file ./rte-minikube.yaml  --updater-notif-enable=false --updater-sync-period=15s
+
 echo "#>>> setup done! now run:"
 echo "deployer deploy api"
 echo "deployer deploy topology-updater --rte-config-file ./rte-minikube.yaml"
