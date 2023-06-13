@@ -60,6 +60,7 @@ type CommonOptions struct {
 	UpdaterVerbose        int
 	SchedProfileName      string
 	SchedResyncPeriod     time.Duration
+	SchedVerbose          int
 	rteConfigFile         string
 	plat                  string
 	platVer               string
@@ -122,6 +123,7 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
 	flags.IntVar(&commonOpts.UpdaterVerbose, "updater-verbose", 1, "set the updater verbosiness.")
 	flags.StringVar(&commonOpts.SchedProfileName, "sched-profile-name", DefaultSchedulerProfileName, "inject scheduler profile name.")
 	flags.DurationVar(&commonOpts.SchedResyncPeriod, "sched-resync-period", DefaultSchedulerResyncPeriod, "inject scheduler resync period.")
+	flags.IntVar(&commonOpts.SchedVerbose, "sched-verbose", 4, "set the scheduler verbosiness.")
 }
 
 func PostSetupOptions(commonOpts *CommonOptions) error {

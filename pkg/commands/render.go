@@ -177,6 +177,7 @@ func RenderManifests(commonOpts *CommonOptions) error {
 		PullIfNotPresent:  commonOpts.PullIfNotPresent,
 		ProfileName:       commonOpts.SchedProfileName,
 		CacheResyncPeriod: commonOpts.SchedResyncPeriod,
+		Verbose:           commonOpts.SchedVerbose,
 	}
 
 	schedObjs, err := schedManifests.Render(commonOpts.Log, schedRenderOpts)

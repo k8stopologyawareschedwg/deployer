@@ -460,39 +460,75 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			}()
 
-			ginkgo.By("checking that scheduler plugin is running")
+			expectSchedulerRunning()
+		})
 
-			ns, err := manifests.Namespace(manifests.ComponentSchedulerPlugin)
+		ginkgo.It("should perform the deployment of scheduler plugin (with extreme verbosity) + API and verify all pods are running", func() {
+			binPath := filepath.Join(binariesPath, "deployer")
+
+			err := runCmdline(
+				[]string{binPath, "--debug", "deploy", "api", "--wait"},
+				"failed to deploy partial components before test started",
+			)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-			ginkgo.By("checking that topo-aware-scheduler pod is running")
-			// TODO: autodetect the platform
-			mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
-			gomega.Expect(err).ToNot(gomega.HaveOccurred())
-			mfs, err = mfs.Render(logr.Discard(), sched.RenderOptions{
-				Replicas: int32(1),
-			})
+			err = runCmdline(
+				[]string{binPath, "--debug", "--sched-verbose=9", "deploy", "scheduler-plugin", "--wait"},
+				"failed to deploy partial components before test started",
+			)
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-			cli, err := clientutil.New()
-			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			defer func() {
+				err := runCmdline(
+					[]string{binPath, "--debug", "remove", "scheduler-plugin", "--wait"},
+					"failed to remove partial components after test finished",
+				)
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-			ctx := context.Background()
+				err = runCmdline(
+					[]string{binPath, "--debug", "remove", "api", "--wait"},
+					"failed to remove partial components after test finished",
+				)
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
+			}()
 
-			var wg sync.WaitGroup
-			for _, dp := range []*appsv1.Deployment{
-				mfs.DPScheduler,
-				mfs.DPController,
-			} {
-				wg.Add(1)
-				go func(dp *appsv1.Deployment) {
-					defer ginkgo.GinkgoRecover()
-					defer wg.Done()
-					_, err = wait.With(cli, logr.Discard()).Interval(10*time.Second).Timeout(3*time.Minute).ForDeploymentComplete(ctx, dp)
-					gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				}(dp)
-			}
-			wg.Wait()
+			expectSchedulerRunning()
 		})
 	})
 })
+
+func expectSchedulerRunning() {
+	ginkgo.By("checking that scheduler plugin is running")
+
+	ns, err := manifests.Namespace(manifests.ComponentSchedulerPlugin)
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+
+	ginkgo.By("checking that topo-aware-scheduler pod is running")
+	// TODO: autodetect the platform
+	mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+	mfs, err = mfs.Render(logr.Discard(), sched.RenderOptions{
+		Replicas: int32(1),
+	})
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+
+	cli, err := clientutil.New()
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+
+	ctx := context.Background()
+
+	var wg sync.WaitGroup
+	for _, dp := range []*appsv1.Deployment{
+		mfs.DPScheduler,
+		mfs.DPController,
+	} {
+		wg.Add(1)
+		go func(dp *appsv1.Deployment) {
+			defer ginkgo.GinkgoRecover()
+			defer wg.Done()
+			_, err = wait.With(cli, logr.Discard()).Interval(10*time.Second).Timeout(3*time.Minute).ForDeploymentComplete(ctx, dp)
+			gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+		}(dp)
+	}
+	wg.Wait()
+}

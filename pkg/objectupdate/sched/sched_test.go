@@ -17,9 +17,14 @@
 package sched
 
 import (
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
+	appsv1 "k8s.io/api/apps/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	pluginconfig "sigs.k8s.io/scheduler-plugins/apis/config"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
@@ -56,6 +61,55 @@ func TestRenderConfig(t *testing.T) {
 	}
 }
 
+func TestSchedulerDeployment(t *testing.T) {
+	type testCase struct {
+		name               string
+		pullIfNotPresent   bool
+		verbose            int
+		expectedRenderedDp string
+	}
+
+	testCases := []testCase{
+		{
+			name:               "defaults",
+			verbose:            4, // TODO: this *IS* the default - see pkg/commands/root.go - but how do we keep this in sync?
+			expectedRenderedDp: expectedSchedDeploymentDefault,
+		},
+		{
+			name:               "extra-verbose",
+			verbose:            6,
+			expectedRenderedDp: expectedSchedDeploymentVerbose,
+		},
+	}
+
+	dpRef, err := manifests.Deployment(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, "")
+	if err != nil {
+		t.Errorf("cannot load the scheduler manifest: %v", err)
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			dp := dpRef.DeepCopy()
+
+			SchedulerDeployment(dp, tc.pullIfNotPresent, tc.verbose)
+			fixSchedulerImage(dp)
+
+			var sb strings.Builder
+			manifests.RenderObjects([]client.Object{dp}, &sb)
+			got := sb.String()
+
+			if got != tc.expectedRenderedDp {
+				t.Errorf("unexpected result, diff=%s", cmp.Diff(got, tc.expectedRenderedDp))
+			}
+		})
+	}
+}
+
+// to make the image (which we change regularly) invariant for the tests
+func fixSchedulerImage(dp *appsv1.Deployment) {
+	cnt := &dp.Spec.Template.Spec.Containers[0] // shortcut
+	cnt.Image = "test.com/image:latest"
+}
+
 var configTemplate string = `apiVersion: kubescheduler.config.k8s.io/v1beta2
 kind: KubeSchedulerConfiguration
 leaderElection:
@@ -76,3 +130,115 @@ profiles:
   pluginConfig:
   - name: NodeResourceTopologyMatch
     args: {}`
+
+const expectedSchedDeploymentDefault string = `---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    component: scheduler
+  name: topology-aware-scheduler
+  namespace: tas-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: scheduler
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        component: scheduler
+    spec:
+      containers:
+      - args:
+        - /bin/kube-scheduler
+        - --config=/etc/kubernetes/scheduler-config.yaml
+        - --v=4
+        image: test.com/image:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 10259
+            scheme: HTTPS
+          initialDelaySeconds: 15
+        name: topology-aware-scheduler
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 10259
+            scheme: HTTPS
+        resources:
+          limits:
+            cpu: 200m
+            memory: 500Mi
+          requests:
+            cpu: 200m
+            memory: 500Mi
+        volumeMounts:
+        - mountPath: /etc/kubernetes
+          name: scheduler-config
+          readOnly: true
+      serviceAccountName: topology-aware-scheduler
+      volumes:
+      - configMap:
+          name: scheduler-config
+        name: scheduler-config
+`
+
+const expectedSchedDeploymentVerbose string = `---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    component: scheduler
+  name: topology-aware-scheduler
+  namespace: tas-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: scheduler
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        component: scheduler
+    spec:
+      containers:
+      - args:
+        - /bin/kube-scheduler
+        - --config=/etc/kubernetes/scheduler-config.yaml
+        - --v=6
+        image: test.com/image:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 10259
+            scheme: HTTPS
+          initialDelaySeconds: 15
+        name: topology-aware-scheduler
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 10259
+            scheme: HTTPS
+        resources:
+          limits:
+            cpu: 200m
+            memory: 500Mi
+          requests:
+            cpu: 200m
+            memory: 500Mi
+        volumeMounts:
+        - mountPath: /etc/kubernetes
+          name: scheduler-config
+          readOnly: true
+      serviceAccountName: topology-aware-scheduler
+      volumes:
+      - configMap:
+          name: scheduler-config
+        name: scheduler-config
+`

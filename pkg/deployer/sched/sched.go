@@ -34,6 +34,7 @@ type Options struct {
 	RTEConfigData     string
 	PullIfNotPresent  bool
 	CacheResyncPeriod time.Duration
+	Verbose           int
 }
 
 func SetupNamespace(plat platform.Platform) (*corev1.Namespace, string, error) {
@@ -54,6 +55,7 @@ func Deploy(env *deployer.Environment, opts Options) error {
 		Replicas:          opts.Replicas,
 		PullIfNotPresent:  opts.PullIfNotPresent,
 		CacheResyncPeriod: opts.CacheResyncPeriod,
+		Verbose:           opts.Verbose,
 	})
 	if err != nil {
 		return err
@@ -90,6 +92,7 @@ func Remove(env *deployer.Environment, opts Options) error {
 		Replicas:          opts.Replicas,
 		PullIfNotPresent:  opts.PullIfNotPresent,
 		CacheResyncPeriod: opts.CacheResyncPeriod,
+		Verbose:           opts.Verbose,
 	})
 	if err != nil {
 		return err
