@@ -55,7 +55,7 @@ func TestClone(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc.mf, _ = GetManifests(tc.plat, tc.platVersion, "")
+		tc.mf, _ = GetManifests(tc.plat, tc.platVersion, "", true)
 		cMf := tc.mf.Clone()
 
 		if &cMf == &tc.mf {
@@ -96,7 +96,7 @@ func TestRender(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc.mf, _ = GetManifests(tc.plat, tc.platVersion, "")
+		tc.mf, _ = GetManifests(tc.plat, tc.platVersion, "", true)
 		mfBeforeRender := tc.mf.Clone()
 		uMf, err := tc.mf.Render(RenderOptions{})
 		if err != nil {
@@ -133,7 +133,7 @@ func TestGetManifestsOpenShift(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		mf, err := GetManifests(tc.plat, tc.platVersion, "test")
+		mf, err := GetManifests(tc.plat, tc.platVersion, "test", true)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

@@ -248,7 +248,8 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-				mf, err := rte.GetManifests(platform.Kubernetes, platform.Version("1.23"), ns.Name)
+				enableCRIHooks := true
+				mf, err := rte.GetManifests(platform.Kubernetes, platform.Version("1.23"), ns.Name, enableCRIHooks)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				mf, err = mf.Render(rte.RenderOptions{
 					Namespace: ns.Name,

@@ -444,6 +444,7 @@ func TestMachineConfig(t *testing.T) {
 	type testCase struct {
 		name            string
 		platformVersion platform.Version
+		enableCRIHooks  bool
 		expectedFileNum int
 		expectedUnitNum int
 	}
@@ -461,20 +462,29 @@ func TestMachineConfig(t *testing.T) {
 		{
 			name:            "OCP 4.10",
 			platformVersion: "v4.10",
+			enableCRIHooks:  true,
 			expectedFileNum: 3,
 			expectedUnitNum: 1,
 		},
 		{
 			name:            "OCP 4.11",
 			platformVersion: "v4.11",
+			enableCRIHooks:  true,
 			expectedFileNum: 3,
+			expectedUnitNum: 1,
+		},
+		{
+			name:            "OCP 4.11",
+			platformVersion: "v4.11",
+			enableCRIHooks:  false,
+			expectedFileNum: 1,
 			expectedUnitNum: 1,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			mc, err := MachineConfig(ComponentResourceTopologyExporter, platform.Version(tc.platformVersion))
+			mc, err := MachineConfig(ComponentResourceTopologyExporter, platform.Version(tc.platformVersion), tc.enableCRIHooks)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
