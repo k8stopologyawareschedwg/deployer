@@ -29,7 +29,7 @@ import (
 func GetObjects(opts Options, updaterType, namespace string) ([]client.Object, error) {
 
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
+		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks)
 		if err != nil {
 			return nil, err
 		}
@@ -55,7 +55,7 @@ func GetObjects(opts Options, updaterType, namespace string) ([]client.Object, e
 
 func getCreatableObjects(env *deployer.Environment, opts Options, updaterType, namespace string) ([]deployer.WaitableObject, error) {
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
+		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks)
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +81,7 @@ func getCreatableObjects(env *deployer.Environment, opts Options, updaterType, n
 
 func getDeletableObjects(env *deployer.Environment, opts Options, updaterType, namespace string) ([]deployer.WaitableObject, error) {
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace)
+		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks)
 		if err != nil {
 			return nil, err
 		}

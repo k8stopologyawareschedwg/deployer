@@ -44,24 +44,25 @@ const (
 )
 
 type CommonOptions struct {
-	Debug               bool
-	UserPlatform        platform.Platform
-	UserPlatformVersion platform.Version
-	Log                 logr.Logger
-	DebugLog            logr.Logger
-	Replicas            int
-	RTEConfigData       string
-	PullIfNotPresent    bool
-	UpdaterType         string
-	UpdaterPFPEnable    bool
-	UpdaterNotifEnable  bool
-	UpdaterSyncPeriod   time.Duration
-	UpdaterVerbose      int
-	SchedProfileName    string
-	SchedResyncPeriod   time.Duration
-	rteConfigFile       string
-	plat                string
-	platVer             string
+	Debug                 bool
+	UserPlatform          platform.Platform
+	UserPlatformVersion   platform.Version
+	Log                   logr.Logger
+	DebugLog              logr.Logger
+	Replicas              int
+	RTEConfigData         string
+	PullIfNotPresent      bool
+	UpdaterType           string
+	UpdaterPFPEnable      bool
+	UpdaterNotifEnable    bool
+	UpdaterCRIHooksEnable bool
+	UpdaterSyncPeriod     time.Duration
+	UpdaterVerbose        int
+	SchedProfileName      string
+	SchedResyncPeriod     time.Duration
+	rteConfigFile         string
+	plat                  string
+	platVer               string
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -116,6 +117,7 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
 	flags.StringVar(&commonOpts.UpdaterType, "updater-type", "RTE", "type of updater to deploy - RTE or NFD")
 	flags.BoolVar(&commonOpts.UpdaterPFPEnable, "updater-pfp-enable", true, "toggle PFP support on the updater side.")
 	flags.BoolVar(&commonOpts.UpdaterNotifEnable, "updater-notif-enable", true, "toggle event-based notification support on the updater side.")
+	flags.BoolVar(&commonOpts.UpdaterCRIHooksEnable, "updater-cri-hooks-enable", true, "toggle installation of CRI hooks on the updater side.")
 	flags.DurationVar(&commonOpts.UpdaterSyncPeriod, "updater-sync-period", DefaultUpdaterSyncPeriod, "tune the updater synchronization (nrt update) interval. Use 0 to disable.")
 	flags.IntVar(&commonOpts.UpdaterVerbose, "updater-verbose", 1, "set the updater verbosiness.")
 	flags.StringVar(&commonOpts.SchedProfileName, "sched-profile-name", DefaultSchedulerProfileName, "inject scheduler profile name.")

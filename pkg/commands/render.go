@@ -138,6 +138,7 @@ func makeUpdaterObjects(commonOpts *CommonOptions) ([]client.Object, string, err
 		Platform:        commonOpts.UserPlatform,
 		RTEConfigData:   commonOpts.RTEConfigData,
 		DaemonSet:       daemonSetOptionsFromCommonOptions(commonOpts),
+		EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 	}
 	objs, err := updaters.GetObjects(opts, commonOpts.UpdaterType, namespace)
 	if err != nil {

@@ -40,6 +40,7 @@ type Options struct {
 	WaitCompletion  bool
 	RTEConfigData   string
 	DaemonSet       objectupdate.DaemonSetOptions
+	EnableCRIHooks  bool
 }
 
 func Deploy(env *deployer.Environment, updaterType string, opts Options) error {

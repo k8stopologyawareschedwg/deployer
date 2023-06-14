@@ -95,6 +95,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 				WaitCompletion:  opts.waitCompletion,
 				RTEConfigData:   commonOpts.RTEConfigData,
 				DaemonSet:       daemonSetOptionsFromCommonOptions(commonOpts),
+				EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
@@ -220,6 +221,7 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 				WaitCompletion:  opts.waitCompletion,
 				RTEConfigData:   commonOpts.RTEConfigData,
 				DaemonSet:       daemonSetOptionsFromCommonOptions(commonOpts),
+				EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -329,6 +331,7 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 				WaitCompletion:  opts.waitCompletion,
 				RTEConfigData:   commonOpts.RTEConfigData,
 				DaemonSet:       daemonSetOptionsFromCommonOptions(commonOpts),
+				EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -367,6 +370,7 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 		WaitCompletion:  opts.waitCompletion,
 		RTEConfigData:   commonOpts.RTEConfigData,
 		DaemonSet:       daemonSetOptionsFromCommonOptions(commonOpts),
+		EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 	}); err != nil {
 		return err
 	}
