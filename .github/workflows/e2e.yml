@@ -42,6 +42,7 @@ jobs:
         kind create cluster --config=hack/kind-config-e2e-positive.yaml --image kindest/node:v1.26.4@sha256:f4c0d87be03d6bea69f5e5dc0adb678bb498a190ee5c38422bf751541cebe92e
         kubectl label node kind-worker node-role.kubernetes.io/worker=''
         hack/wait-nodes-ready.sh
+        kubectl describe nodes
 
     - name: run E2E tests
       run: |
@@ -77,6 +78,7 @@ jobs:
         kind create cluster --config=hack/kind-config-e2e-negative.yaml --image kindest/node:v1.26.4@sha256:f4c0d87be03d6bea69f5e5dc0adb678bb498a190ee5c38422bf751541cebe92e
         kubectl label node kind-worker node-role.kubernetes.io/worker=''
         hack/wait-nodes-ready.sh
+        kubectl describe nodes
 
     - name: run E2E tests
       run: |
