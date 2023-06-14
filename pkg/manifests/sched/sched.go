@@ -88,6 +88,7 @@ type RenderOptions struct {
 	PullIfNotPresent  bool
 	ProfileName       string
 	CacheResyncPeriod time.Duration
+	Verbose           int
 }
 
 func (mf Manifests) Render(logger logr.Logger, options RenderOptions) (Manifests, error) {
@@ -104,7 +105,7 @@ func (mf Manifests) Render(logger logr.Logger, options RenderOptions) (Manifests
 		return ret, err
 	}
 
-	schedupdate.SchedulerDeployment(ret.DPScheduler, options.PullIfNotPresent)
+	schedupdate.SchedulerDeployment(ret.DPScheduler, options.PullIfNotPresent, options.Verbose)
 	schedupdate.ControllerDeployment(ret.DPController, options.PullIfNotPresent)
 	if mf.plat == platform.OpenShift {
 		ret.Namespace.Name = NamespaceOpenShift

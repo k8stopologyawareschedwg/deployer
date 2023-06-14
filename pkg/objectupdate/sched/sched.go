@@ -26,6 +26,7 @@ import (
 	schedconfig "k8s.io/kubernetes/pkg/scheduler/apis/config"
 	pluginconfig "sigs.k8s.io/scheduler-plugins/apis/config"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/flagcodec"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 )
@@ -35,9 +36,15 @@ const (
 	schedulerPluginName     = "NodeResourceTopologyMatch"
 )
 
-func SchedulerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool) {
-	dp.Spec.Template.Spec.Containers[0].Image = images.SchedulerPluginSchedulerImage
-	dp.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
+func SchedulerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool, verbose int) {
+	cnt := &dp.Spec.Template.Spec.Containers[0] // shortcut
+
+	cnt.Image = images.SchedulerPluginSchedulerImage
+	cnt.ImagePullPolicy = pullPolicy(pullIfNotPresent)
+
+	flags := flagcodec.ParseArgvKeyValue(cnt.Args)
+	flags.SetOption("--v", fmt.Sprintf("%d", verbose)) // TODO: keep in sync with the manifest (-v vs --v)
+	cnt.Args = flags.Argv()
 }
 
 func ControllerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool) {

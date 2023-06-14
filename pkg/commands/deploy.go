@@ -184,6 +184,7 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 				RTEConfigData:     commonOpts.RTEConfigData,
 				PullIfNotPresent:  commonOpts.PullIfNotPresent,
 				CacheResyncPeriod: commonOpts.SchedResyncPeriod,
+				Verbose:           commonOpts.SchedVerbose,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -294,6 +295,7 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 				RTEConfigData:     commonOpts.RTEConfigData,
 				PullIfNotPresent:  commonOpts.PullIfNotPresent,
 				CacheResyncPeriod: commonOpts.SchedResyncPeriod,
+				Verbose:           commonOpts.SchedVerbose,
 			})
 		},
 		Args: cobra.NoArgs,
@@ -381,6 +383,7 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 		RTEConfigData:     commonOpts.RTEConfigData,
 		PullIfNotPresent:  commonOpts.PullIfNotPresent,
 		CacheResyncPeriod: commonOpts.SchedResyncPeriod,
+		Verbose:           commonOpts.SchedVerbose,
 	}); err != nil {
 		return err
 	}
