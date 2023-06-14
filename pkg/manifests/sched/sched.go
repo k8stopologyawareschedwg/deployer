@@ -88,6 +88,7 @@ type RenderOptions struct {
 	PullIfNotPresent  bool
 	ProfileName       string
 	CacheResyncPeriod time.Duration
+	CtrlPlaneAffinity bool
 	Verbose           int
 }
 
@@ -105,8 +106,8 @@ func (mf Manifests) Render(logger logr.Logger, options RenderOptions) (Manifests
 		return ret, err
 	}
 
-	schedupdate.SchedulerDeployment(ret.DPScheduler, options.PullIfNotPresent, options.Verbose)
-	schedupdate.ControllerDeployment(ret.DPController, options.PullIfNotPresent)
+	schedupdate.SchedulerDeployment(ret.DPScheduler, options.PullIfNotPresent, options.CtrlPlaneAffinity, options.Verbose)
+	schedupdate.ControllerDeployment(ret.DPController, options.PullIfNotPresent, options.CtrlPlaneAffinity)
 	if mf.plat == platform.OpenShift {
 		ret.Namespace.Name = NamespaceOpenShift
 	}

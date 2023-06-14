@@ -29,6 +29,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/flagcodec"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 )
 
 const (
@@ -36,7 +37,7 @@ const (
 	schedulerPluginName     = "NodeResourceTopologyMatch"
 )
 
-func SchedulerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool, verbose int) {
+func SchedulerDeployment(dp *appsv1.Deployment, pullIfNotPresent, ctrlPlaneAffinity bool, verbose int) {
 	cnt := &dp.Spec.Template.Spec.Containers[0] // shortcut
 
 	cnt.Image = images.SchedulerPluginSchedulerImage
@@ -45,11 +46,19 @@ func SchedulerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool, verbose i
 	flags := flagcodec.ParseArgvKeyValue(cnt.Args)
 	flags.SetOption("--v", fmt.Sprintf("%d", verbose)) // TODO: keep in sync with the manifest (-v vs --v)
 	cnt.Args = flags.Argv()
+
+	if ctrlPlaneAffinity {
+		objectupdate.SetPodSchedulerAffinityOnControlPlane(&dp.Spec.Template.Spec)
+	}
 }
 
-func ControllerDeployment(dp *appsv1.Deployment, pullIfNotPresent bool) {
+func ControllerDeployment(dp *appsv1.Deployment, pullIfNotPresent, ctrlPlaneAffinity bool) {
 	dp.Spec.Template.Spec.Containers[0].Image = images.SchedulerPluginControllerImage
 	dp.Spec.Template.Spec.Containers[0].ImagePullPolicy = pullPolicy(pullIfNotPresent)
+
+	if ctrlPlaneAffinity {
+		objectupdate.SetPodSchedulerAffinityOnControlPlane(&dp.Spec.Template.Spec)
+	}
 }
 
 func SchedulerConfig(cm *corev1.ConfigMap, schedulerName string, cacheResyncPeriod time.Duration) error {

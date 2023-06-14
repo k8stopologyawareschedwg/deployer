@@ -65,6 +65,7 @@ func TestSchedulerDeployment(t *testing.T) {
 	type testCase struct {
 		name               string
 		pullIfNotPresent   bool
+		ctrlPlaneAffinity  bool
 		verbose            int
 		expectedRenderedDp string
 	}
@@ -73,11 +74,18 @@ func TestSchedulerDeployment(t *testing.T) {
 		{
 			name:               "defaults",
 			verbose:            4, // TODO: this *IS* the default - see pkg/commands/root.go - but how do we keep this in sync?
+			ctrlPlaneAffinity:  true,
 			expectedRenderedDp: expectedSchedDeploymentDefault,
+		},
+		{
+			name:               "non-affine",
+			verbose:            4, // TODO: this *IS* the default - see pkg/commands/root.go - but how do we keep this in sync?
+			expectedRenderedDp: expectedSchedDeploymentNonAffine,
 		},
 		{
 			name:               "extra-verbose",
 			verbose:            6,
+			ctrlPlaneAffinity:  true,
 			expectedRenderedDp: expectedSchedDeploymentVerbose,
 		},
 	}
@@ -90,7 +98,7 @@ func TestSchedulerDeployment(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			dp := dpRef.DeepCopy()
 
-			SchedulerDeployment(dp, tc.pullIfNotPresent, tc.verbose)
+			SchedulerDeployment(dp, tc.pullIfNotPresent, tc.ctrlPlaneAffinity, tc.verbose)
 			fixSchedulerImage(dp)
 
 			var sb strings.Builder
@@ -132,6 +140,74 @@ profiles:
     args: {}`
 
 const expectedSchedDeploymentDefault string = `---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    component: scheduler
+  name: topology-aware-scheduler
+  namespace: tas-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: scheduler
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        component: scheduler
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Exists
+      containers:
+      - args:
+        - /bin/kube-scheduler
+        - --config=/etc/kubernetes/scheduler-config.yaml
+        - --v=4
+        image: test.com/image:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 10259
+            scheme: HTTPS
+          initialDelaySeconds: 15
+        name: topology-aware-scheduler
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 10259
+            scheme: HTTPS
+        resources:
+          limits:
+            cpu: 200m
+            memory: 500Mi
+          requests:
+            cpu: 200m
+            memory: 500Mi
+        volumeMounts:
+        - mountPath: /etc/kubernetes
+          name: scheduler-config
+          readOnly: true
+      serviceAccountName: topology-aware-scheduler
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+      volumes:
+      - configMap:
+          name: scheduler-config
+        name: scheduler-config
+`
+
+const expectedSchedDeploymentNonAffine string = `---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -206,6 +282,13 @@ spec:
       labels:
         component: scheduler
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Exists
       containers:
       - args:
         - /bin/kube-scheduler
@@ -237,6 +320,11 @@ spec:
           name: scheduler-config
           readOnly: true
       serviceAccountName: topology-aware-scheduler
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
       volumes:
       - configMap:
           name: scheduler-config

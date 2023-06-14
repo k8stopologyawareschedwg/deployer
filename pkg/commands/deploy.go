@@ -84,6 +84,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 				RTEConfigData:     commonOpts.RTEConfigData,
 				PullIfNotPresent:  commonOpts.PullIfNotPresent,
 				CacheResyncPeriod: commonOpts.SchedResyncPeriod,
+				CtrlPlaneAffinity: commonOpts.SchedCtrlPlaneAffinity,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
@@ -184,6 +185,7 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 				RTEConfigData:     commonOpts.RTEConfigData,
 				PullIfNotPresent:  commonOpts.PullIfNotPresent,
 				CacheResyncPeriod: commonOpts.SchedResyncPeriod,
+				CtrlPlaneAffinity: commonOpts.SchedCtrlPlaneAffinity,
 				Verbose:           commonOpts.SchedVerbose,
 			})
 		},
@@ -295,6 +297,7 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 				RTEConfigData:     commonOpts.RTEConfigData,
 				PullIfNotPresent:  commonOpts.PullIfNotPresent,
 				CacheResyncPeriod: commonOpts.SchedResyncPeriod,
+				CtrlPlaneAffinity: commonOpts.SchedCtrlPlaneAffinity,
 				Verbose:           commonOpts.SchedVerbose,
 			})
 		},
@@ -383,6 +386,7 @@ func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
 		RTEConfigData:     commonOpts.RTEConfigData,
 		PullIfNotPresent:  commonOpts.PullIfNotPresent,
 		CacheResyncPeriod: commonOpts.SchedResyncPeriod,
+		CtrlPlaneAffinity: commonOpts.SchedCtrlPlaneAffinity,
 		Verbose:           commonOpts.SchedVerbose,
 	}); err != nil {
 		return err
