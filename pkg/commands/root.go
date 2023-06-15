@@ -32,15 +32,9 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
-)
-
-// TODO: move elsewhere
-const (
-	DefaultSchedulerProfileName  = "topology-aware-scheduler"
-	DefaultSchedulerResyncPeriod = 0 * time.Second
-	DefaultUpdaterSyncPeriod     = 10 * time.Second
 )
 
 type CommonOptions struct {
@@ -119,11 +113,11 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
 	flags.BoolVar(&commonOpts.UpdaterPFPEnable, "updater-pfp-enable", true, "toggle PFP support on the updater side.")
 	flags.BoolVar(&commonOpts.UpdaterNotifEnable, "updater-notif-enable", true, "toggle event-based notification support on the updater side.")
 	flags.BoolVar(&commonOpts.UpdaterCRIHooksEnable, "updater-cri-hooks-enable", true, "toggle installation of CRI hooks on the updater side.")
-	flags.DurationVar(&commonOpts.UpdaterSyncPeriod, "updater-sync-period", DefaultUpdaterSyncPeriod, "tune the updater synchronization (nrt update) interval. Use 0 to disable.")
-	flags.IntVar(&commonOpts.UpdaterVerbose, "updater-verbose", 1, "set the updater verbosiness.")
-	flags.StringVar(&commonOpts.SchedProfileName, "sched-profile-name", DefaultSchedulerProfileName, "inject scheduler profile name.")
-	flags.DurationVar(&commonOpts.SchedResyncPeriod, "sched-resync-period", DefaultSchedulerResyncPeriod, "inject scheduler resync period.")
-	flags.IntVar(&commonOpts.SchedVerbose, "sched-verbose", 4, "set the scheduler verbosiness.")
+	flags.DurationVar(&commonOpts.UpdaterSyncPeriod, "updater-sync-period", updaters.DefaultSyncPeriod, "tune the updater synchronization (nrt update) interval. Use 0 to disable.")
+	flags.IntVar(&commonOpts.UpdaterVerbose, "updater-verbose", updaters.DefaultVerbose, "set the updater verbosiness.")
+	flags.StringVar(&commonOpts.SchedProfileName, "sched-profile-name", sched.DefaultProfileName, "inject scheduler profile name.")
+	flags.DurationVar(&commonOpts.SchedResyncPeriod, "sched-resync-period", sched.DefaultResyncPeriod, "inject scheduler resync period.")
+	flags.IntVar(&commonOpts.SchedVerbose, "sched-verbose", sched.DefaultVerbose, "set the scheduler verbosiness.")
 }
 
 func PostSetupOptions(commonOpts *CommonOptions) error {

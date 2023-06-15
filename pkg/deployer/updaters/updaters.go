@@ -19,6 +19,7 @@ package updaters
 import (
 	"context"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -27,6 +28,11 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
+)
+
+const (
+	DefaultSyncPeriod = 10 * time.Second
+	DefaultVerbose    = 1
 )
 
 const (

@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	pluginconfig "sigs.k8s.io/scheduler-plugins/apis/config"
 
+	depsched "github.com/k8stopologyawareschedwg/deployer/pkg/deployer/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 )
 
@@ -72,7 +73,7 @@ func TestSchedulerDeployment(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:               "defaults",
-			verbose:            4, // TODO: this *IS* the default - see pkg/commands/root.go - but how do we keep this in sync?
+			verbose:            depsched.DefaultVerbose,
 			expectedRenderedDp: expectedSchedDeploymentDefault,
 		},
 		{

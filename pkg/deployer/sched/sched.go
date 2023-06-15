@@ -27,6 +27,12 @@ import (
 	schedmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 )
 
+const (
+	DefaultProfileName  = "topology-aware-scheduler"
+	DefaultResyncPeriod = 0 * time.Second
+	DefaultVerbose      = 4
+)
+
 type Options struct {
 	Platform          platform.Platform
 	WaitCompletion    bool
