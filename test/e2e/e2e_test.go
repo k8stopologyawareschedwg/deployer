@@ -155,6 +155,7 @@ func deploy(updaterType string, pfpEnable bool) error {
 		"deploy",
 		"--rte-config-file=" + filepath.Join(deployerBaseDir, "hack", "rte.yaml"),
 		"--updater-pfp-enable=" + strconv.FormatBool(pfpEnable),
+		"--sched-ctrlplane-affinity=false",
 		"--wait",
 	}
 	if updaterType != "" {

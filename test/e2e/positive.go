@@ -444,7 +444,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 			err = runCmdline(
-				[]string{binPath, "--debug", "deploy", "scheduler-plugin", "--wait"},
+				[]string{binPath, "--debug", "deploy", "scheduler-plugin", "--sched-ctrlplane-affinity=false", "--wait"},
 				"failed to deploy partial components before test started",
 			)
 			if err != nil {
@@ -479,7 +479,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 			err = runCmdline(
-				[]string{binPath, "--debug", "--sched-verbose=9", "deploy", "scheduler-plugin", "--wait"},
+				[]string{binPath, "--debug", "--sched-verbose=9", "deploy", "scheduler-plugin", "--sched-ctrlplane-affinity=false", "--wait"},
 				"failed to deploy partial components before test started",
 			)
 			if err != nil {
