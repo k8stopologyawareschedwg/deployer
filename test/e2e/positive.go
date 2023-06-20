@@ -33,9 +33,12 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 
+	"sigs.k8s.io/yaml"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 
@@ -444,6 +447,9 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 				[]string{binPath, "--debug", "deploy", "scheduler-plugin", "--wait"},
 				"failed to deploy partial components before test started",
 			)
+			if err != nil {
+				dumpSchedulerPods()
+			}
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 			defer func() {
@@ -476,6 +482,9 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 				[]string{binPath, "--debug", "--sched-verbose=9", "deploy", "scheduler-plugin", "--wait"},
 				"failed to deploy partial components before test started",
 			)
+			if err != nil {
+				dumpSchedulerPods()
+			}
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 			defer func() {
@@ -496,6 +505,48 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 		})
 	})
 })
+
+func dumpSchedulerPods() {
+	ns, err := manifests.Namespace(manifests.ComponentSchedulerPlugin)
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+
+	// TODO: autodetect the platform
+	mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+	mfs, err = mfs.Render(logr.Discard(), sched.RenderOptions{
+		Replicas: int32(1),
+	})
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+
+	cli, err := clientutil.New()
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+
+	k8sCli, err := clientutil.NewK8s()
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+
+	ctx := context.Background()
+
+	pods, err := e2epods.GetByDeployment(cli, ctx, *mfs.DPScheduler)
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+
+	klog.Warning(">>> scheduler pod status begin:\n")
+	for idx := range pods {
+		pod := &pods[idx]
+
+		// TODO
+		pod.ManagedFields = nil
+		// TODO
+
+		data, err := yaml.Marshal(pod)
+		gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+
+		klog.Warningf("%s\n---\n", string(data))
+
+		e2epods.LogEventsForPod(k8sCli, ctx, pod.Namespace, pod.Name)
+		klog.Warningf("---\n")
+	}
+	klog.Warning(">>> scheduler pod status end\n")
+}
 
 func expectSchedulerRunning() {
 	ginkgo.By("checking that scheduler plugin is running")
