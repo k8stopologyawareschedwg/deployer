@@ -44,26 +44,27 @@ const (
 )
 
 type CommonOptions struct {
-	Debug                 bool
-	UserPlatform          platform.Platform
-	UserPlatformVersion   platform.Version
-	Log                   logr.Logger
-	DebugLog              logr.Logger
-	Replicas              int
-	RTEConfigData         string
-	PullIfNotPresent      bool
-	UpdaterType           string
-	UpdaterPFPEnable      bool
-	UpdaterNotifEnable    bool
-	UpdaterCRIHooksEnable bool
-	UpdaterSyncPeriod     time.Duration
-	UpdaterVerbose        int
-	SchedProfileName      string
-	SchedResyncPeriod     time.Duration
-	SchedVerbose          int
-	rteConfigFile         string
-	plat                  string
-	platVer               string
+	Debug                  bool
+	UserPlatform           platform.Platform
+	UserPlatformVersion    platform.Version
+	Log                    logr.Logger
+	DebugLog               logr.Logger
+	Replicas               int
+	RTEConfigData          string
+	PullIfNotPresent       bool
+	UpdaterType            string
+	UpdaterPFPEnable       bool
+	UpdaterNotifEnable     bool
+	UpdaterCRIHooksEnable  bool
+	UpdaterSyncPeriod      time.Duration
+	UpdaterVerbose         int
+	SchedProfileName       string
+	SchedResyncPeriod      time.Duration
+	SchedVerbose           int
+	SchedCtrlPlaneAffinity bool
+	rteConfigFile          string
+	plat                   string
+	platVer                string
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -124,6 +125,7 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
 	flags.StringVar(&commonOpts.SchedProfileName, "sched-profile-name", DefaultSchedulerProfileName, "inject scheduler profile name.")
 	flags.DurationVar(&commonOpts.SchedResyncPeriod, "sched-resync-period", DefaultSchedulerResyncPeriod, "inject scheduler resync period.")
 	flags.IntVar(&commonOpts.SchedVerbose, "sched-verbose", 4, "set the scheduler verbosiness.")
+	flags.BoolVar(&commonOpts.SchedCtrlPlaneAffinity, "sched-ctrlplane-affinity", true, "toggle the scheduler control plane affinity.")
 }
 
 func PostSetupOptions(commonOpts *CommonOptions) error {

@@ -177,6 +177,7 @@ func RenderManifests(commonOpts *CommonOptions) error {
 		PullIfNotPresent:  commonOpts.PullIfNotPresent,
 		ProfileName:       commonOpts.SchedProfileName,
 		CacheResyncPeriod: commonOpts.SchedResyncPeriod,
+		CtrlPlaneAffinity: commonOpts.SchedCtrlPlaneAffinity,
 		Verbose:           commonOpts.SchedVerbose,
 	}
 

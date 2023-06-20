@@ -155,6 +155,7 @@ func deploy(updaterType string, pfpEnable bool) error {
 		"deploy",
 		"--rte-config-file=" + filepath.Join(deployerBaseDir, "hack", "rte.yaml"),
 		"--updater-pfp-enable=" + strconv.FormatBool(pfpEnable),
+		"--sched-ctrlplane-affinity=false",
 		"--wait",
 	}
 	if updaterType != "" {
@@ -162,7 +163,11 @@ func deploy(updaterType string, pfpEnable bool) error {
 		cmdline = append(cmdline, updaterArg)
 	}
 	// TODO: use error wrapping
-	return runCmdline(cmdline, "failed to deploy components before test started")
+	err := runCmdline(cmdline, "failed to deploy components before test started")
+	if err != nil {
+		dumpSchedulerPods()
+	}
+	return err
 }
 
 func remove(updaterType string) error {

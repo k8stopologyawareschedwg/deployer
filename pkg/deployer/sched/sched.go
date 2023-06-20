@@ -34,6 +34,7 @@ type Options struct {
 	RTEConfigData     string
 	PullIfNotPresent  bool
 	CacheResyncPeriod time.Duration
+	CtrlPlaneAffinity bool
 	Verbose           int
 }
 
@@ -55,6 +56,7 @@ func Deploy(env *deployer.Environment, opts Options) error {
 		Replicas:          opts.Replicas,
 		PullIfNotPresent:  opts.PullIfNotPresent,
 		CacheResyncPeriod: opts.CacheResyncPeriod,
+		CtrlPlaneAffinity: opts.CtrlPlaneAffinity,
 		Verbose:           opts.Verbose,
 	})
 	if err != nil {
@@ -92,6 +94,7 @@ func Remove(env *deployer.Environment, opts Options) error {
 		Replicas:          opts.Replicas,
 		PullIfNotPresent:  opts.PullIfNotPresent,
 		CacheResyncPeriod: opts.CacheResyncPeriod,
+		CtrlPlaneAffinity: opts.CtrlPlaneAffinity,
 		Verbose:           opts.Verbose,
 	})
 	if err != nil {

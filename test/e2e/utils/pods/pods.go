@@ -24,12 +24,14 @@ import (
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 )
@@ -127,4 +129,19 @@ func GetByRegex(cs client.Client, reg string) ([]*corev1.Pod, error) {
 		}
 	}
 	return ret, nil
+}
+
+func GetByDeployment(cli client.Client, ctx context.Context, deployment appsv1.Deployment) ([]corev1.Pod, error) {
+	podList := &corev1.PodList{}
+	sel, err := metav1.LabelSelectorAsSelector(deployment.Spec.Selector)
+	if err != nil {
+		return nil, err
+	}
+
+	err = cli.List(ctx, podList, &client.ListOptions{Namespace: deployment.Namespace, LabelSelector: sel})
+	if err != nil {
+		return nil, err
+	}
+
+	return podList.Items, nil
 }
