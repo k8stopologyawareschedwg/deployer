@@ -157,7 +157,6 @@ func TestDaemonSet(t *testing.T) {
 		expectedVolumeMounts map[string]string
 	}
 
-	containerPodResourcesSocket := fmt.Sprintf("/%s/kubelet.sock", rtePodresourcesSocketVolumeName)
 	containerHostSysDir := fmt.Sprintf("/%s", rteSysVolumeName)
 	testCases := []testCase{
 		{
@@ -165,18 +164,18 @@ func TestDaemonSet(t *testing.T) {
 			plat: platform.OpenShift,
 			expectedCommandArgs: []string{
 				fmt.Sprintf("--sysfs=%s", containerHostSysDir),
-				fmt.Sprintf("--podresources-socket=unix://%s", containerPodResourcesSocket),
+				fmt.Sprintf("--podresources-socket=unix:///%s/%s", rtePodresourcesDirVolumeName, "kubelet.sock"),
 				fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
 			},
 			expectedVolumes: map[string]string{
-				rteSysVolumeName:                "/sys",
-				rtePodresourcesSocketVolumeName: "/var/lib/kubelet/pod-resources/kubelet.sock",
-				rteNotifierVolumeName:           "/run/rte",
+				rteSysVolumeName:             "/sys",
+				rtePodresourcesDirVolumeName: "/var/lib/kubelet/pod-resources",
+				rteNotifierVolumeName:        "/run/rte",
 			},
 			expectedVolumeMounts: map[string]string{
-				rteSysVolumeName:                containerHostSysDir,
-				rtePodresourcesSocketVolumeName: containerPodResourcesSocket,
-				rteNotifierVolumeName:           fmt.Sprintf("/%s", rteNotifierVolumeName),
+				rteSysVolumeName:             containerHostSysDir,
+				rtePodresourcesDirVolumeName: fmt.Sprintf("/%s", rtePodresourcesDirVolumeName),
+				rteNotifierVolumeName:        fmt.Sprintf("/%s", rteNotifierVolumeName),
 			},
 		},
 		{
@@ -184,22 +183,22 @@ func TestDaemonSet(t *testing.T) {
 			plat: platform.Kubernetes,
 			expectedCommandArgs: []string{
 				fmt.Sprintf("--sysfs=%s", containerHostSysDir),
-				fmt.Sprintf("--podresources-socket=unix://%s", containerPodResourcesSocket),
+				fmt.Sprintf("--podresources-socket=unix:///%s/%s", rtePodresourcesDirVolumeName, "kubelet.sock"),
 				fmt.Sprintf("--kubelet-config-file=/%s/config.yaml", rteKubeletDirVolumeName),
 				fmt.Sprintf("--kubelet-state-dir=/%s", rteKubeletDirVolumeName),
 				fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
 			},
 			expectedVolumes: map[string]string{
-				rteSysVolumeName:                "/sys",
-				rtePodresourcesSocketVolumeName: "/var/lib/kubelet/pod-resources/kubelet.sock",
-				rteKubeletDirVolumeName:         "/var/lib/kubelet",
-				rteNotifierVolumeName:           "/run/rte",
+				rteSysVolumeName:             "/sys",
+				rtePodresourcesDirVolumeName: "/var/lib/kubelet/pod-resources",
+				rteKubeletDirVolumeName:      "/var/lib/kubelet",
+				rteNotifierVolumeName:        "/run/rte",
 			},
 			expectedVolumeMounts: map[string]string{
-				rteSysVolumeName:                containerHostSysDir,
-				rtePodresourcesSocketVolumeName: containerPodResourcesSocket,
-				rteKubeletDirVolumeName:         fmt.Sprintf("/%s", rteKubeletDirVolumeName),
-				rteNotifierVolumeName:           fmt.Sprintf("/%s", rteNotifierVolumeName),
+				rteSysVolumeName:             containerHostSysDir,
+				rtePodresourcesDirVolumeName: fmt.Sprintf("/%s", rtePodresourcesDirVolumeName),
+				rteKubeletDirVolumeName:      fmt.Sprintf("/%s", rteKubeletDirVolumeName),
+				rteNotifierVolumeName:        fmt.Sprintf("/%s", rteNotifierVolumeName),
 			},
 		},
 	}
