@@ -17,18 +17,12 @@
 package nfd
 
 import (
-	"context"
-
-	"github.com/go-logr/logr"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 	nfdupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/nfd"
@@ -92,28 +86,6 @@ func (mf Manifests) ToObjects() []client.Object {
 		mf.CRTopologyUpdater,
 		mf.CRBTopologyUpdater,
 		mf.DSTopologyUpdater,
-	}
-}
-
-func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []deployer.WaitableObject {
-	return []deployer.WaitableObject{
-		{Obj: mf.SATopologyUpdater},
-		{Obj: mf.CRTopologyUpdater},
-		{Obj: mf.CRBTopologyUpdater},
-		{
-			Obj: mf.DSTopologyUpdater,
-			Wait: func(ctx context.Context) error {
-				_, err := wait.With(cli, log).ForDaemonSetReady(ctx, mf.DSTopologyUpdater)
-				return err
-			},
-		},
-	}
-}
-
-func (mf Manifests) ToDeletableObjects(cli client.Client, log logr.Logger) []deployer.WaitableObject {
-	return []deployer.WaitableObject{
-		{Obj: mf.CRBTopologyUpdater},
-		{Obj: mf.CRTopologyUpdater},
 	}
 }
 

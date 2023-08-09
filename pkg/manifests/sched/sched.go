@@ -17,7 +17,6 @@
 package sched
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -30,9 +29,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	rbacupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/rbac"
 	schedupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/sched"
@@ -141,55 +138,6 @@ func (mf Manifests) ToObjects() []client.Object {
 		mf.CRBController,
 		mf.DPController,
 		mf.RBController,
-	}
-}
-
-func (mf Manifests) ToCreatableObjects(cli client.Client, log logr.Logger) []deployer.WaitableObject {
-	return []deployer.WaitableObject{
-		{Obj: mf.Crd},
-		{Obj: mf.Namespace},
-		{Obj: mf.SAScheduler},
-		{Obj: mf.CRScheduler},
-		{Obj: mf.CRBScheduler},
-		{Obj: mf.RBScheduler},
-		{Obj: mf.ConfigMap},
-		{
-			Obj: mf.DPScheduler,
-			Wait: func(ctx context.Context) error {
-				_, err := wait.With(cli, log).ForDeploymentComplete(ctx, mf.DPScheduler)
-				return err
-			},
-		},
-		{Obj: mf.SAController},
-		{Obj: mf.CRController},
-		{Obj: mf.CRBController},
-		{Obj: mf.RBController},
-		{
-			Obj: mf.DPController,
-			Wait: func(ctx context.Context) error {
-				_, err := wait.With(cli, log).ForDeploymentComplete(ctx, mf.DPController)
-				return err
-			},
-		},
-	}
-}
-
-func (mf Manifests) ToDeletableObjects(cli client.Client, log logr.Logger) []deployer.WaitableObject {
-	return []deployer.WaitableObject{
-		{
-			Obj: mf.Namespace,
-			Wait: func(ctx context.Context) error {
-				return wait.With(cli, log).ForNamespaceDeleted(ctx, mf.Namespace.Name)
-			},
-		},
-		// no need to remove objects created inside the namespace we just removed
-		{Obj: mf.CRBScheduler},
-		{Obj: mf.CRScheduler},
-		{Obj: mf.RBScheduler},
-		{Obj: mf.CRBController},
-		{Obj: mf.CRController},
-		{Obj: mf.RBController},
-		{Obj: mf.Crd},
 	}
 }
 

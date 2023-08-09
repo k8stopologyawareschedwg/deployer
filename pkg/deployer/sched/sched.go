@@ -25,6 +25,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	schedmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
+	schedwait "github.com/k8stopologyawareschedwg/deployer/pkg/objectwait/sched"
 )
 
 type Options struct {
@@ -64,7 +65,7 @@ func Deploy(env *deployer.Environment, opts Options) error {
 	}
 	env.Log.V(3).Info("manifests loaded")
 
-	for _, wo := range mf.ToCreatableObjects(env.Cli, env.Log) {
+	for _, wo := range schedwait.Creatable(mf, env.Cli, env.Log) {
 		if err := env.CreateObject(wo.Obj); err != nil {
 			return err
 		}
@@ -102,7 +103,7 @@ func Remove(env *deployer.Environment, opts Options) error {
 	}
 	env.Log.V(3).Info("manifests loaded")
 
-	for _, wo := range mf.ToDeletableObjects(env.Cli, env.Log) {
+	for _, wo := range schedwait.Deletable(mf, env.Cli, env.Log) {
 		err = env.DeleteObject(wo.Obj)
 		if err != nil {
 			continue
