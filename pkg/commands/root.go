@@ -33,6 +33,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 )
 
@@ -62,6 +63,8 @@ type CommonOptions struct {
 	SchedResyncPeriod      time.Duration
 	SchedVerbose           int
 	SchedCtrlPlaneAffinity bool
+	WaitInterval           time.Duration
+	WaitTimeout            time.Duration
 	rteConfigFile          string
 	plat                   string
 	platVer                string
@@ -114,6 +117,8 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
 	flags.BoolVarP(&commonOpts.Debug, "debug", "D", false, "enable debug log")
 	flags.StringVarP(&commonOpts.plat, "platform", "P", "", "platform kind:version to deploy on (example kubernetes:v1.22)")
 	flags.IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
+	flags.DurationVarP(&commonOpts.WaitInterval, "wait-interval", "E", 2*time.Second, "wait interval.")
+	flags.DurationVarP(&commonOpts.WaitTimeout, "wait-timeout", "T", 2*time.Minute, "wait timeout.")
 	flags.BoolVar(&commonOpts.PullIfNotPresent, "pull-if-not-present", false, "force pull policies to IfNotPresent.")
 	flags.StringVar(&commonOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
 	flags.StringVar(&commonOpts.UpdaterType, "updater-type", "RTE", "type of updater to deploy - RTE or NFD")
@@ -136,6 +141,9 @@ func PostSetupOptions(commonOpts *CommonOptions) error {
 	} else {
 		commonOpts.DebugLog = logr.Discard()
 	}
+
+	commonOpts.Log.V(3).Info("global polling interval=%v timeout=%v", commonOpts.WaitInterval, commonOpts.WaitTimeout)
+	wait.SetBaseValues(commonOpts.WaitInterval, commonOpts.WaitTimeout)
 
 	// if it is unknown, it's fine
 	if commonOpts.plat == "" {

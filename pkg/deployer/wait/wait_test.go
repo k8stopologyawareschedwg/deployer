@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
 
 	corev1 "k8s.io/api/core/v1"
@@ -29,6 +30,52 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
+
+func TestSetBaseValues(t *testing.T) {
+	type testCase struct {
+		name     string
+		timeout  time.Duration
+		interval time.Duration
+		expected string
+	}
+	testCases := []testCase{
+		{
+			name:     "enforce defaults",
+			interval: DefaultPollInterval,
+			timeout:  DefaultPollTimeout,
+			expected: "wait every 2s up to 2m0s",
+		},
+		{
+			name:     "override interval",
+			interval: 11 * time.Second,
+			timeout:  DefaultPollTimeout,
+			expected: "wait every 11s up to 2m0s",
+		},
+		{
+			name:     "override timeout",
+			interval: DefaultPollInterval,
+			timeout:  33 * time.Second,
+			expected: "wait every 2s up to 33s",
+		},
+		{
+			name:     "override both interval and timeout",
+			interval: 9 * time.Second,
+			timeout:  42 * time.Second,
+			expected: "wait every 9s up to 42s",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			SetBaseValues(tc.interval, tc.timeout)
+			wt := With(nil, logr.Discard())
+			got := wt.String()
+			if got != tc.expected {
+				t.Errorf("default values mismatch got [%s] expected [%s]", got, tc.expected)
+			}
+		})
+	}
+}
 
 func TestForNamespaceDeleted(t *testing.T) {
 	type testCase struct {

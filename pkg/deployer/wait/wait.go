@@ -38,6 +38,16 @@ const (
 	DefaultPollTimeout  = 2 * time.Minute
 )
 
+var (
+	basePollInterval = DefaultPollInterval
+	basePollTimeout  = DefaultPollTimeout
+)
+
+func SetBaseValues(interval, timeout time.Duration) {
+	basePollInterval = interval
+	basePollTimeout = timeout
+}
+
 type ObjectKey struct {
 	Namespace string
 	Name      string
@@ -69,9 +79,13 @@ func With(cli client.Client, log logr.Logger) *Waiter {
 	return &Waiter{
 		Cli:          cli,
 		Log:          log,
-		PollTimeout:  DefaultPollTimeout,
-		PollInterval: DefaultPollInterval,
+		PollTimeout:  basePollTimeout,
+		PollInterval: basePollInterval,
 	}
+}
+
+func (wt *Waiter) String() string {
+	return fmt.Sprintf("wait every %v up to %v", wt.PollInterval, wt.PollTimeout)
 }
 
 func (wt *Waiter) Timeout(tt time.Duration) *Waiter {
