@@ -39,7 +39,7 @@ func Setup(getImage func(string) (string, bool)) {
 
 var (
 	SchedulerPluginSchedulerImage  = SchedulerPluginSchedulerDefaultImageTag
-	SchedulerPluginControllerImage = SchedulerPluginSchedulerDefaultImageTag
+	SchedulerPluginControllerImage = SchedulerPluginControllerDefaultImageTag
 	ResourceTopologyExporterImage  = ResourceTopologyExporterDefaultImageTag
 	NodeFeatureDiscoveryImage      = NodeFeatureDiscoveryDefaultImageTag
 )
