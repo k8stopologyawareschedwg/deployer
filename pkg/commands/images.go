@@ -28,6 +28,7 @@ import (
 type ImagesOptions struct {
 	jsonOutput bool
 	rawOutput  bool
+	useSHA     bool
 }
 
 func NewImagesCommand(commonOpts *CommonOptions) *cobra.Command {
@@ -36,6 +37,7 @@ func NewImagesCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "images",
 		Short: "dump the container images used to deploy",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			images.SetDefaults(opts.useSHA)
 			updaterImage := getUpdaterImage(commonOpts.UpdaterType)
 			fk := images.FormatText
 			if opts.jsonOutput {
@@ -53,12 +55,13 @@ func NewImagesCommand(commonOpts *CommonOptions) *cobra.Command {
 	}
 	images.Flags().BoolVarP(&opts.jsonOutput, "json", "J", false, "output JSON, not text (default).")
 	images.Flags().BoolVarP(&opts.rawOutput, "raw", "r", false, "output raw list. Default is key=value object.")
+	images.Flags().BoolVarP(&opts.useSHA, "sha", "S", false, "emit SHA256 pullspects, not tag pullspecs.")
 	return images
 }
 
 func getUpdaterImage(updaterType string) string {
 	if updaterType == updaters.RTE {
-		return images.ResourceTopologyExporterDefaultImageTag
+		return images.ResourceTopologyExporterImage
 	}
-	return images.NodeFeatureDiscoveryDefaultImageTag
+	return images.NodeFeatureDiscoveryImage
 }
