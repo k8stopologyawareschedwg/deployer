@@ -27,6 +27,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/objectwait"
 )
 
 const (
@@ -59,7 +60,7 @@ func Deploy(env *deployer.Environment, updaterType string, opts Options) error {
 
 	env.Log.V(3).Info("manifests loaded")
 
-	objs = append([]deployer.WaitableObject{{Obj: ns}}, objs...)
+	objs = append([]objectwait.WaitableObject{{Obj: ns}}, objs...)
 
 	for _, wo := range objs {
 		if err := env.CreateObject(wo.Obj); err != nil {
@@ -95,7 +96,7 @@ func Remove(env *deployer.Environment, updaterType string, opts Options) error {
 
 	env.Log.V(3).Info("%s manifests loaded")
 
-	objs = append(objs, deployer.WaitableObject{
+	objs = append(objs, objectwait.WaitableObject{
 		Obj:  ns,
 		Wait: func(ctx context.Context) error { return wait.With(env.Cli, env.Log).ForNamespaceDeleted(ctx, ns.Name) },
 	})

@@ -24,6 +24,9 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	nfdmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/nfd"
 	rtemanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/objectwait"
+	nfdwait "github.com/k8stopologyawareschedwg/deployer/pkg/objectwait/nfd"
+	rtewait "github.com/k8stopologyawareschedwg/deployer/pkg/objectwait/rte"
 )
 
 func GetObjects(opts Options, updaterType, namespace string) ([]client.Object, error) {
@@ -53,7 +56,7 @@ func GetObjects(opts Options, updaterType, namespace string) ([]client.Object, e
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }
 
-func getCreatableObjects(env *deployer.Environment, opts Options, updaterType, namespace string) ([]deployer.WaitableObject, error) {
+func getCreatableObjects(env *deployer.Environment, opts Options, updaterType, namespace string) ([]objectwait.WaitableObject, error) {
 	if updaterType == RTE {
 		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks)
 		if err != nil {
@@ -63,7 +66,7 @@ func getCreatableObjects(env *deployer.Environment, opts Options, updaterType, n
 		if err != nil {
 			return nil, err
 		}
-		return ret.ToCreatableObjects(env.Cli, env.Log), nil
+		return rtewait.Creatable(ret, env.Cli, env.Log), nil
 	}
 	if updaterType == NFD {
 		mf, err := nfdmanifests.GetManifests(opts.Platform, namespace)
@@ -74,12 +77,12 @@ func getCreatableObjects(env *deployer.Environment, opts Options, updaterType, n
 		if err != nil {
 			return nil, err
 		}
-		return ret.ToCreatableObjects(env.Cli, env.Log), nil
+		return nfdwait.Creatable(ret, env.Cli, env.Log), nil
 	}
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }
 
-func getDeletableObjects(env *deployer.Environment, opts Options, updaterType, namespace string) ([]deployer.WaitableObject, error) {
+func getDeletableObjects(env *deployer.Environment, opts Options, updaterType, namespace string) ([]objectwait.WaitableObject, error) {
 	if updaterType == RTE {
 		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks)
 		if err != nil {
@@ -89,7 +92,7 @@ func getDeletableObjects(env *deployer.Environment, opts Options, updaterType, n
 		if err != nil {
 			return nil, err
 		}
-		return ret.ToDeletableObjects(env.Cli, env.Log), nil
+		return rtewait.Deletable(ret, env.Cli, env.Log), nil
 	}
 	if updaterType == NFD {
 		mf, err := nfdmanifests.GetManifests(opts.Platform, namespace)
@@ -100,7 +103,7 @@ func getDeletableObjects(env *deployer.Environment, opts Options, updaterType, n
 		if err != nil {
 			return nil, err
 		}
-		return ret.ToDeletableObjects(env.Cli, env.Log), nil
+		return nfdwait.Deletable(ret, env.Cli, env.Log), nil
 	}
 	return nil, fmt.Errorf("unsupported updater: %q", updaterType)
 }

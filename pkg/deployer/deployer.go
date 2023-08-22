@@ -24,11 +24,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type WaitableObject struct {
-	Obj  client.Object
-	Wait func(ctx context.Context) error
-}
-
 type Environment struct {
 	Ctx context.Context
 	Cli client.Client
