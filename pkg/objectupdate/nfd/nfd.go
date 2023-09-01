@@ -18,6 +18,7 @@ package nfd
 
 import (
 	"fmt"
+	"strconv"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -42,9 +43,8 @@ func UpdaterDaemonSet(ds *appsv1.DaemonSet, opts objectupdate.DaemonSetOptions) 
 		} else {
 			flags.Delete("--sleep-interval")
 		}
-		if opts.PFPEnable {
-			flags.SetToggle("--pods-fingerprint")
-		}
+
+		flags.SetOption("--pods-fingerprint", strconv.FormatBool(opts.PFPEnable))
 
 		// we need to explicitely disable the kubelet state dir monitoring, which is opt-out
 		flags.SetOption("--kubelet-state-dir", "")

@@ -131,9 +131,9 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer render", func() {
 
 					text := string(out)
 					// TODO: pretty crude. We should do something smarter
-					haveFlag := strings.Contains(text, "--pods-fingerprint")
-					desc := fmt.Sprintf("pods fingerprinting got %v expected %v", haveFlag, expected)
-					gomega.Expect(haveFlag).To(gomega.Equal(expected), desc)
+					haveFlag := strings.Contains(text, fmt.Sprintf("--pods-fingerprint=%v", strconv.FormatBool(expected)))
+					desc := fmt.Sprintf("pods fingerprinting setting found=%v", haveFlag)
+					gomega.Expect(haveFlag).To(gomega.BeTrue(), desc)
 				},
 				ginkgo.Entry("RTE pfp on", "RTE", true),
 				ginkgo.Entry("NFD pfp on", "NFD", true),
