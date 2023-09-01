@@ -185,7 +185,6 @@ func TestDaemonSet(t *testing.T) {
 				fmt.Sprintf("--sysfs=%s", containerHostSysDir),
 				fmt.Sprintf("--podresources-socket=unix:///%s/%s", rtePodresourcesDirVolumeName, "kubelet.sock"),
 				fmt.Sprintf("--kubelet-config-file=/%s/config.yaml", rteKubeletDirVolumeName),
-				fmt.Sprintf("--kubelet-state-dir=/%s", rteKubeletDirVolumeName),
 				fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
 			},
 			expectedVolumes: map[string]string{

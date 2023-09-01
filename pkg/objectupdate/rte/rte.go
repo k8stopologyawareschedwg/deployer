@@ -138,9 +138,6 @@ func DaemonSet(ds *appsv1.DaemonSet, plat platform.Platform, configMapName strin
 		}
 		if plat == platform.Kubernetes {
 			flags.SetOption("--kubelet-config-file", fmt.Sprintf("/%s/config.yaml", rteKubeletDirVolumeName))
-			if opts.NotificationEnable {
-				flags.SetOption("--kubelet-state-dir", fmt.Sprintf("/%s", rteKubeletDirVolumeName))
-			}
 		}
 		cntSpec.Args = flags.Argv()
 
