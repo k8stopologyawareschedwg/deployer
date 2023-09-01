@@ -279,7 +279,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 					ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
 
 					// the name of the nrt object is the same as the worker node's name
-					_ = getNodeResourceTopology(tc, mf.DaemonSet.Namespace, node.Name, func(nrt *v1alpha2.NodeResourceTopology) error {
+					_ = getNodeResourceTopology(tc, node.Name, func(nrt *v1alpha2.NodeResourceTopology) error {
 						if err := checkHasCPU(nrt); err != nil {
 							return err
 						}
@@ -374,7 +374,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 					ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
 
 					// the name of the nrt object is the same as the worker node's name
-					_ = getNodeResourceTopology(tc, mf.DSTopologyUpdater.Namespace, node.Name, func(nrt *v1alpha2.NodeResourceTopology) error {
+					_ = getNodeResourceTopology(tc, node.Name, func(nrt *v1alpha2.NodeResourceTopology) error {
 						if err := checkHasCPU(nrt); err != nil {
 							return err
 						}

@@ -33,6 +33,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 	nrtattrv1alpha2 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2/helper/attribute"
@@ -42,6 +43,7 @@ import (
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/stringify"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/validator"
 )
 
@@ -123,29 +125,56 @@ func checkLacksPFP(nrt *v1alpha2.NodeResourceTopology) error {
 	return nil
 }
 
-func getNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name string, filterFunc func(nrt *v1alpha2.NodeResourceTopology) error) *v1alpha2.NodeResourceTopology {
+func getNodeResourceTopology(tc topologyclientset.Interface, name string, filterFunc func(nrt *v1alpha2.NodeResourceTopology) error) *v1alpha2.NodeResourceTopology {
 	var err error
 	var nrt *v1alpha2.NodeResourceTopology
-	fmt.Fprintf(ginkgo.GinkgoWriter, "looking for noderesourcetopology %q in namespace %q\n", name, namespace)
-	gomega.EventuallyWithOffset(1, func() error {
+	fmt.Fprintf(ginkgo.GinkgoWriter, "looking for noderesourcetopology %q\n", name)
+	err = wait.PollImmediate(5*time.Second, 1*time.Minute, func() (bool, error) {
 		nrt, err = tc.TopologyV1alpha2().NodeResourceTopologies().Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
-			return err
+			return false, err
 		}
-		return filterFunc(nrt)
-	}).WithTimeout(1 * time.Minute).WithPolling(5 * time.Second).ShouldNot(gomega.HaveOccurred())
+		err = filterFunc(nrt)
+		if err != nil {
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		dumpNRT(tc)
+	}
 	return nrt
 }
 
-func ensureNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name string, filterFunc func(nrt *v1alpha2.NodeResourceTopology) error) {
-	fmt.Fprintf(ginkgo.GinkgoWriter, "ensuring predicate for noderesourcetopology %q in namespace %q\n", name, namespace)
-	gomega.ConsistentlyWithOffset(1, func() error {
-		nrt, err := tc.TopologyV1alpha2().NodeResourceTopologies().Get(context.TODO(), name, metav1.GetOptions{})
+func ensureNodeResourceTopology(tc topologyclientset.Interface, name string, filterFunc func(nrt *v1alpha2.NodeResourceTopology) error) error {
+	fmt.Fprintf(ginkgo.GinkgoWriter, "ensuring predicate for noderesourcetopology %q\n", name)
+	var err error
+	var nrt *v1alpha2.NodeResourceTopology
+	for attempt := 0; attempt <= 12; attempt++ {
+		nrt, err = tc.TopologyV1alpha2().NodeResourceTopologies().Get(context.TODO(), name, metav1.GetOptions{})
 		if err != nil {
-			return err
+			break
 		}
-		return filterFunc(nrt)
-	}).WithTimeout(1 * time.Minute).WithPolling(5 * time.Second).ShouldNot(gomega.HaveOccurred())
+		err = filterFunc(nrt)
+		if err != nil {
+			break
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+	if err != nil {
+		dumpNRT(tc)
+	}
+	return err
+}
+
+func dumpNRT(tc topologyclientset.Interface) {
+	nrts, err := tc.TopologyV1alpha2().NodeResourceTopologies().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		fmt.Fprintf(ginkgo.GinkgoWriter, "cannot dump NRTs in the cluster: %v\n", err)
+		return
+	}
+	fmt.Fprintf(ginkgo.GinkgoWriter, "%s\n", stringify.NodeResourceTopologyList(nrts.Items, "cluster NRTs"))
 }
 
 func deploy(updaterType string, pfpEnable bool) error {
