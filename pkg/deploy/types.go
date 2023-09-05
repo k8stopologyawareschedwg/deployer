@@ -40,4 +40,7 @@ type Options struct {
 	SchedCtrlPlaneAffinity bool
 	WaitInterval           time.Duration
 	WaitTimeout            time.Duration
+	ClusterPlatform        platform.Platform
+	ClusterVersion         platform.Version
+	WaitCompletion         bool
 }

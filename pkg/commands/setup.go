@@ -23,7 +23,6 @@ import (
 )
 
 func NewSetupCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
-	depOpts := &DeployOptions{}
 	valOpts := &validateOptions{
 		outputMode: ValidateOutputLog,
 	}
@@ -34,7 +33,7 @@ func NewSetupCommand(env *deployer.Environment, commonOpts *deploy.Options) *cob
 			if err := validateCluster(cmd, env, commonOpts, valOpts, args); err != nil {
 				return err
 			}
-			return deployOnCluster(env, commonOpts, depOpts)
+			return deployOnCluster(env, commonOpts)
 		},
 		Args: cobra.NoArgs,
 	}
