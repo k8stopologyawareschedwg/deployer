@@ -28,6 +28,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deploy"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
@@ -42,26 +43,6 @@ const (
 	DefaultUpdaterSyncPeriod     = 10 * time.Second
 )
 
-type CommonOptions struct {
-	UserPlatform           platform.Platform
-	UserPlatformVersion    platform.Version
-	Replicas               int
-	RTEConfigData          string
-	PullIfNotPresent       bool
-	UpdaterType            string
-	UpdaterPFPEnable       bool
-	UpdaterNotifEnable     bool
-	UpdaterCRIHooksEnable  bool
-	UpdaterSyncPeriod      time.Duration
-	UpdaterVerbose         int
-	SchedProfileName       string
-	SchedResyncPeriod      time.Duration
-	SchedVerbose           int
-	SchedCtrlPlaneAffinity bool
-	WaitInterval           time.Duration
-	WaitTimeout            time.Duration
-}
-
 type internalOptions struct {
 	rteConfigFile string
 	plat          string
@@ -73,7 +54,7 @@ func ShowHelp(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-type NewCommandFunc func(ev *deployer.Environment, ko *CommonOptions) *cobra.Command
+type NewCommandFunc func(ev *deployer.Environment, ko *deploy.Options) *cobra.Command
 
 // NewRootCommand returns entrypoint command to interact with all other commands
 func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
@@ -82,7 +63,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 		Log: stdr.New(log.New(os.Stderr, "", log.LstdFlags)),
 	}
 	internalOpts := internalOptions{}
-	commonOpts := CommonOptions{}
+	commonOpts := deploy.Options{}
 
 	root := &cobra.Command{
 		Use:   "deployer",
@@ -116,7 +97,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	return root
 }
 
-func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions, internalOpts *internalOptions) {
+func InitFlags(flags *pflag.FlagSet, commonOpts *deploy.Options, internalOpts *internalOptions) {
 	flags.StringVarP(&internalOpts.plat, "platform", "P", "", "platform kind:version to deploy on (example kubernetes:v1.22)")
 	flags.StringVar(&internalOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
 
@@ -136,7 +117,7 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions, internalOpts *in
 	flags.BoolVar(&commonOpts.SchedCtrlPlaneAffinity, "sched-ctrlplane-affinity", true, "toggle the scheduler control plane affinity.")
 }
 
-func PostSetupOptions(env *deployer.Environment, commonOpts *CommonOptions, internalOpts *internalOptions) error {
+func PostSetupOptions(env *deployer.Environment, commonOpts *deploy.Options, internalOpts *internalOptions) error {
 	env.Log.V(3).Info("global polling interval=%v timeout=%v", commonOpts.WaitInterval, commonOpts.WaitTimeout)
 	wait.SetBaseValues(commonOpts.WaitInterval, commonOpts.WaitTimeout)
 
@@ -173,7 +154,7 @@ func validateUpdaterType(updaterType string) error {
 	return nil
 }
 
-func daemonSetOptionsFromCommonOptions(commonOpts *CommonOptions) objectupdate.DaemonSetOptions {
+func daemonSetOptionsFrom(commonOpts *deploy.Options) objectupdate.DaemonSetOptions {
 	return objectupdate.DaemonSetOptions{
 		PullIfNotPresent:   commonOpts.PullIfNotPresent,
 		PFPEnable:          commonOpts.UpdaterPFPEnable,

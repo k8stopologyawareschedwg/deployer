@@ -21,6 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deploy"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
 )
@@ -29,7 +30,7 @@ type detectOptions struct {
 	jsonOutput bool
 }
 
-func NewDetectCommand(env *deployer.Environment, commonOpts *CommonOptions) *cobra.Command {
+func NewDetectCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
 	opts := &detectOptions{}
 	detect := &cobra.Command{
 		Use:   "detect",

@@ -25,6 +25,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil/nodes"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deploy"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/validator"
 )
@@ -43,7 +44,7 @@ type validateOptions struct {
 	jsonOutput bool
 }
 
-func NewValidateCommand(env *deployer.Environment, commonOpts *CommonOptions) *cobra.Command {
+func NewValidateCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
 	opts := &validateOptions{}
 	validate := &cobra.Command{
 		Use:   "validate",
@@ -73,7 +74,7 @@ type validationOutput struct {
 	Errors  []validator.ValidationResult `json:"errors,omitempty"`
 }
 
-func validateCluster(cmd *cobra.Command, env *deployer.Environment, commonOpts *CommonOptions, opts *validateOptions, args []string) error {
+func validateCluster(cmd *cobra.Command, env *deployer.Environment, commonOpts *deploy.Options, opts *validateOptions, args []string) error {
 	// TODO
 	validatePostSetupOptions(opts)
 

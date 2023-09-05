@@ -21,6 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deploy"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
@@ -35,7 +36,7 @@ type DeployOptions struct {
 	waitCompletion  bool
 }
 
-func NewDeployCommand(env *deployer.Environment, commonOpts *CommonOptions) *cobra.Command {
+func NewDeployCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
 	opts := &DeployOptions{}
 	deploy := &cobra.Command{
 		Use:   "deploy",
@@ -52,7 +53,7 @@ func NewDeployCommand(env *deployer.Environment, commonOpts *CommonOptions) *cob
 	return deploy
 }
 
-func NewRemoveCommand(env *deployer.Environment, commonOpts *CommonOptions) *cobra.Command {
+func NewRemoveCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
 	opts := &DeployOptions{}
 	remove := &cobra.Command{
 		Use:   "remove",
@@ -94,7 +95,7 @@ func NewRemoveCommand(env *deployer.Environment, commonOpts *CommonOptions) *cob
 				PlatformVersion: opts.clusterVersion,
 				WaitCompletion:  opts.waitCompletion,
 				RTEConfigData:   commonOpts.RTEConfigData,
-				DaemonSet:       daemonSetOptionsFromCommonOptions(commonOpts),
+				DaemonSet:       daemonSetOptionsFrom(commonOpts),
 				EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 			})
 			if err != nil {
@@ -119,7 +120,7 @@ func NewRemoveCommand(env *deployer.Environment, commonOpts *CommonOptions) *cob
 	return remove
 }
 
-func NewDeployAPICommand(env *deployer.Environment, commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
+func NewDeployAPICommand(env *deployer.Environment, commonOpts *deploy.Options, opts *DeployOptions) *cobra.Command {
 	deploy := &cobra.Command{
 		Use:   "api",
 		Short: "deploy the APIs needed for topology-aware-scheduling",
@@ -150,7 +151,7 @@ func NewDeployAPICommand(env *deployer.Environment, commonOpts *CommonOptions, o
 	return deploy
 }
 
-func NewDeploySchedulerPluginCommand(env *deployer.Environment, commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
+func NewDeploySchedulerPluginCommand(env *deployer.Environment, commonOpts *deploy.Options, opts *DeployOptions) *cobra.Command {
 	deploy := &cobra.Command{
 		Use:   "scheduler-plugin",
 		Short: "deploy the scheduler plugin needed for topology-aware-scheduling",
@@ -189,7 +190,7 @@ func NewDeploySchedulerPluginCommand(env *deployer.Environment, commonOpts *Comm
 	return deploy
 }
 
-func NewDeployTopologyUpdaterCommand(env *deployer.Environment, commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
+func NewDeployTopologyUpdaterCommand(env *deployer.Environment, commonOpts *deploy.Options, opts *DeployOptions) *cobra.Command {
 	deploy := &cobra.Command{
 		Use:   "topology-updater",
 		Short: "deploy the topology updater needed for topology-aware-scheduling",
@@ -217,7 +218,7 @@ func NewDeployTopologyUpdaterCommand(env *deployer.Environment, commonOpts *Comm
 				PlatformVersion: opts.clusterVersion,
 				WaitCompletion:  opts.waitCompletion,
 				RTEConfigData:   commonOpts.RTEConfigData,
-				DaemonSet:       daemonSetOptionsFromCommonOptions(commonOpts),
+				DaemonSet:       daemonSetOptionsFrom(commonOpts),
 				EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 			})
 		},
@@ -226,7 +227,7 @@ func NewDeployTopologyUpdaterCommand(env *deployer.Environment, commonOpts *Comm
 	return deploy
 }
 
-func NewRemoveAPICommand(env *deployer.Environment, commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
+func NewRemoveAPICommand(env *deployer.Environment, commonOpts *deploy.Options, opts *DeployOptions) *cobra.Command {
 	remove := &cobra.Command{
 		Use:   "api",
 		Short: "remove the APIs needed for topology-aware-scheduling",
@@ -259,7 +260,7 @@ func NewRemoveAPICommand(env *deployer.Environment, commonOpts *CommonOptions, o
 	return remove
 }
 
-func NewRemoveSchedulerPluginCommand(env *deployer.Environment, commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
+func NewRemoveSchedulerPluginCommand(env *deployer.Environment, commonOpts *deploy.Options, opts *DeployOptions) *cobra.Command {
 	remove := &cobra.Command{
 		Use:   "scheduler-plugin",
 		Short: "remove the scheduler plugin needed for topology-aware-scheduling",
@@ -298,7 +299,7 @@ func NewRemoveSchedulerPluginCommand(env *deployer.Environment, commonOpts *Comm
 	return remove
 }
 
-func NewRemoveTopologyUpdaterCommand(env *deployer.Environment, commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
+func NewRemoveTopologyUpdaterCommand(env *deployer.Environment, commonOpts *deploy.Options, opts *DeployOptions) *cobra.Command {
 	remove := &cobra.Command{
 		Use:   "topology-updater",
 		Short: "remove the topology updater needed for topology-aware-scheduling",
@@ -326,7 +327,7 @@ func NewRemoveTopologyUpdaterCommand(env *deployer.Environment, commonOpts *Comm
 				PlatformVersion: opts.clusterVersion,
 				WaitCompletion:  opts.waitCompletion,
 				RTEConfigData:   commonOpts.RTEConfigData,
-				DaemonSet:       daemonSetOptionsFromCommonOptions(commonOpts),
+				DaemonSet:       daemonSetOptionsFrom(commonOpts),
 				EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 			})
 		},
@@ -335,7 +336,7 @@ func NewRemoveTopologyUpdaterCommand(env *deployer.Environment, commonOpts *Comm
 	return remove
 }
 
-func deployOnCluster(env *deployer.Environment, commonOpts *CommonOptions, opts *DeployOptions) error {
+func deployOnCluster(env *deployer.Environment, commonOpts *deploy.Options, opts *DeployOptions) error {
 	if err := env.EnsureClient(); err != nil {
 		return err
 	}
@@ -362,7 +363,7 @@ func deployOnCluster(env *deployer.Environment, commonOpts *CommonOptions, opts 
 		PlatformVersion: opts.clusterVersion,
 		WaitCompletion:  opts.waitCompletion,
 		RTEConfigData:   commonOpts.RTEConfigData,
-		DaemonSet:       daemonSetOptionsFromCommonOptions(commonOpts),
+		DaemonSet:       daemonSetOptionsFrom(commonOpts),
 		EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 	}); err != nil {
 		return err

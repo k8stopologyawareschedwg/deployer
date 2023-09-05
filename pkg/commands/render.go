@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deploy"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
@@ -33,7 +34,7 @@ import (
 
 type RenderOptions struct{}
 
-func NewRenderCommand(env *deployer.Environment, commonOpts *CommonOptions) *cobra.Command {
+func NewRenderCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
 	opts := &RenderOptions{}
 	render := &cobra.Command{
 		Use:   "render",
@@ -52,7 +53,7 @@ func NewRenderCommand(env *deployer.Environment, commonOpts *CommonOptions) *cob
 	return render
 }
 
-func NewRenderAPICommand(env *deployer.Environment, commonOpts *CommonOptions, opts *RenderOptions) *cobra.Command {
+func NewRenderAPICommand(env *deployer.Environment, commonOpts *deploy.Options, opts *RenderOptions) *cobra.Command {
 	render := &cobra.Command{
 		Use:   "api",
 		Short: "render the APIs needed for topology-aware-scheduling",
@@ -75,7 +76,7 @@ func NewRenderAPICommand(env *deployer.Environment, commonOpts *CommonOptions, o
 	return render
 }
 
-func NewRenderSchedulerPluginCommand(env *deployer.Environment, commonOpts *CommonOptions, opts *RenderOptions) *cobra.Command {
+func NewRenderSchedulerPluginCommand(env *deployer.Environment, commonOpts *deploy.Options, opts *RenderOptions) *cobra.Command {
 	render := &cobra.Command{
 		Use:   "scheduler-plugin",
 		Short: "render the scheduler plugin needed for topology-aware-scheduling",
@@ -109,7 +110,7 @@ func NewRenderSchedulerPluginCommand(env *deployer.Environment, commonOpts *Comm
 	return render
 }
 
-func NewRenderTopologyUpdaterCommand(env *deployer.Environment, commonOpts *CommonOptions, opts *RenderOptions) *cobra.Command {
+func NewRenderTopologyUpdaterCommand(env *deployer.Environment, commonOpts *deploy.Options, opts *RenderOptions) *cobra.Command {
 	render := &cobra.Command{
 		Use:   "topology-updater",
 		Short: "render the topology updater needed for topology-aware-scheduling",
@@ -128,7 +129,7 @@ func NewRenderTopologyUpdaterCommand(env *deployer.Environment, commonOpts *Comm
 	return render
 }
 
-func makeUpdaterObjects(commonOpts *CommonOptions) ([]client.Object, string, error) {
+func makeUpdaterObjects(commonOpts *deploy.Options) ([]client.Object, string, error) {
 	ns, namespace, err := updaters.SetupNamespace(commonOpts.UpdaterType)
 	if err != nil {
 		return nil, namespace, err
@@ -138,7 +139,7 @@ func makeUpdaterObjects(commonOpts *CommonOptions) ([]client.Object, string, err
 		PlatformVersion: commonOpts.UserPlatformVersion,
 		Platform:        commonOpts.UserPlatform,
 		RTEConfigData:   commonOpts.RTEConfigData,
-		DaemonSet:       daemonSetOptionsFromCommonOptions(commonOpts),
+		DaemonSet:       daemonSetOptionsFrom(commonOpts),
 		EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 	}
 	objs, err := updaters.GetObjects(opts, commonOpts.UpdaterType, namespace)
@@ -149,7 +150,7 @@ func makeUpdaterObjects(commonOpts *CommonOptions) ([]client.Object, string, err
 	return append([]client.Object{ns}, objs...), namespace, nil
 }
 
-func RenderManifests(env *deployer.Environment, commonOpts *CommonOptions) error {
+func RenderManifests(env *deployer.Environment, commonOpts *deploy.Options) error {
 	var objs []client.Object
 
 	apiManifests, err := api.GetManifests(commonOpts.UserPlatform)
