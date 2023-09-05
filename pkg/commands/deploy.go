@@ -35,7 +35,7 @@ func NewDeployCommand(env *deployer.Environment, commonOpts *deploy.Options) *co
 		Use:   "deploy",
 		Short: "deploy the components and configurations needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return deployOnCluster(env, commonOpts)
+			return deploy.OnCluster(env, commonOpts)
 		},
 		Args: cobra.NoArgs,
 	}
@@ -87,7 +87,7 @@ func NewRemoveCommand(env *deployer.Environment, commonOpts *deploy.Options) *co
 				PlatformVersion: commonOpts.ClusterVersion,
 				WaitCompletion:  commonOpts.WaitCompletion,
 				RTEConfigData:   commonOpts.RTEConfigData,
-				DaemonSet:       daemonSetOptionsFrom(commonOpts),
+				DaemonSet:       deploy.DaemonSetOptionsFrom(commonOpts),
 				EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 			})
 			if err != nil {
@@ -210,7 +210,7 @@ func NewDeployTopologyUpdaterCommand(env *deployer.Environment, commonOpts *depl
 				PlatformVersion: commonOpts.ClusterVersion,
 				WaitCompletion:  commonOpts.WaitCompletion,
 				RTEConfigData:   commonOpts.RTEConfigData,
-				DaemonSet:       daemonSetOptionsFrom(commonOpts),
+				DaemonSet:       deploy.DaemonSetOptionsFrom(commonOpts),
 				EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 			})
 		},
@@ -319,58 +319,11 @@ func NewRemoveTopologyUpdaterCommand(env *deployer.Environment, commonOpts *depl
 				PlatformVersion: commonOpts.ClusterVersion,
 				WaitCompletion:  commonOpts.WaitCompletion,
 				RTEConfigData:   commonOpts.RTEConfigData,
-				DaemonSet:       daemonSetOptionsFrom(commonOpts),
+				DaemonSet:       deploy.DaemonSetOptionsFrom(commonOpts),
 				EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 			})
 		},
 		Args: cobra.NoArgs,
 	}
 	return remove
-}
-
-func deployOnCluster(env *deployer.Environment, commonOpts *deploy.Options) error {
-	if err := env.EnsureClient(); err != nil {
-		return err
-	}
-
-	platDetect, reason, _ := detect.FindPlatform(env.Ctx, commonOpts.UserPlatform)
-	commonOpts.ClusterPlatform = platDetect.Discovered
-	if commonOpts.ClusterPlatform == platform.Unknown {
-		return fmt.Errorf("cannot autodetect the platform, and no platform given")
-	}
-	versionDetect, source, _ := detect.FindVersion(env.Ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
-	commonOpts.ClusterVersion = versionDetect.Discovered
-	if commonOpts.ClusterVersion == platform.MissingVersion {
-		return fmt.Errorf("cannot autodetect the platform version, and no version given")
-	}
-
-	env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
-	if err := api.Deploy(env, api.Options{
-		Platform: commonOpts.ClusterPlatform,
-	}); err != nil {
-		return err
-	}
-	if err := updaters.Deploy(env, commonOpts.UpdaterType, updaters.Options{
-		Platform:        commonOpts.ClusterPlatform,
-		PlatformVersion: commonOpts.ClusterVersion,
-		WaitCompletion:  commonOpts.WaitCompletion,
-		RTEConfigData:   commonOpts.RTEConfigData,
-		DaemonSet:       daemonSetOptionsFrom(commonOpts),
-		EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
-	}); err != nil {
-		return err
-	}
-	if err := sched.Deploy(env, sched.Options{
-		Platform:          commonOpts.ClusterPlatform,
-		WaitCompletion:    commonOpts.WaitCompletion,
-		Replicas:          int32(commonOpts.Replicas),
-		RTEConfigData:     commonOpts.RTEConfigData,
-		PullIfNotPresent:  commonOpts.PullIfNotPresent,
-		CacheResyncPeriod: commonOpts.SchedResyncPeriod,
-		CtrlPlaneAffinity: commonOpts.SchedCtrlPlaneAffinity,
-		Verbose:           commonOpts.SchedVerbose,
-	}); err != nil {
-		return err
-	}
-	return nil
 }

@@ -33,7 +33,6 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 )
 
 // TODO: move elsewhere
@@ -152,14 +151,4 @@ func validateUpdaterType(updaterType string) error {
 		return fmt.Errorf("%q is invalid updater type", updaterType)
 	}
 	return nil
-}
-
-func daemonSetOptionsFrom(commonOpts *deploy.Options) objectupdate.DaemonSetOptions {
-	return objectupdate.DaemonSetOptions{
-		PullIfNotPresent:   commonOpts.PullIfNotPresent,
-		PFPEnable:          commonOpts.UpdaterPFPEnable,
-		NotificationEnable: commonOpts.UpdaterNotifEnable,
-		UpdateInterval:     commonOpts.UpdaterSyncPeriod,
-		Verbose:            commonOpts.UpdaterVerbose,
-	}
 }

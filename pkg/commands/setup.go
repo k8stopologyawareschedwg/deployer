@@ -33,7 +33,7 @@ func NewSetupCommand(env *deployer.Environment, commonOpts *deploy.Options) *cob
 			if err := validateCluster(cmd, env, commonOpts, valOpts, args); err != nil {
 				return err
 			}
-			return deployOnCluster(env, commonOpts)
+			return deploy.OnCluster(env, commonOpts)
 		},
 		Args: cobra.NoArgs,
 	}
