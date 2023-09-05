@@ -22,12 +22,23 @@ import (
 	"github.com/go-logr/logr"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 )
 
 type Environment struct {
 	Ctx context.Context
 	Cli client.Client
 	Log logr.Logger
+}
+
+func (env *Environment) EnsureClient() error {
+	cli, err := clientutil.New()
+	if err != nil {
+		return err
+	}
+	env.Cli = cli
+	return nil
 }
 
 func (env *Environment) WithName(name string) *Environment {

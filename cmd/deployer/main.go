@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/commands"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	deployerversion "github.com/k8stopologyawareschedwg/deployer/pkg/version"
 )
 
@@ -31,7 +32,7 @@ type versionOptions struct {
 	hashOnly   bool
 }
 
-func NewVersionCommand(commonOpts *commands.CommonOptions) *cobra.Command {
+func NewVersionCommand(env *deployer.Environment, commonOpts *commands.CommonOptions) *cobra.Command {
 	opts := versionOptions{}
 	version := &cobra.Command{
 		Use:   "version",

@@ -21,6 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 )
@@ -30,7 +31,7 @@ type ImagesOptions struct {
 	rawOutput  bool
 }
 
-func NewImagesCommand(commonOpts *CommonOptions) *cobra.Command {
+func NewImagesCommand(env *deployer.Environment, commonOpts *CommonOptions) *cobra.Command {
 	opts := &ImagesOptions{}
 	images := &cobra.Command{
 		Use:   "images",

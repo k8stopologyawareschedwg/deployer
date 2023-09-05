@@ -17,11 +17,11 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
@@ -35,47 +35,46 @@ type DeployOptions struct {
 	waitCompletion  bool
 }
 
-func NewDeployCommand(commonOpts *CommonOptions) *cobra.Command {
+func NewDeployCommand(env *deployer.Environment, commonOpts *CommonOptions) *cobra.Command {
 	opts := &DeployOptions{}
 	deploy := &cobra.Command{
 		Use:   "deploy",
 		Short: "deploy the components and configurations needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return deployOnCluster(commonOpts, opts)
+			return deployOnCluster(env, commonOpts, opts)
 		},
 		Args: cobra.NoArgs,
 	}
 	deploy.PersistentFlags().BoolVarP(&opts.waitCompletion, "wait", "W", false, "wait for deployment to be all completed.")
-	deploy.AddCommand(NewDeployAPICommand(commonOpts, opts))
-	deploy.AddCommand(NewDeploySchedulerPluginCommand(commonOpts, opts))
-	deploy.AddCommand(NewDeployTopologyUpdaterCommand(commonOpts, opts))
+	deploy.AddCommand(NewDeployAPICommand(env, commonOpts, opts))
+	deploy.AddCommand(NewDeploySchedulerPluginCommand(env, commonOpts, opts))
+	deploy.AddCommand(NewDeployTopologyUpdaterCommand(env, commonOpts, opts))
 	return deploy
 }
 
-func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
+func NewRemoveCommand(env *deployer.Environment, commonOpts *CommonOptions) *cobra.Command {
 	opts := &DeployOptions{}
 	remove := &cobra.Command{
 		Use:   "remove",
 		Short: "remove the components and configurations needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			env, err := environFromOpts(commonOpts)
-			if err != nil {
+			var err error
+
+			if err = env.EnsureClient(); err != nil {
 				return err
 			}
 
-			ctx := context.Background()
-
-			platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
+			platDetect, reason, _ := detect.FindPlatform(env.Ctx, commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
+			versionDetect, source, _ := detect.FindVersion(env.Ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 			opts.clusterVersion = versionDetect.Discovered
 			if opts.clusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
-			commonOpts.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
+			env.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
 
 			err = sched.Remove(env, sched.Options{
 				Platform:          opts.clusterPlatform,
@@ -88,7 +87,7 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
-				commonOpts.Log.Info("while removing", "error", err)
+				env.Log.Info("while removing", "error", err)
 			}
 			err = updaters.Remove(env, commonOpts.UpdaterType, updaters.Options{
 				Platform:        opts.clusterPlatform,
@@ -100,50 +99,47 @@ func NewRemoveCommand(commonOpts *CommonOptions) *cobra.Command {
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
-				commonOpts.Log.Info("while removing", "error", err)
+				env.Log.Info("while removing", "error", err)
 			}
 			err = api.Remove(env, api.Options{
 				Platform: opts.clusterPlatform,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
-				commonOpts.Log.Info("while removing", "error", err)
+				env.Log.Info("while removing", "error", err)
 			}
 			return nil
 		},
 		Args: cobra.NoArgs,
 	}
 	remove.PersistentFlags().BoolVarP(&opts.waitCompletion, "wait", "W", false, "wait for removal to be all completed.")
-	remove.AddCommand(NewRemoveAPICommand(commonOpts, opts))
-	remove.AddCommand(NewRemoveSchedulerPluginCommand(commonOpts, opts))
-	remove.AddCommand(NewRemoveTopologyUpdaterCommand(commonOpts, opts))
+	remove.AddCommand(NewRemoveAPICommand(env, commonOpts, opts))
+	remove.AddCommand(NewRemoveSchedulerPluginCommand(env, commonOpts, opts))
+	remove.AddCommand(NewRemoveTopologyUpdaterCommand(env, commonOpts, opts))
 	return remove
 }
 
-func NewDeployAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
+func NewDeployAPICommand(env *deployer.Environment, commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
 	deploy := &cobra.Command{
 		Use:   "api",
 		Short: "deploy the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			env, err := environFromOpts(commonOpts)
-			if err != nil {
+			if err := env.EnsureClient(); err != nil {
 				return err
 			}
 
-			ctx := context.Background()
-
-			platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
+			platDetect, reason, _ := detect.FindPlatform(env.Ctx, commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
+			versionDetect, source, _ := detect.FindVersion(env.Ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 			opts.clusterVersion = versionDetect.Discovered
 			if opts.clusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
 
-			commonOpts.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
+			env.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
 			if err := api.Deploy(env, api.Options{Platform: opts.clusterPlatform}); err != nil {
 				return err
 			}
@@ -154,30 +150,29 @@ func NewDeployAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.
 	return deploy
 }
 
-func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
+func NewDeploySchedulerPluginCommand(env *deployer.Environment, commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
 	deploy := &cobra.Command{
 		Use:   "scheduler-plugin",
 		Short: "deploy the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			env, err := environFromOpts(commonOpts)
-			if err != nil {
+			var err error
+
+			if err = env.EnsureClient(); err != nil {
 				return err
 			}
 
-			ctx := context.Background()
-
-			platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
+			platDetect, reason, _ := detect.FindPlatform(env.Ctx, commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
+			versionDetect, source, _ := detect.FindVersion(env.Ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 			opts.clusterVersion = versionDetect.Discovered
 			if opts.clusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
 
-			commonOpts.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
+			env.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
 			return sched.Deploy(env, sched.Options{
 				Platform:          opts.clusterPlatform,
 				WaitCompletion:    opts.waitCompletion,
@@ -194,30 +189,29 @@ func NewDeploySchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 	return deploy
 }
 
-func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
+func NewDeployTopologyUpdaterCommand(env *deployer.Environment, commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
 	deploy := &cobra.Command{
 		Use:   "topology-updater",
 		Short: "deploy the topology updater needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			env, err := environFromOpts(commonOpts)
-			if err != nil {
+			var err error
+
+			if err = env.EnsureClient(); err != nil {
 				return err
 			}
 
-			ctx := context.Background()
-
-			platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
+			platDetect, reason, _ := detect.FindPlatform(env.Ctx, commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
+			versionDetect, source, _ := detect.FindVersion(env.Ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 			opts.clusterVersion = versionDetect.Discovered
 			if opts.clusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
 
-			commonOpts.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
+			env.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
 			return updaters.Deploy(env, commonOpts.UpdaterType, updaters.Options{
 				Platform:        opts.clusterPlatform,
 				PlatformVersion: opts.clusterVersion,
@@ -232,30 +226,29 @@ func NewDeployTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 	return deploy
 }
 
-func NewRemoveAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
+func NewRemoveAPICommand(env *deployer.Environment, commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
 	remove := &cobra.Command{
 		Use:   "api",
 		Short: "remove the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			env, err := environFromOpts(commonOpts)
-			if err != nil {
+			var err error
+
+			if err = env.EnsureClient(); err != nil {
 				return err
 			}
 
-			ctx := context.Background()
-
-			platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
+			platDetect, reason, _ := detect.FindPlatform(env.Ctx, commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
+			versionDetect, source, _ := detect.FindVersion(env.Ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 			opts.clusterVersion = versionDetect.Discovered
 			if opts.clusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
 
-			commonOpts.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
+			env.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
 			if err := api.Remove(env, api.Options{Platform: opts.clusterPlatform}); err != nil {
 				return err
 			}
@@ -266,30 +259,29 @@ func NewRemoveAPICommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.
 	return remove
 }
 
-func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
+func NewRemoveSchedulerPluginCommand(env *deployer.Environment, commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
 	remove := &cobra.Command{
 		Use:   "scheduler-plugin",
 		Short: "remove the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			env, err := environFromOpts(commonOpts)
-			if err != nil {
+			var err error
+
+			if err = env.EnsureClient(); err != nil {
 				return err
 			}
 
-			ctx := context.Background()
-
-			platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
+			platDetect, reason, _ := detect.FindPlatform(env.Ctx, commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
+			versionDetect, source, _ := detect.FindVersion(env.Ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 			opts.clusterVersion = versionDetect.Discovered
 			if opts.clusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
 
-			commonOpts.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
+			env.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
 			return sched.Remove(env, sched.Options{
 				Platform:          opts.clusterPlatform,
 				WaitCompletion:    opts.waitCompletion,
@@ -306,30 +298,29 @@ func NewRemoveSchedulerPluginCommand(commonOpts *CommonOptions, opts *DeployOpti
 	return remove
 }
 
-func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
+func NewRemoveTopologyUpdaterCommand(env *deployer.Environment, commonOpts *CommonOptions, opts *DeployOptions) *cobra.Command {
 	remove := &cobra.Command{
 		Use:   "topology-updater",
 		Short: "remove the topology updater needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			env, err := environFromOpts(commonOpts)
-			if err != nil {
+			var err error
+
+			if err = env.EnsureClient(); err != nil {
 				return err
 			}
 
-			ctx := context.Background()
-
-			platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
+			platDetect, reason, _ := detect.FindPlatform(env.Ctx, commonOpts.UserPlatform)
 			opts.clusterPlatform = platDetect.Discovered
 			if opts.clusterPlatform == platform.Unknown {
 				return fmt.Errorf("cannot autodetect the platform, and no platform given")
 			}
-			versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
+			versionDetect, source, _ := detect.FindVersion(env.Ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 			opts.clusterVersion = versionDetect.Discovered
 			if opts.clusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
 
-			commonOpts.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
+			env.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
 			return updaters.Remove(env, commonOpts.UpdaterType, updaters.Options{
 				Platform:        opts.clusterPlatform,
 				PlatformVersion: opts.clusterVersion,
@@ -344,26 +335,23 @@ func NewRemoveTopologyUpdaterCommand(commonOpts *CommonOptions, opts *DeployOpti
 	return remove
 }
 
-func deployOnCluster(commonOpts *CommonOptions, opts *DeployOptions) error {
-	env, err := environFromOpts(commonOpts)
-	if err != nil {
+func deployOnCluster(env *deployer.Environment, commonOpts *CommonOptions, opts *DeployOptions) error {
+	if err := env.EnsureClient(); err != nil {
 		return err
 	}
 
-	ctx := context.Background()
-
-	platDetect, reason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
+	platDetect, reason, _ := detect.FindPlatform(env.Ctx, commonOpts.UserPlatform)
 	opts.clusterPlatform = platDetect.Discovered
 	if opts.clusterPlatform == platform.Unknown {
 		return fmt.Errorf("cannot autodetect the platform, and no platform given")
 	}
-	versionDetect, source, _ := detect.FindVersion(ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
+	versionDetect, source, _ := detect.FindVersion(env.Ctx, platDetect.Discovered, commonOpts.UserPlatformVersion)
 	opts.clusterVersion = versionDetect.Discovered
 	if opts.clusterVersion == platform.MissingVersion {
 		return fmt.Errorf("cannot autodetect the platform version, and no version given")
 	}
 
-	commonOpts.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
+	env.Log.Info("detection", "platform", opts.clusterPlatform, "reason", reason, "version", opts.clusterVersion, "source", source)
 	if err := api.Deploy(env, api.Options{
 		Platform: opts.clusterPlatform,
 	}); err != nil {

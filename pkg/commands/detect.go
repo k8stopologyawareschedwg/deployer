@@ -17,11 +17,11 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
 )
 
@@ -29,18 +29,22 @@ type detectOptions struct {
 	jsonOutput bool
 }
 
-func NewDetectCommand(commonOpts *CommonOptions) *cobra.Command {
+func NewDetectCommand(env *deployer.Environment, commonOpts *CommonOptions) *cobra.Command {
 	opts := &detectOptions{}
 	detect := &cobra.Command{
 		Use:   "detect",
 		Short: "detect the cluster platform (kubernetes, openshift...)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			var err error
 
-			platKind, kindReason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
-			platVer, verReason, _ := detect.FindVersion(ctx, platKind.Discovered, commonOpts.UserPlatformVersion)
+			if err = env.EnsureClient(); err != nil {
+				return err
+			}
 
-			commonOpts.Log.Info("detection", "platform", platKind, "reason", kindReason, "version", platVer, "source", verReason)
+			platKind, kindReason, _ := detect.FindPlatform(env.Ctx, commonOpts.UserPlatform)
+			platVer, verReason, _ := detect.FindVersion(env.Ctx, platKind.Discovered, commonOpts.UserPlatformVersion)
+
+			env.Log.Info("detection", "platform", platKind, "reason", kindReason, "version", platVer, "source", verReason)
 
 			cluster := detect.ClusterInfo{
 				Platform: platKind,

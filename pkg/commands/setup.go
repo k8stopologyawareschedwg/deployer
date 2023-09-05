@@ -17,10 +17,11 @@
 package commands
 
 import (
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/spf13/cobra"
 )
 
-func NewSetupCommand(commonOpts *CommonOptions) *cobra.Command {
+func NewSetupCommand(env *deployer.Environment, commonOpts *CommonOptions) *cobra.Command {
 	depOpts := &DeployOptions{}
 	valOpts := &validateOptions{
 		outputMode: ValidateOutputLog,
@@ -29,10 +30,10 @@ func NewSetupCommand(commonOpts *CommonOptions) *cobra.Command {
 		Use:   "setup",
 		Short: "validate and setup a cluster to be used for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := validateCluster(cmd, commonOpts, valOpts, args); err != nil {
+			if err := validateCluster(cmd, env, commonOpts, valOpts, args); err != nil {
 				return err
 			}
-			return deployOnCluster(commonOpts, depOpts)
+			return deployOnCluster(env, commonOpts, depOpts)
 		},
 		Args: cobra.NoArgs,
 	}

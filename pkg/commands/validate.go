@@ -25,6 +25,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil/nodes"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/validator"
 )
 
@@ -42,13 +43,13 @@ type validateOptions struct {
 	jsonOutput bool
 }
 
-func NewValidateCommand(commonOpts *CommonOptions) *cobra.Command {
+func NewValidateCommand(env *deployer.Environment, commonOpts *CommonOptions) *cobra.Command {
 	opts := &validateOptions{}
 	validate := &cobra.Command{
 		Use:   "validate",
 		Short: "validate the cluster configuration to be correct for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return validateCluster(cmd, commonOpts, opts, args)
+			return validateCluster(cmd, env, commonOpts, opts, args)
 		},
 		Args: cobra.NoArgs,
 	}
@@ -72,11 +73,11 @@ type validationOutput struct {
 	Errors  []validator.ValidationResult `json:"errors,omitempty"`
 }
 
-func validateCluster(cmd *cobra.Command, commonOpts *CommonOptions, opts *validateOptions, args []string) error {
+func validateCluster(cmd *cobra.Command, env *deployer.Environment, commonOpts *CommonOptions, opts *validateOptions, args []string) error {
 	// TODO
 	validatePostSetupOptions(opts)
 
-	env, err := environFromOpts(commonOpts)
+	err := env.EnsureClient()
 	if err != nil {
 		return err
 	}
