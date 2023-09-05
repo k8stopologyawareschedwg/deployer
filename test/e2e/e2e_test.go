@@ -151,7 +151,6 @@ func ensureNodeResourceTopology(tc *topologyclientset.Clientset, namespace, name
 func deploy(updaterType string, pfpEnable bool) error {
 	cmdline := []string{
 		filepath.Join(binariesPath, "deployer"),
-		"--debug",
 		"deploy",
 		"--rte-config-file=" + filepath.Join(deployerBaseDir, "hack", "rte.yaml"),
 		"--updater-pfp-enable=" + strconv.FormatBool(pfpEnable),
@@ -173,7 +172,6 @@ func deploy(updaterType string, pfpEnable bool) error {
 func remove(updaterType string) error {
 	cmdline := []string{
 		filepath.Join(binariesPath, "deployer"),
-		"--debug",
 		"remove",
 		"--wait",
 	}

@@ -40,7 +40,7 @@ func NewDetectCommand(commonOpts *CommonOptions) *cobra.Command {
 			platKind, kindReason, _ := detect.FindPlatform(ctx, commonOpts.UserPlatform)
 			platVer, verReason, _ := detect.FindVersion(ctx, platKind.Discovered, commonOpts.UserPlatformVersion)
 
-			commonOpts.DebugLog.Info("detection", "platform", platKind, "reason", kindReason, "version", platVer, "source", verReason)
+			commonOpts.Log.Info("detection", "platform", platKind, "reason", kindReason, "version", platVer, "source", verReason)
 
 			cluster := detect.ClusterInfo{
 				Platform: platKind,

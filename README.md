@@ -56,7 +56,6 @@ Flags:
   -h, --help   help for render
 
 Global Flags:
-  -D, --debug                    enable debug log
   -P, --platform string          platform to deploy on
       --pull-if-not-present      force pull policies to IfNotPresent.
   -R, --replicas int             set the replica value - where relevant. (default 1)

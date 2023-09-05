@@ -45,11 +45,9 @@ const (
 )
 
 type CommonOptions struct {
-	Debug                  bool
 	UserPlatform           platform.Platform
 	UserPlatformVersion    platform.Version
 	Log                    logr.Logger
-	DebugLog               logr.Logger
 	Replicas               int
 	RTEConfigData          string
 	PullIfNotPresent       bool
@@ -114,7 +112,6 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 }
 
 func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
-	flags.BoolVarP(&commonOpts.Debug, "debug", "D", false, "enable debug log")
 	flags.StringVarP(&commonOpts.plat, "platform", "P", "", "platform kind:version to deploy on (example kubernetes:v1.22)")
 	flags.IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
 	flags.DurationVarP(&commonOpts.WaitInterval, "wait-interval", "E", 2*time.Second, "wait interval.")
@@ -136,11 +133,6 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
 func PostSetupOptions(commonOpts *CommonOptions) error {
 	// we abuse the logger to have a common interface and the timestamps
 	commonOpts.Log = stdr.New(log.New(os.Stderr, "", log.LstdFlags))
-	if commonOpts.Debug {
-		commonOpts.DebugLog = commonOpts.Log.WithName("DEBUG")
-	} else {
-		commonOpts.DebugLog = logr.Discard()
-	}
 
 	commonOpts.Log.V(3).Info("global polling interval=%v timeout=%v", commonOpts.WaitInterval, commonOpts.WaitTimeout)
 	wait.SetBaseValues(commonOpts.WaitInterval, commonOpts.WaitTimeout)
@@ -166,7 +158,7 @@ func PostSetupOptions(commonOpts *CommonOptions) error {
 			return err
 		}
 		commonOpts.RTEConfigData = string(data)
-		commonOpts.DebugLog.Info("RTE config: read", "bytes", len(commonOpts.RTEConfigData))
+		commonOpts.Log.Info("RTE config: read", "bytes", len(commonOpts.RTEConfigData))
 	}
 	return validateUpdaterType(commonOpts.UpdaterType)
 }
