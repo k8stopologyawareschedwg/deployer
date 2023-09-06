@@ -24,17 +24,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/go-logr/stdr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deploy"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 )
 
 // TODO: move elsewhere
@@ -44,30 +42,10 @@ const (
 	DefaultUpdaterSyncPeriod     = 10 * time.Second
 )
 
-type CommonOptions struct {
-	Debug                  bool
-	UserPlatform           platform.Platform
-	UserPlatformVersion    platform.Version
-	Log                    logr.Logger
-	DebugLog               logr.Logger
-	Replicas               int
-	RTEConfigData          string
-	PullIfNotPresent       bool
-	UpdaterType            string
-	UpdaterPFPEnable       bool
-	UpdaterNotifEnable     bool
-	UpdaterCRIHooksEnable  bool
-	UpdaterSyncPeriod      time.Duration
-	UpdaterVerbose         int
-	SchedProfileName       string
-	SchedResyncPeriod      time.Duration
-	SchedVerbose           int
-	SchedCtrlPlaneAffinity bool
-	WaitInterval           time.Duration
-	WaitTimeout            time.Duration
-	rteConfigFile          string
-	plat                   string
-	platVer                string
+type internalOptions struct {
+	rteConfigFile string
+	plat          string
+	platVer       string
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -75,18 +53,23 @@ func ShowHelp(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-type NewCommandFunc func(ko *CommonOptions) *cobra.Command
+type NewCommandFunc func(ev *deployer.Environment, ko *deploy.Options) *cobra.Command
 
 // NewRootCommand returns entrypoint command to interact with all other commands
 func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
-	commonOpts := &CommonOptions{}
+	env := deployer.Environment{
+		Ctx: context.Background(),
+		Log: stdr.New(log.New(os.Stderr, "", log.LstdFlags)),
+	}
+	internalOpts := internalOptions{}
+	commonOpts := deploy.Options{}
 
 	root := &cobra.Command{
 		Use:   "deployer",
 		Short: "deployer helps setting up all the topology-aware-scheduling components on a kubernetes cluster",
 
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return PostSetupOptions(commonOpts)
+			return PostSetupOptions(&env, &commonOpts, &internalOpts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return ShowHelp(cmd, args)
@@ -95,32 +78,32 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 		SilenceErrors: true,
 	}
 
-	InitFlags(root.PersistentFlags(), commonOpts)
+	InitFlags(root.PersistentFlags(), &commonOpts, &internalOpts)
 
 	root.AddCommand(
-		NewRenderCommand(commonOpts),
-		NewValidateCommand(commonOpts),
-		NewDeployCommand(commonOpts),
-		NewRemoveCommand(commonOpts),
-		NewSetupCommand(commonOpts),
-		NewDetectCommand(commonOpts),
-		NewImagesCommand(commonOpts),
+		NewRenderCommand(&env, &commonOpts),
+		NewValidateCommand(&env, &commonOpts),
+		NewDeployCommand(&env, &commonOpts),
+		NewRemoveCommand(&env, &commonOpts),
+		NewSetupCommand(&env, &commonOpts),
+		NewDetectCommand(&env, &commonOpts),
+		NewImagesCommand(&env, &commonOpts),
 	)
 	for _, extraCmd := range extraCmds {
-		root.AddCommand(extraCmd(commonOpts))
+		root.AddCommand(extraCmd(&env, &commonOpts))
 	}
 
 	return root
 }
 
-func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
-	flags.BoolVarP(&commonOpts.Debug, "debug", "D", false, "enable debug log")
-	flags.StringVarP(&commonOpts.plat, "platform", "P", "", "platform kind:version to deploy on (example kubernetes:v1.22)")
+func InitFlags(flags *pflag.FlagSet, commonOpts *deploy.Options, internalOpts *internalOptions) {
+	flags.StringVarP(&internalOpts.plat, "platform", "P", "", "platform kind:version to deploy on (example kubernetes:v1.22)")
+	flags.StringVar(&internalOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
+
 	flags.IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
 	flags.DurationVarP(&commonOpts.WaitInterval, "wait-interval", "E", 2*time.Second, "wait interval.")
 	flags.DurationVarP(&commonOpts.WaitTimeout, "wait-timeout", "T", 2*time.Minute, "wait timeout.")
 	flags.BoolVar(&commonOpts.PullIfNotPresent, "pull-if-not-present", false, "force pull policies to IfNotPresent.")
-	flags.StringVar(&commonOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
 	flags.StringVar(&commonOpts.UpdaterType, "updater-type", "RTE", "type of updater to deploy - RTE or NFD")
 	flags.BoolVar(&commonOpts.UpdaterPFPEnable, "updater-pfp-enable", true, "toggle PFP support on the updater side.")
 	flags.BoolVar(&commonOpts.UpdaterNotifEnable, "updater-notif-enable", true, "toggle event-based notification support on the updater side.")
@@ -133,40 +116,32 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *CommonOptions) {
 	flags.BoolVar(&commonOpts.SchedCtrlPlaneAffinity, "sched-ctrlplane-affinity", true, "toggle the scheduler control plane affinity.")
 }
 
-func PostSetupOptions(commonOpts *CommonOptions) error {
-	// we abuse the logger to have a common interface and the timestamps
-	commonOpts.Log = stdr.New(log.New(os.Stderr, "", log.LstdFlags))
-	if commonOpts.Debug {
-		commonOpts.DebugLog = commonOpts.Log.WithName("DEBUG")
-	} else {
-		commonOpts.DebugLog = logr.Discard()
-	}
-
-	commonOpts.Log.V(3).Info("global polling interval=%v timeout=%v", commonOpts.WaitInterval, commonOpts.WaitTimeout)
+func PostSetupOptions(env *deployer.Environment, commonOpts *deploy.Options, internalOpts *internalOptions) error {
+	env.Log.V(3).Info("global polling interval=%v timeout=%v", commonOpts.WaitInterval, commonOpts.WaitTimeout)
 	wait.SetBaseValues(commonOpts.WaitInterval, commonOpts.WaitTimeout)
 
 	// if it is unknown, it's fine
-	if commonOpts.plat == "" {
+	if internalOpts.plat == "" {
 		commonOpts.UserPlatform = platform.Unknown
 		commonOpts.UserPlatformVersion = platform.MissingVersion
 	} else {
-		fields := strings.FieldsFunc(commonOpts.plat, func(c rune) bool {
+		fields := strings.FieldsFunc(internalOpts.plat, func(c rune) bool {
 			return c == ':'
 		})
 		if len(fields) != 2 {
-			return fmt.Errorf("unsupported platform spec: %q", commonOpts.plat)
+			return fmt.Errorf("unsupported platform spec: %q", internalOpts.plat)
 		}
 		commonOpts.UserPlatform, _ = platform.ParsePlatform(fields[0])
 		commonOpts.UserPlatformVersion, _ = platform.ParseVersion(fields[1])
 	}
 
-	if commonOpts.rteConfigFile != "" {
-		data, err := os.ReadFile(commonOpts.rteConfigFile)
+	if internalOpts.rteConfigFile != "" {
+		data, err := os.ReadFile(internalOpts.rteConfigFile)
 		if err != nil {
 			return err
 		}
 		commonOpts.RTEConfigData = string(data)
-		commonOpts.DebugLog.Info("RTE config: read", "bytes", len(commonOpts.RTEConfigData))
+		env.Log.Info("RTE config: read", "bytes", len(commonOpts.RTEConfigData))
 	}
 	return validateUpdaterType(commonOpts.UpdaterType)
 }
@@ -176,26 +151,4 @@ func validateUpdaterType(updaterType string) error {
 		return fmt.Errorf("%q is invalid updater type", updaterType)
 	}
 	return nil
-}
-
-func environFromOpts(commonOpts *CommonOptions) (*deployer.Environment, error) {
-	cli, err := clientutil.New()
-	if err != nil {
-		return nil, err
-	}
-	return &deployer.Environment{
-		Ctx: context.Background(),
-		Cli: cli,
-		Log: commonOpts.Log,
-	}, nil
-}
-
-func daemonSetOptionsFromCommonOptions(commonOpts *CommonOptions) objectupdate.DaemonSetOptions {
-	return objectupdate.DaemonSetOptions{
-		PullIfNotPresent:   commonOpts.PullIfNotPresent,
-		PFPEnable:          commonOpts.UpdaterPFPEnable,
-		NotificationEnable: commonOpts.UpdaterNotifEnable,
-		UpdateInterval:     commonOpts.UpdaterSyncPeriod,
-		Verbose:            commonOpts.UpdaterVerbose,
-	}
 }
