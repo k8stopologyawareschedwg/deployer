@@ -124,7 +124,8 @@ var _ = ginkgo.Describe("[NegativeFlow] Deployer execution with PFP disabled", f
 					ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
 
 					// the name of the nrt object is the same as the worker node's name
-					ensureNodeResourceTopology(tc, mf.DaemonSet.Namespace, node.Name, checkLacksPFP)
+					err = ensureNodeResourceTopology(tc, node.Name, checkLacksPFP)
+					gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				}
 			})
 
@@ -168,7 +169,8 @@ var _ = ginkgo.Describe("[NegativeFlow] Deployer execution with PFP disabled", f
 						ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
 
 						// the name of the nrt object is the same as the worker node's name
-						ensureNodeResourceTopology(tc, mf.DSTopologyUpdater.Namespace, node.Name, checkLacksPFP)
+						err = ensureNodeResourceTopology(tc, node.Name, checkLacksPFP)
+						gomega.Expect(err).ToNot(gomega.HaveOccurred())
 					}
 				})
 			})

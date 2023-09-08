@@ -43,15 +43,34 @@ func TestUpdaterDaemonSet(t *testing.T) {
 	}
 
 	testCases := []struct {
-		cntName          string
-		pullIfNotPresent bool
-		nodeSelector     *metav1.LabelSelector
+		cntName             string
+		pfpEnable           bool
+		pullIfNotPresent    bool
+		nodeSelector        *metav1.LabelSelector
+		expectedCommandArgs []string
 	}{
 		{
 			cntName:          manifests.ContainerNameNFDTopologyUpdater,
+			pfpEnable:        true,
 			pullIfNotPresent: false,
 			nodeSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"foo": "bar"},
+			},
+			expectedCommandArgs: []string{
+				"--kubelet-state-dir=",
+				"--pods-fingerprint=true",
+			},
+		},
+		{
+			cntName:          manifests.ContainerNameNFDTopologyUpdater,
+			pfpEnable:        false,
+			pullIfNotPresent: false,
+			nodeSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"foo": "bar"},
+			},
+			expectedCommandArgs: []string{
+				"--kubelet-state-dir=",
+				"--pods-fingerprint=false",
 			},
 		},
 	}
@@ -61,7 +80,7 @@ func TestUpdaterDaemonSet(t *testing.T) {
 		pSpec.Containers[0].Name = tc.cntName
 		UpdaterDaemonSet(mutatedDs, objectupdate.DaemonSetOptions{
 			PullIfNotPresent: tc.pullIfNotPresent,
-			PFPEnable:        true,
+			PFPEnable:        tc.pfpEnable,
 			NodeSelector:     tc.nodeSelector,
 		})
 		if tc.cntName == manifests.ContainerNameNFDTopologyUpdater {
@@ -71,12 +90,28 @@ func TestUpdaterDaemonSet(t *testing.T) {
 			if !cmp.Equal(pSpec.NodeSelector, tc.nodeSelector.MatchLabels) {
 				t.Errorf("expected NodeSelector to be: %v; got: %v", tc.nodeSelector.MatchLabels, pSpec.NodeSelector)
 			}
+
+			for _, arg := range tc.expectedCommandArgs {
+				if !matchArgs(pSpec.Containers[0].Args, arg) {
+					t.Fatalf("the container args does not container argument %q: {%v}", arg, pSpec.Containers[0].Args)
+				}
+			}
+
 		} else {
 			if pSpec.Containers[0].ImagePullPolicy != "" {
 				t.Errorf("container name is other than %q, no changes to container are expected", manifests.ContainerNameNFDTopologyUpdater)
 			}
 		}
 	}
+}
+
+func matchArgs(got []string, expArg string) bool {
+	for _, gotArg := range got {
+		if gotArg == expArg {
+			return true
+		}
+	}
+	return false
 }
 
 func pullPolicy(pullIfNotPresent bool) corev1.PullPolicy {

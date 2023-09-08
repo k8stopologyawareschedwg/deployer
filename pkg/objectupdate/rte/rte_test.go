@@ -152,6 +152,7 @@ func TestDaemonSet(t *testing.T) {
 	type testCase struct {
 		name                 string
 		plat                 platform.Platform
+		pfpEnable            bool
 		expectedCommandArgs  []string
 		expectedVolumes      map[string]string
 		expectedVolumeMounts map[string]string
@@ -160,12 +161,14 @@ func TestDaemonSet(t *testing.T) {
 	containerHostSysDir := fmt.Sprintf("/%s", rteSysVolumeName)
 	testCases := []testCase{
 		{
-			name: "Verify DaemonSet generation for OpenShift platform",
-			plat: platform.OpenShift,
+			name:      "Verify DaemonSet generation for OpenShift platform",
+			plat:      platform.OpenShift,
+			pfpEnable: true,
 			expectedCommandArgs: []string{
 				fmt.Sprintf("--sysfs=%s", containerHostSysDir),
 				fmt.Sprintf("--podresources-socket=unix:///%s/%s", rtePodresourcesDirVolumeName, "kubelet.sock"),
 				fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
+				"--pods-fingerprint=true",
 			},
 			expectedVolumes: map[string]string{
 				rteSysVolumeName:             "/sys",
@@ -179,14 +182,58 @@ func TestDaemonSet(t *testing.T) {
 			},
 		},
 		{
-			name: "Verify DaemonSet generation for Kubernetes platform",
+			name: "Verify DaemonSet generation for OpenShift platform with PFP disabled",
+			plat: platform.OpenShift,
+			expectedCommandArgs: []string{
+				fmt.Sprintf("--sysfs=%s", containerHostSysDir),
+				fmt.Sprintf("--podresources-socket=unix:///%s/%s", rtePodresourcesDirVolumeName, "kubelet.sock"),
+				fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
+				"--pods-fingerprint=false",
+			},
+			expectedVolumes: map[string]string{
+				rteSysVolumeName:             "/sys",
+				rtePodresourcesDirVolumeName: "/var/lib/kubelet/pod-resources",
+				rteNotifierVolumeName:        "/run/rte",
+			},
+			expectedVolumeMounts: map[string]string{
+				rteSysVolumeName:             containerHostSysDir,
+				rtePodresourcesDirVolumeName: fmt.Sprintf("/%s", rtePodresourcesDirVolumeName),
+				rteNotifierVolumeName:        fmt.Sprintf("/%s", rteNotifierVolumeName),
+			},
+		},
+		{
+			name:      "Verify DaemonSet generation for Kubernetes platform",
+			plat:      platform.Kubernetes,
+			pfpEnable: true,
+			expectedCommandArgs: []string{
+				fmt.Sprintf("--sysfs=%s", containerHostSysDir),
+				fmt.Sprintf("--podresources-socket=unix:///%s/%s", rtePodresourcesDirVolumeName, "kubelet.sock"),
+				fmt.Sprintf("--kubelet-config-file=/%s/config.yaml", rteKubeletDirVolumeName),
+				fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
+				"--pods-fingerprint=true",
+			},
+			expectedVolumes: map[string]string{
+				rteSysVolumeName:             "/sys",
+				rtePodresourcesDirVolumeName: "/var/lib/kubelet/pod-resources",
+				rteKubeletDirVolumeName:      "/var/lib/kubelet",
+				rteNotifierVolumeName:        "/run/rte",
+			},
+			expectedVolumeMounts: map[string]string{
+				rteSysVolumeName:             containerHostSysDir,
+				rtePodresourcesDirVolumeName: fmt.Sprintf("/%s", rtePodresourcesDirVolumeName),
+				rteKubeletDirVolumeName:      fmt.Sprintf("/%s", rteKubeletDirVolumeName),
+				rteNotifierVolumeName:        fmt.Sprintf("/%s", rteNotifierVolumeName),
+			},
+		},
+		{
+			name: "Verify DaemonSet generation for Kubernetes platform with PFP disabled",
 			plat: platform.Kubernetes,
 			expectedCommandArgs: []string{
 				fmt.Sprintf("--sysfs=%s", containerHostSysDir),
 				fmt.Sprintf("--podresources-socket=unix:///%s/%s", rtePodresourcesDirVolumeName, "kubelet.sock"),
 				fmt.Sprintf("--kubelet-config-file=/%s/config.yaml", rteKubeletDirVolumeName),
-				fmt.Sprintf("--kubelet-state-dir=/%s", rteKubeletDirVolumeName),
 				fmt.Sprintf("--notify-file=/%s/%s", rteNotifierVolumeName, rteNotifierFileName),
+				"--pods-fingerprint=false",
 			},
 			expectedVolumes: map[string]string{
 				rteSysVolumeName:             "/sys",
@@ -210,7 +257,7 @@ func TestDaemonSet(t *testing.T) {
 				t.Fatalf("unexpected error getting the manifests: %v", err)
 			}
 			DaemonSet(ds, tc.plat, "", objectupdate.DaemonSetOptions{
-				PFPEnable:          true,
+				PFPEnable:          tc.pfpEnable,
 				NotificationEnable: true,
 				UpdateInterval:     10 * time.Second,
 			})
