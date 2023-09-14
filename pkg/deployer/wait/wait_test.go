@@ -43,19 +43,19 @@ func TestSetBaseValues(t *testing.T) {
 			name:     "enforce defaults",
 			interval: DefaultPollInterval,
 			timeout:  DefaultPollTimeout,
-			expected: "wait every 2s up to 2m0s",
+			expected: "wait every 1s up to 3m0s",
 		},
 		{
 			name:     "override interval",
 			interval: 11 * time.Second,
 			timeout:  DefaultPollTimeout,
-			expected: "wait every 11s up to 2m0s",
+			expected: "wait every 11s up to 3m0s",
 		},
 		{
 			name:     "override timeout",
 			interval: DefaultPollInterval,
 			timeout:  33 * time.Second,
-			expected: "wait every 2s up to 33s",
+			expected: "wait every 1s up to 33s",
 		},
 		{
 			name:     "override both interval and timeout",

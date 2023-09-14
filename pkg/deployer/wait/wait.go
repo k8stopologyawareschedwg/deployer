@@ -17,7 +17,6 @@
 package wait
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -25,17 +24,16 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	k8swait "k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
-	// found by trial and error, no hard math behind, can change anytime
-	DefaultPollInterval = 2 * time.Second
-	DefaultPollTimeout  = 2 * time.Minute
+	DefaultPollInterval = 1 * time.Second
+	// DefaultPollTimeout was computed by trial and error, not scientifically,
+	// so it may adjusted in the future any time.
+	// Roughly match the time it takes for pods to go running in CI.
+	DefaultPollTimeout = 3 * time.Minute
 )
 
 var (
@@ -96,28 +94,4 @@ func (wt *Waiter) Timeout(tt time.Duration) *Waiter {
 func (wt *Waiter) Interval(iv time.Duration) *Waiter {
 	wt.PollInterval = iv
 	return wt
-}
-
-func (wt Waiter) ForNamespaceDeleted(ctx context.Context, namespace string) error {
-	log := wt.Log.WithValues("namespace", namespace)
-	log.Info("wait for the namespace to be gone")
-	return k8swait.PollImmediate(wt.PollInterval, wt.PollTimeout, func() (bool, error) {
-		nsKey := ObjectKey{Name: namespace}
-		ns := corev1.Namespace{} // unused
-		err := wt.Cli.Get(ctx, nsKey.AsKey(), &ns)
-		return deletionStatusFromError(wt.Log, "Namespace", nsKey, err)
-	})
-}
-
-func deletionStatusFromError(logger logr.Logger, kind string, key ObjectKey, err error) (bool, error) {
-	if err == nil {
-		logger.Info("object still present", "kind", kind, "key", key.String())
-		return false, nil
-	}
-	if k8serrors.IsNotFound(err) {
-		logger.Info("object is gone", "kind", kind, "key", key.String())
-		return true, nil
-	}
-	logger.Info("failed to get object", "kind", kind, "key", key.String(), "error", err)
-	return false, err
 }

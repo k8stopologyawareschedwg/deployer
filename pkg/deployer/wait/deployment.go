@@ -24,7 +24,16 @@ import (
 	k8swait "k8s.io/apimachinery/pkg/util/wait"
 )
 
-func (wt Waiter) ForDeploymentCompleteByKey(ctx context.Context, key ObjectKey, replicas int32) (*appsv1.Deployment, error) {
+// This function waits for the readiness of the pods under the deployment. The best use of this check is for
+// completely new deployments. If the deployment exists on the cluster and simply updated, this check is
+// not enough to guarantee that the deployment is ready with the NEW replica, thus need to cover that by
+// additional checks as the context requires
+func (wt Waiter) ForDeploymentComplete(ctx context.Context, dp *appsv1.Deployment) (*appsv1.Deployment, error) {
+	if dp.Spec.Replicas == nil {
+		return nil, fmt.Errorf("unspecified replicas in %s/%s", dp.Namespace, dp.Name)
+	}
+
+	key := ObjectKeyFromObject(dp)
 	updatedDp := &appsv1.Deployment{}
 	err := k8swait.PollImmediate(wt.PollInterval, wt.PollTimeout, func() (bool, error) {
 		err := wt.Cli.Get(ctx, key.AsKey(), updatedDp)
@@ -33,7 +42,7 @@ func (wt Waiter) ForDeploymentCompleteByKey(ctx context.Context, key ObjectKey, 
 			return false, err
 		}
 
-		if !areDeploymentReplicasAvailable(&updatedDp.Status, replicas) {
+		if !isDeploymentComplete(dp, &updatedDp.Status) {
 			wt.Log.Info("deployment not complete",
 				"key", key.String(),
 				"replicas", updatedDp.Status.Replicas,
@@ -47,25 +56,13 @@ func (wt Waiter) ForDeploymentCompleteByKey(ctx context.Context, key ObjectKey, 
 	})
 	return updatedDp, err
 }
-
-func (wt Waiter) ForDeploymentComplete(ctx context.Context, dp *appsv1.Deployment) (*appsv1.Deployment, error) {
-	if dp.Spec.Replicas == nil {
-		return nil, fmt.Errorf("unspecified replicas in %s/%s", dp.Namespace, dp.Name)
-	}
-	return wt.ForDeploymentCompleteByKey(ctx, ObjectKeyFromObject(dp), *dp.Spec.Replicas)
+func isDeploymentComplete(dp *appsv1.Deployment, newStatus *appsv1.DeploymentStatus) bool {
+	return areDeploymentReplicasAvailable(newStatus, *(dp.Spec.Replicas)) &&
+		newStatus.ObservedGeneration >= dp.Generation
 }
 
 func areDeploymentReplicasAvailable(newStatus *appsv1.DeploymentStatus, replicas int32) bool {
 	return newStatus.UpdatedReplicas == replicas &&
 		newStatus.Replicas == replicas &&
 		newStatus.AvailableReplicas == replicas
-}
-
-func (wt Waiter) ForDeploymentDeleted(ctx context.Context, namespace, name string) error {
-	return k8swait.PollImmediate(wt.PollInterval, wt.PollTimeout, func() (bool, error) {
-		obj := appsv1.Deployment{}
-		key := ObjectKey{Name: name, Namespace: namespace}
-		err := wt.Cli.Get(ctx, key.AsKey(), &obj)
-		return deletionStatusFromError(wt.Log, "Deployment", key, err)
-	})
 }
