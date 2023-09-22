@@ -37,7 +37,7 @@ func NewVersionCommand(env *deployer.Environment, commonOpts *deploy.Options) *c
 	opts := versionOptions{}
 	version := &cobra.Command{
 		Use:   "version",
-		Short: "emit the version and exits succesfully",
+		Short: "emit the version and exits successfully",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if opts.hashOnly {
 				fmt.Printf("%s\n", deployerversion.GitCommit)

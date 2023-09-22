@@ -46,7 +46,7 @@ func UpdaterDaemonSet(ds *appsv1.DaemonSet, opts objectupdate.DaemonSetOptions) 
 
 		flags.SetOption("--pods-fingerprint", strconv.FormatBool(opts.PFPEnable))
 
-		// we need to explicitely disable the kubelet state dir monitoring, which is opt-out
+		// we need to explicitly disable the kubelet state dir monitoring, which is opt-out
 		flags.SetOption("--kubelet-state-dir", "")
 
 		c.Args = flags.Argv()

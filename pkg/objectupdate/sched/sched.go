@@ -76,7 +76,7 @@ func SchedulerConfig(cm *corev1.ConfigMap, schedulerName string, cacheResyncPeri
 		return err
 	}
 
-	cm.Data[SchedulerConfigFileName] = string(newData)
+	cm.Data[SchedulerConfigFileName] = newData
 	return nil
 }
 

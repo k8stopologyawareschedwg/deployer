@@ -45,7 +45,6 @@ const (
 type internalOptions struct {
 	rteConfigFile string
 	plat          string
-	platVer       string
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {

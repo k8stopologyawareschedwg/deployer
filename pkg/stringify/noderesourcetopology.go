@@ -94,7 +94,7 @@ func NodeResourceTopologyList(nrts []nrtv1alpha2.NodeResourceTopology, tag strin
 	}
 	fmt.Fprintf(&b, "\n")
 	for idx := range nrts {
-		fmt.Fprintf(&b, NodeResourceTopology(nrts[idx]))
+		fmt.Fprint(&b, NodeResourceTopology(nrts[idx]))
 	}
 	fmt.Fprintf(&b, "NRT END dump\n")
 	return b.String()

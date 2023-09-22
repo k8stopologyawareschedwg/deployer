@@ -1,3 +1,9 @@
+BINDIR=_out
+
+GOLANGCI_LINT_VERSION=1.54.2
+GOLANGCI_LINT_BIN=$(BINDIR)/golangci-lint
+GOLANGCI_LINT_VERSION_TAG=v${GOLANGCI_LINT_VERSION}
+
 all: deployer
 
 .PHONY: vet
@@ -59,9 +65,25 @@ gofmt:
 	@echo "Running gofmt"
 	gofmt -s -w `find . -path ./vendor -prune -o -type f -name '*.go' -print`
 
+# this is meant for developers only.
+# DO NOT WIRE THIS IN CI! Let's use https://golangci-lint.run/usage/install/#github-actions instead
+.PHONY: dev-lint
+dev-lint: _out/golangci-lint
+	$(GOLANGCI_LINT_BIN) run
+
 .PHONY: build-e2e
 build-e2e: _out/e2e.test
 
 _out/e2e.test: outdir test/e2e/*.go
 	go test -v -c -o _out/e2e.test ./test/e2e/
+
+_out/golangci-lint: outdir
+	@if [ ! -x "$(GOLANGCI_LINT_BIN)" ]; then\
+		echo "Downloading golangci-lint $(GOLANGCI_LINT_VERSION)";\
+		curl -JL https://github.com/golangci/golangci-lint/releases/download/$(GOLANGCI_LINT_VERSION_TAG)/golangci-lint-$(GOLANGCI_LINT_VERSION)-linux-amd64.tar.gz -o _out/golangci-lint-$(GOLANGCI_LINT_VERSION)-linux-amd64.tar.gz;\
+		tar xz -C _out -f _out/golangci-lint-$(GOLANGCI_LINT_VERSION)-linux-amd64.tar.gz;\
+		ln -sf golangci-lint-1.54.2-linux-amd64/golangci-lint _out/golangci-lint;\
+	else\
+		echo "Using golangci-lint cached at $(GOLANGCI_LINT_BIN)";\
+	fi
 
