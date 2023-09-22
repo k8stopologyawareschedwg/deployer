@@ -30,7 +30,6 @@ import (
 )
 
 func GetObjects(opts Options, updaterType, namespace string) ([]client.Object, error) {
-
 	if updaterType == RTE {
 		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks)
 		if err != nil {

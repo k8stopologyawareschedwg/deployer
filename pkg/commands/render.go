@@ -41,7 +41,7 @@ func NewRenderCommand(env *deployer.Environment, commonOpts *deploy.Options) *co
 		Short: "render all the manifests",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if commonOpts.UserPlatform == platform.Unknown {
-				return fmt.Errorf("must explicitely select a cluster platform")
+				return fmt.Errorf("must explicitly select a cluster platform")
 			}
 			return RenderManifests(env, commonOpts)
 		},
@@ -59,7 +59,7 @@ func NewRenderAPICommand(env *deployer.Environment, commonOpts *deploy.Options, 
 		Short: "render the APIs needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if commonOpts.UserPlatform == platform.Unknown {
-				return fmt.Errorf("must explicitely select a cluster platform")
+				return fmt.Errorf("must explicitly select a cluster platform")
 			}
 			apiManifests, err := api.GetManifests(commonOpts.UserPlatform)
 			if err != nil {
@@ -82,7 +82,7 @@ func NewRenderSchedulerPluginCommand(env *deployer.Environment, commonOpts *depl
 		Short: "render the scheduler plugin needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if commonOpts.UserPlatform == platform.Unknown {
-				return fmt.Errorf("must explicitely select a cluster platform")
+				return fmt.Errorf("must explicitly select a cluster platform")
 			}
 
 			_, namespace, err := updaters.SetupNamespace(commonOpts.UpdaterType)
@@ -116,7 +116,7 @@ func NewRenderTopologyUpdaterCommand(env *deployer.Environment, commonOpts *depl
 		Short: "render the topology updater needed for topology-aware-scheduling",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if commonOpts.UserPlatform == platform.Unknown {
-				return fmt.Errorf("must explicitely select a cluster platform")
+				return fmt.Errorf("must explicitly select a cluster platform")
 			}
 			objs, _, err := makeUpdaterObjects(commonOpts)
 			if err != nil {
