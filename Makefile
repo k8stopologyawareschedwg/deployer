@@ -10,7 +10,7 @@ all: deployer
 vet:
 	go vet ./...
 
-.PHONY: clan
+.PHONY: clean
 clean:
 	rm -rf _out
 
