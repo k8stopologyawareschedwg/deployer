@@ -17,8 +17,9 @@ limitations under the License.
 package v1beta3
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strconv"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -27,9 +28,9 @@ import (
 )
 
 var (
-	defaultPermitWaitingTimeSeconds int64 = 60
-
-	defaultNodeResourcesAllocatableMode = Least
+	defaultPermitWaitingTimeSeconds     int64 = 60
+	defaultPodGroupBackoffSeconds       int64 = 0
+	defaultNodeResourcesAllocatableMode       = Least
 
 	// defaultResourcesToWeightMap is used to set the default resourceToWeight map for CPU and memory
 	// used by the NodeResourcesAllocatable scoring plugin.
@@ -61,6 +62,19 @@ var (
 	// DefaultSafeVarianceSensitivity is one
 	DefaultSafeVarianceSensitivity = 1.0
 
+	// Defaults for LowRiskOverCommitment plugin
+
+	// The default number of windows over which usage data metrics are smoothed.
+	// DefaultSmoothingWindowSize is 5 (used by Prometheus)
+	DefaultSmoothingWindowSize int64 = 5
+	// The default weight of risk due to limit for a resource
+	DefaultRiskLimitWeight float64 = 0.5
+	// Resources fractional weight of risk due to limits specification [0,1]
+	DefaultRiskLimitWeights = map[v1.ResourceName]float64{
+		v1.ResourceCPU:    DefaultRiskLimitWeight,
+		v1.ResourceMemory: DefaultRiskLimitWeight,
+	}
+
 	// DefaultMetricProviderType is the Kubernetes metrics server
 	DefaultMetricProviderType = KubernetesMetricsServer
 	// DefaultInsecureSkipVerify is whether to skip the certificate verification
@@ -70,6 +84,10 @@ var (
 		{Name: string(v1.ResourceCPU), Weight: 1},
 		{Name: string(v1.ResourceMemory), Weight: 1},
 	}
+
+	defaultForeignPodsDetect = ForeignPodsDetectAll
+
+	defaultResyncMethod = CacheResyncAutodetect
 
 	// Defaults for NetworkOverhead
 	// DefaultWeightsName contains the default costs to be used by networkAware plugins
@@ -82,6 +100,9 @@ var (
 func SetDefaults_CoschedulingArgs(obj *CoschedulingArgs) {
 	if obj.PermitWaitingTimeSeconds == nil {
 		obj.PermitWaitingTimeSeconds = &defaultPermitWaitingTimeSeconds
+	}
+	if obj.PodGroupBackoffSeconds == nil {
+		obj.PodGroupBackoffSeconds = &defaultPodGroupBackoffSeconds
 	}
 }
 
@@ -99,7 +120,7 @@ func SetDefaults_NodeResourcesAllocatableArgs(obj *NodeResourcesAllocatableArgs)
 // SetDefaultTrimaranSpec sets the default parameters for common Trimaran plugins
 func SetDefaultTrimaranSpec(args *TrimaranSpec) {
 	if args.WatcherAddress == nil && args.MetricProvider.Type == "" {
-		args.MetricProvider.Type = MetricProviderType(DefaultMetricProviderType)
+		args.MetricProvider.Type = DefaultMetricProviderType
 	}
 	if args.MetricProvider.Type == Prometheus && args.MetricProvider.InsecureSkipVerify == nil {
 		args.MetricProvider.InsecureSkipVerify = &DefaultInsecureSkipVerify
@@ -132,6 +153,23 @@ func SetDefaults_LoadVariationRiskBalancingArgs(args *LoadVariationRiskBalancing
 	}
 }
 
+// SetDefaults_LowRiskOverCommitmentArgs sets the default parameters for LowRiskOverCommitment plugin
+func SetDefaults_LowRiskOverCommitmentArgs(args *LowRiskOverCommitmentArgs) {
+	SetDefaultTrimaranSpec(&args.TrimaranSpec)
+	if args.SmoothingWindowSize == nil || *args.SmoothingWindowSize <= 0 {
+		args.SmoothingWindowSize = &DefaultSmoothingWindowSize
+	}
+	if args.RiskLimitWeights == nil || len(args.RiskLimitWeights) == 0 {
+		args.RiskLimitWeights = DefaultRiskLimitWeights
+	} else {
+		for r, w := range args.RiskLimitWeights {
+			if w < 0 || w > 1 {
+				args.RiskLimitWeights[r] = DefaultRiskLimitWeight
+			}
+		}
+	}
+}
+
 // SetDefaults_NodeResourceTopologyMatchArgs sets the default parameters for NodeResourceTopologyMatch plugin.
 func SetDefaults_NodeResourceTopologyMatchArgs(obj *NodeResourceTopologyMatchArgs) {
 	if obj.ScoringStrategy == nil {
@@ -150,6 +188,17 @@ func SetDefaults_NodeResourceTopologyMatchArgs(obj *NodeResourceTopologyMatchArg
 		if obj.ScoringStrategy.Resources[i].Weight == 0 {
 			obj.ScoringStrategy.Resources[i].Weight = 1
 		}
+	}
+
+	if obj.Cache == nil {
+		obj.Cache = &NodeResourceTopologyCache{}
+	}
+	if obj.Cache.ForeignPodsDetect == nil {
+		obj.Cache.ForeignPodsDetect = &defaultForeignPodsDetect
+
+	}
+	if obj.Cache.ResyncMethod == nil {
+		obj.Cache.ResyncMethod = &defaultResyncMethod
 	}
 }
 
