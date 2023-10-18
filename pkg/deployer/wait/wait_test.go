@@ -24,6 +24,8 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
 
+	"github.com/openshift/client-go/config/clientset/versioned/scheme"
+	machineconfigv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -116,6 +118,102 @@ func TestForNamespaceDeleted(t *testing.T) {
 
 			startTime := time.Now()
 			err := With(cli, testr.New(t)).Interval(tc.interval).Timeout(tc.timeout).ForNamespaceDeleted(context.TODO(), tc.namespace)
+			elapsed := time.Since(startTime)
+
+			if !tc.expectError && err != nil {
+				t.Errorf("unexpected failure: %v", err)
+			}
+			if tc.expectError {
+				if err == nil {
+					t.Errorf("unexpected success")
+				}
+				if elapsed < tc.timeout {
+					t.Errorf("terminated too early: elapsed %v timeout %v", elapsed, tc.timeout)
+				}
+			}
+		})
+	}
+}
+
+func TestMCPs(t *testing.T) {
+	type testCase struct {
+		name        string
+		timeout     time.Duration
+		interval    time.Duration
+		mcp         *machineconfigv1.MachineConfigPool
+		updateFunc  func(*testing.T, client.Client, context.Context, *machineconfigv1.MachineConfigPool)
+		expectError bool
+	}
+
+	testCases := []testCase{
+		{
+			name:     "one",
+			timeout:  10 * time.Second,
+			interval: 1 * time.Second,
+			mcp: &machineconfigv1.MachineConfigPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "mcp-one",
+				},
+				Status: machineconfigv1.MachineConfigPoolStatus{
+					Conditions: []machineconfigv1.MachineConfigPoolCondition{
+						{
+							Type:   machineconfigv1.MachineConfigPoolUpdating,
+							Status: "False",
+						},
+					},
+				},
+			},
+			updateFunc: func(t *testing.T, cli client.Client, ctx context.Context, mcp *machineconfigv1.MachineConfigPool) {
+				time.Sleep(1 * time.Second)
+				cond := []machineconfigv1.MachineConfigPoolCondition{
+					{
+						Type:   machineconfigv1.MachineConfigPoolUpdating,
+						Status: "True",
+					},
+				}
+				mcp.Status.Conditions = cond
+				if err := cli.Update(ctx, mcp); err != nil {
+					t.Errorf("unexpected failure: %v", err)
+				}
+			},
+			expectError: false,
+		},
+		{
+			name:     "two",
+			timeout:  10 * time.Second,
+			interval: 1 * time.Second,
+			mcp: &machineconfigv1.MachineConfigPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "mcp-two",
+				},
+				Status: machineconfigv1.MachineConfigPoolStatus{
+					Conditions: []machineconfigv1.MachineConfigPoolCondition{
+						{
+							Type:   machineconfigv1.MachineConfigPoolUpdating,
+							Status: "False",
+						},
+					},
+				},
+			},
+			updateFunc:  nil,
+			expectError: true,
+		},
+	}
+
+	sch := scheme.Scheme
+	machineconfigv1.AddToScheme(sch)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cli := fake.NewClientBuilder().WithScheme(sch).WithObjects(tc.mcp).Build()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			w := With(cli, testr.New(t)).Interval(tc.interval).Timeout(tc.timeout)
+			if tc.updateFunc != nil {
+				go tc.updateFunc(t, cli, ctx, tc.mcp)
+			}
+			startTime := time.Now()
+			err := w.ForMachineConfigPoolCondition(ctx, tc.mcp, machineconfigv1.MachineConfigPoolUpdating)
 			elapsed := time.Since(startTime)
 
 			if !tc.expectError && err != nil {

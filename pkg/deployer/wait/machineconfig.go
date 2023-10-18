@@ -38,12 +38,17 @@ func (wt Waiter) ForMachineConfigPoolCondition(ctx context.Context, mcp *machine
 				if cond.Status == corev1.ConditionTrue {
 					return true, nil
 				} else {
-					wt.Log.Info("mcp: %q condition type: %q status is: %q expected status: %q", updatedMcp.Name, cond.Type, cond.Status, corev1.ConditionTrue)
+					wt.Log.Info("mcp: condition type does not have expected status",
+						"machineConfigPoolName", updatedMcp.Name,
+						"conditionType", cond.Type,
+						"current status", cond.Status,
+						"expected status", corev1.ConditionTrue,
+					)
 					return false, nil
 				}
 			}
 		}
-		wt.Log.Info("mcp: %q condition type: %q was not found", updatedMcp.Name, condType)
+		wt.Log.Info("mcp: condition type was not found", "mcp-name", updatedMcp.Name, "conditionType", condType)
 		return false, nil
 	})
 	return err
