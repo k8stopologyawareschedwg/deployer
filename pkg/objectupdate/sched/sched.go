@@ -23,13 +23,13 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
-	schedconfig "k8s.io/kubernetes/pkg/scheduler/apis/config"
-	pluginconfig "sigs.k8s.io/scheduler-plugins/apis/config"
-
 	"github.com/k8stopologyawareschedwg/deployer/pkg/flagcodec"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
+
+	schedconfig "github.com/k8stopologyawareschedwg/k8sschedulerconfig-api/pkg/scheduler/apis/config"
+	pluginconfig "github.com/k8stopologyawareschedwg/k8sschedulerconfig-api/scheduler-plugins/apis/config"
 )
 
 const (

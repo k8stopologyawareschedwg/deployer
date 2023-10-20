@@ -36,11 +36,10 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	kubeschedulerconfigv1beta2 "k8s.io/kube-scheduler/config/v1beta2"
 	"k8s.io/utils/pointer"
-	apiconfigv1beta2 "sigs.k8s.io/scheduler-plugins/apis/config/v1beta2"
 
-	k8sschedpluginsconf "sigs.k8s.io/scheduler-plugins/apis/config"
-	k8sschedpluginsconfv1beta2 "sigs.k8s.io/scheduler-plugins/apis/config/v1beta2"
-	k8sschedpluginsconfv1beta3 "sigs.k8s.io/scheduler-plugins/apis/config/v1beta3"
+	k8sschedpluginsconf "github.com/k8stopologyawareschedwg/k8sschedulerconfig-api/scheduler-plugins/apis/config"
+	k8sschedpluginsconfv1beta2 "github.com/k8stopologyawareschedwg/k8sschedulerconfig-api/scheduler-plugins/apis/config/v1beta2"
+	k8sschedpluginsconfv1beta3 "github.com/k8stopologyawareschedwg/k8sschedulerconfig-api/scheduler-plugins/apis/config/v1beta3"
 
 	rteassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/rte"
 	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
@@ -80,7 +79,6 @@ var src embed.FS
 
 func init() {
 	apiextensionv1.AddToScheme(scheme.Scheme)
-	apiconfigv1beta2.AddToScheme(scheme.Scheme)
 	kubeschedulerconfigv1beta2.AddToScheme(scheme.Scheme)
 	k8sschedpluginsconf.AddToScheme(scheme.Scheme)
 	k8sschedpluginsconfv1beta2.AddToScheme(scheme.Scheme)

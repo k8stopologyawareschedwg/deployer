@@ -26,11 +26,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	k8sscheme "k8s.io/client-go/kubernetes/scheme"
-	schedconfig "k8s.io/kubernetes/pkg/scheduler/apis/config"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	schedscheme "sigs.k8s.io/scheduler-plugins/apis/config/scheme"
-	"sigs.k8s.io/scheduler-plugins/apis/config/v1beta2"
+
+	schedconfig "github.com/k8stopologyawareschedwg/k8sschedulerconfig-api/pkg/scheduler/apis/config"
+	schedscheme "github.com/k8stopologyawareschedwg/k8sschedulerconfig-api/scheduler-plugins/apis/config/scheme"
+	"github.com/k8stopologyawareschedwg/k8sschedulerconfig-api/scheduler-plugins/apis/config/v1beta2"
 )
 
 func SerializeObject(obj runtime.Object, out io.Writer) error {

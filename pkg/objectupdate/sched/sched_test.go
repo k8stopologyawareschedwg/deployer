@@ -25,9 +25,10 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	pluginconfig "sigs.k8s.io/scheduler-plugins/apis/config"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+
+	pluginconfig "github.com/k8stopologyawareschedwg/k8sschedulerconfig-api/scheduler-plugins/apis/config"
 )
 
 func TestRenderConfig(t *testing.T) {
