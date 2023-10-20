@@ -28,7 +28,7 @@ require (
 	k8s.io/kubernetes v1.26.4
 	k8s.io/utils v0.0.0-20221107191617-1a15be271d1d
 	sigs.k8s.io/controller-runtime v0.13.1
-	sigs.k8s.io/scheduler-plugins v0.24.9
+	sigs.k8s.io/scheduler-plugins v0.25.7
 	sigs.k8s.io/yaml v1.3.0
 )
 

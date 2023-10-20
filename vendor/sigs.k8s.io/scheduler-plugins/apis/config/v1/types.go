@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta2
+package v1
 
 import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	schedulerconfigv1beta2 "k8s.io/kube-scheduler/config/v1beta2"
+	schedulerconfigv1 "k8s.io/kube-scheduler/config/v1"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -30,8 +30,6 @@ type CoschedulingArgs struct {
 
 	// PermitWaitingTimeSeconds is the waiting timeout in seconds.
 	PermitWaitingTimeSeconds *int64 `json:"permitWaitingTimeSeconds,omitempty"`
-	// DeniedPGExpirationTimeSeconds is the expiration time of the denied podgroup store.
-	DeniedPGExpirationTimeSeconds *int64 `json:"deniedPGExpirationTimeSeconds,omitempty"`
 }
 
 // ModeType is a type "string".
@@ -55,7 +53,7 @@ type NodeResourcesAllocatableArgs struct {
 	// An example resource set might include "cpu" (millicores) and "memory" (bytes)
 	// with weights of 1<<20 and 1 respectfully. That would mean 1 MiB has equivalent
 	// weight as 1 millicore.
-	Resources []schedulerconfigv1beta2.ResourceSpec `json:"resources,omitempty"`
+	Resources []schedulerconfigv1.ResourceSpec `json:"resources,omitempty"`
 
 	// Whether to prioritize nodes with least or most allocatable resources.
 	Mode ModeType `json:"mode,omitempty"`
@@ -82,34 +80,40 @@ type MetricProviderSpec struct {
 	InsecureSkipVerify *bool `json:"insecureSkipVerify,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// TargetLoadPackingArgs holds arguments used to configure TargetLoadPacking plugin.
-type TargetLoadPackingArgs struct {
-	metav1.TypeMeta `json:",inline"`
-
-	// Default requests to use for best effort QoS
-	DefaultRequests v1.ResourceList `json:"defaultRequests,omitempty"`
-	// Default requests multiplier for busrtable QoS
-	DefaultRequestsMultiplier *string `json:"defaultRequestsMultiplier,omitempty"`
-	// Node target CPU Utilization for bin packing
-	TargetUtilization *int64 `json:"targetUtilization,omitempty"`
-	// Specify the metric provider type, address and token using MetricProviderSpec
+// TrimaranSpec holds common parameters for trimaran plugins
+type TrimaranSpec struct {
+	// Metric Provider specification when using load watcher as library
 	MetricProvider MetricProviderSpec `json:"metricProvider,omitempty"`
 	// Address of load watcher service
 	WatcherAddress *string `json:"watcherAddress,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:defaulter-gen=true
+
+// TargetLoadPackingArgs holds arguments used to configure TargetLoadPacking plugin.
+type TargetLoadPackingArgs struct {
+	metav1.TypeMeta `json:",inline"`
+
+	// Common parameters for trimaran plugins
+	TrimaranSpec `json:",inline"`
+	// Default requests to use for best effort QoS
+	DefaultRequests v1.ResourceList `json:"defaultRequests,omitempty"`
+	// Default requests multiplier for busrtable QoS
+	DefaultRequestsMultiplier *string `json:"defaultRequestsMultiplier,omitempty"`
+	// Node target CPU Utilization for bin packing
+	TargetUtilization *int64 `json:"targetUtilization,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:defaulter-gen=true
 
 // LoadVariationRiskBalancingArgs holds arguments used to configure LoadVariationRiskBalancing plugin.
 type LoadVariationRiskBalancingArgs struct {
 	metav1.TypeMeta `json:",inline"`
 
-	// Metric Provider specification when using load watcher as library
-	MetricProvider MetricProviderSpec `json:"metricProvider,omitempty"`
-	// Address of load watcher service
-	WatcherAddress *string `json:"watcherAddress,omitempty"`
+	// Common parameters for trimaran plugins
+	TrimaranSpec `json:",inline"`
 	// Multiplier of standard deviation in risk value
 	SafeVarianceMargin *float64 `json:"safeVarianceMargin,omitempty"`
 	// Root power of standard deviation in risk value
@@ -131,8 +135,8 @@ const (
 )
 
 type ScoringStrategy struct {
-	Type      ScoringStrategyType                   `json:"type,omitempty"`
-	Resources []schedulerconfigv1beta2.ResourceSpec `json:"resources,omitempty"`
+	Type      ScoringStrategyType              `json:"type,omitempty"`
+	Resources []schedulerconfigv1.ResourceSpec `json:"resources,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -143,14 +147,35 @@ type NodeResourceTopologyMatchArgs struct {
 
 	// ScoringStrategy a scoring model that determine how the plugin will score the nodes.
 	ScoringStrategy *ScoringStrategy `json:"scoringStrategy,omitempty"`
-	// CacheResyncPeriodSeconds sets the resync period, in seconds, between the internal
-	// NodeResourceTopoology cache and the apiserver. If present and greater than zero,
-	// implicitely enables the caching. If zero, disables the caching entirely.
-	// If the cache is enabled, the Reserve plugin must be enabled.
+	// If > 0, enables the caching facilities of the reserve plugin - which must be enabled
 	CacheResyncPeriodSeconds *int64 `json:"cacheResyncPeriodSeconds,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // PreemptionTolerationArgs reuses DefaultPluginArgs.
-type PreemptionTolerationArgs schedulerconfigv1beta2.DefaultPreemptionArgs
+type PreemptionTolerationArgs schedulerconfigv1.DefaultPreemptionArgs
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type TopologicalSortArgs struct {
+	metav1.TypeMeta `json:",inline"`
+
+	// Namespaces to be considered by TopologySort plugin
+	Namespaces []string `json:"namespaces,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type NetworkOverheadArgs struct {
+	metav1.TypeMeta `json:",inline"`
+
+	// Namespaces to be considered by NetworkMinCost plugin
+	Namespaces []string `json:"namespaces,omitempty"`
+
+	// Preferred weights (Default: UserDefined)
+	WeightsName *string `json:"weightsName,omitempty"`
+
+	// The NetworkTopology CRD name
+	NetworkTopologyName *string `json:"networkTopologyName,omitempty"`
+}

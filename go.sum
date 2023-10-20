@@ -81,8 +81,8 @@ github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ3
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/diktyo-io/appgroup-api v0.0.9-alpha h1:rqRNOl4CRD313a+ugZJ2rJAN2sNe5GGd4PfyaV44Dy4=
-github.com/diktyo-io/networktopology-api v0.0.8-alpha h1:8bSVk6JdUgYd719mXfHgkGZ2eXOfTF436mLu/TQ7WHM=
+github.com/diktyo-io/appgroup-api v1.0.1-alpha h1:XIl7FrBtkGO9QVLQ61xMu7gbtP1DYMdMdS51ntQiN1k=
+github.com/diktyo-io/networktopology-api v1.0.1-alpha h1:yAgUu+h2sSC25Gbv52hsZD453pyDiRhbLUQRIWsmFNI=
 github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815/go.mod h1:WwZ+bS3ebgob9U8Nd0kOddGdZWjyMGR8Wziv+TBNwSE=
 github.com/elazarl/goproxy v0.0.0-20180725130230-947c36da3153/go.mod h1:/Zj4wYkgs4iZTTu3o/KG3Itv/qCCa8VVMlb3i9OVuzc=
 github.com/emicklei/go-restful/v3 v3.8.0/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
@@ -682,8 +682,8 @@ sigs.k8s.io/controller-runtime v0.13.1 h1:tUsRCSJVM1QQOOeViGeX3GMT3dQF1eePPw6sEE
 sigs.k8s.io/controller-runtime v0.13.1/go.mod h1:Zbz+el8Yg31jubvAEyglRZGdLAjplZl+PgtYNI6WNTI=
 sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 h1:iXTIw73aPyC+oRdyqqvVJuloN1p0AC/kzH07hu3NE+k=
 sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2/go.mod h1:B8JuhiUyNFVKdsE8h686QcCxMaH6HrOAZj4vswFpcB0=
-sigs.k8s.io/scheduler-plugins v0.24.9 h1:9oGtwk6uh7mZMCX8+O+PipQzBiRq9d2+E3xq1cn7zbc=
-sigs.k8s.io/scheduler-plugins v0.24.9/go.mod h1:0u2b/0SwY2ozDhOD/f1S3e5IbStoDFLUK8yP5dJTaQ8=
+sigs.k8s.io/scheduler-plugins v0.25.7 h1:2qSTXfHmzfFZJF9M9UHLiDXGdDXX+sUs/cn0dHbc4qk=
+sigs.k8s.io/scheduler-plugins v0.25.7/go.mod h1:CKgZ1xu9WZdB3CMSzOjro/rtrBY/bQWMf6un2M9VNS4=
 sigs.k8s.io/structured-merge-diff/v4 v4.2.3 h1:PRbqxJClWWYMNV1dhaG4NsibJbArud9kFxnAMREiWFE=
 sigs.k8s.io/structured-merge-diff/v4 v4.2.3/go.mod h1:qjx8mGObPmV2aSZepjQjbmb2ihdVs8cGKBraizNC69E=
 sigs.k8s.io/yaml v1.2.0/go.mod h1:yfXDCHCao9+ENCvLSE62v9VSji2MKu5jeNfTrofGhJc=
