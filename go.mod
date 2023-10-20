@@ -66,11 +66,11 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/vincent-petithory/dataurl v1.0.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/term v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/term v0.13.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	google.golang.org/appengine v1.6.7 // indirect
@@ -117,4 +117,7 @@ replace (
 replace (
 	github.com/openshift/api => github.com/openshift/api v0.0.0-20221021112143-4226c2167e40 // release 4.12
 	github.com/openshift/machine-config-operator => github.com/openshift/machine-config-operator v0.0.1-0.20221101091906-fa5e7ae3f0e9 // release-4.12
+	golang.org/x/net => golang.org/x/net v0.17.0
+	golang.org/x/sys => golang.org/x/sys v0.13.0
+	golang.org/x/text => golang.org/x/text v0.13.0
 )
