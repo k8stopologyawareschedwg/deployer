@@ -33,6 +33,7 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -549,10 +550,38 @@ func dumpSchedulerPods() {
 }
 
 func expectSchedulerRunning() {
-	ginkgo.By("checking that scheduler plugin is running")
-
 	ns, err := manifests.Namespace(manifests.ComponentSchedulerPlugin)
 	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+
+	cli, err := clientutil.New()
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+
+	ctx := context.Background()
+
+	ginkgo.By("checking that scheduler plugin is configured")
+
+	confMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns.Name,
+			Name:      "scheduler-config", // TODO: duplicate from YAML
+		},
+	}
+	err = cli.Get(ctx, client.ObjectKeyFromObject(&confMap), &confMap)
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+	gomega.ExpectWithOffset(1, confMap.Data).ToNot(gomega.BeNil(), "empty config map for scheduler config")
+
+	data, ok := confMap.Data[manifests.SchedulerConfigFileName]
+	gomega.ExpectWithOffset(1, ok).To(gomega.BeTrue(), "empty config data for %q", manifests.SchedulerConfigFileName)
+
+	allParams, err := manifests.DecodeSchedulerProfilesFromData([]byte(data))
+	gomega.ExpectWithOffset(1, len(allParams)).To(gomega.Equal(1), "unexpected params: %#v", allParams)
+
+	params := allParams[0] // TODO: smarter find
+	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
+	gomega.ExpectWithOffset(1, params.Cache).ToNot(gomega.BeNil(), "no data for scheduler cache config")
+	gomega.ExpectWithOffset(1, params.Cache.ResyncPeriodSeconds).ToNot(gomega.BeNil(), "no data for scheduler cache resync period")
+
+	ginkgo.By("checking that scheduler plugin is running")
 
 	ginkgo.By("checking that topo-aware-scheduler pod is running")
 	// TODO: autodetect the platform
@@ -562,11 +591,6 @@ func expectSchedulerRunning() {
 		Replicas: int32(1),
 	})
 	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-
-	cli, err := clientutil.New()
-	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-
-	ctx := context.Background()
 
 	var wg sync.WaitGroup
 	for _, dp := range []*appsv1.Deployment{
