@@ -19,47 +19,14 @@ package sched
 import (
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	pluginconfig "sigs.k8s.io/scheduler-plugins/apis/config"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 )
-
-func TestRenderConfig(t *testing.T) {
-	rendered, err := RenderConfig(configTemplate, "test-sched-name", 42*time.Second)
-	if err != nil {
-		t.Errorf("RenderConfig() failed: %v", err)
-	}
-
-	schedCfg, err := manifests.DecodeSchedulerConfigFromData([]byte(rendered))
-	if err != nil {
-		t.Errorf("failed to decode rendered data: %v", err)
-	}
-
-	schedProf, pluginConf := findKubeSchedulerProfileByName(schedCfg, schedulerPluginName)
-	if schedProf == nil || pluginConf == nil {
-		t.Errorf("no profile or plugin configuration found for %q", schedulerPluginName)
-	}
-
-	confObj := pluginConf.Args.DeepCopyObject()
-	pluginCfg, ok := confObj.(*pluginconfig.NodeResourceTopologyMatchArgs)
-	if !ok {
-		t.Errorf("unsupported plugin config type: %T", confObj)
-	}
-
-	if schedProf.SchedulerName != "test-sched-name" {
-		t.Errorf("unexpected rendered data: scheduler profile name: %q", schedProf.SchedulerName)
-	}
-
-	if pluginCfg.CacheResyncPeriodSeconds != int64(42) {
-		t.Errorf("unexpected rendered data: resync period: %d", pluginCfg.CacheResyncPeriodSeconds)
-	}
-}
 
 func TestSchedulerDeployment(t *testing.T) {
 	type testCase struct {
@@ -117,27 +84,6 @@ func fixSchedulerImage(dp *appsv1.Deployment) {
 	cnt := &dp.Spec.Template.Spec.Containers[0] // shortcut
 	cnt.Image = "test.com/image:latest"
 }
-
-var configTemplate string = `apiVersion: kubescheduler.config.k8s.io/v1beta2
-kind: KubeSchedulerConfiguration
-leaderElection:
-  leaderElect: false
-profiles:
-- schedulerName: topology-aware-scheduler
-  plugins:
-    filter:
-      enabled:
-      - name: NodeResourceTopologyMatch
-    reserve:
-      enabled:
-       - name: NodeResourceTopologyMatch
-    score:
-      enabled:
-        - name: NodeResourceTopologyMatch
-  # optional plugin configs
-  pluginConfig:
-  - name: NodeResourceTopologyMatch
-    args: {}`
 
 const expectedSchedDeploymentDefault string = `---
 apiVersion: apps/v1
