@@ -99,7 +99,13 @@ func (mf Manifests) Render(logger logr.Logger, options RenderOptions) (Manifests
 	ret.DPScheduler.Spec.Replicas = newInt32(replicas)
 	ret.DPController.Spec.Replicas = newInt32(replicas)
 
-	err := schedupdate.SchedulerConfig(ret.ConfigMap, options.ProfileName, options.CacheResyncPeriod)
+	params := manifests.ConfigParams{
+		Cache: &manifests.ConfigCacheParams{
+			ResyncPeriodSeconds: newInt64(int64(options.CacheResyncPeriod.Seconds())),
+		},
+	}
+
+	err := schedupdate.SchedulerConfig(ret.ConfigMap, options.ProfileName, &params)
 	if err != nil {
 		return ret, err
 	}
@@ -259,5 +265,9 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 }
 
 func newInt32(value int32) *int32 {
+	return &value
+}
+
+func newInt64(value int64) *int64 {
 	return &value
 }
