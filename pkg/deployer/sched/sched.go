@@ -32,6 +32,7 @@ type Options struct {
 	Platform          platform.Platform
 	WaitCompletion    bool
 	Replicas          int32
+	ProfileName       string
 	RTEConfigData     string
 	PullIfNotPresent  bool
 	CacheResyncPeriod time.Duration
@@ -54,6 +55,7 @@ func Deploy(env *deployer.Environment, opts Options) error {
 	}
 
 	mf, err = mf.Render(env.Log, schedmanifests.RenderOptions{
+		ProfileName:       opts.ProfileName,
 		Replicas:          opts.Replicas,
 		PullIfNotPresent:  opts.PullIfNotPresent,
 		CacheResyncPeriod: opts.CacheResyncPeriod,
@@ -95,6 +97,7 @@ func Remove(env *deployer.Environment, opts Options) error {
 	}
 
 	mf, err = mf.Render(env.Log, schedmanifests.RenderOptions{
+		ProfileName:       opts.ProfileName,
 		Replicas:          opts.Replicas,
 		PullIfNotPresent:  opts.PullIfNotPresent,
 		CacheResyncPeriod: opts.CacheResyncPeriod,

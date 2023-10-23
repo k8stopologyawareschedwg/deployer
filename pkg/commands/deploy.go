@@ -106,6 +106,7 @@ func NewDeploySchedulerPluginCommand(env *deployer.Environment, commonOpts *depl
 				Replicas:          int32(commonOpts.Replicas),
 				RTEConfigData:     commonOpts.RTEConfigData,
 				PullIfNotPresent:  commonOpts.PullIfNotPresent,
+				ProfileName:       commonOpts.SchedProfileName,
 				CacheResyncPeriod: commonOpts.SchedResyncPeriod,
 				CtrlPlaneAffinity: commonOpts.SchedCtrlPlaneAffinity,
 				Verbose:           commonOpts.SchedVerbose,

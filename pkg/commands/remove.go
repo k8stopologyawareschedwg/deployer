@@ -59,6 +59,7 @@ func NewRemoveCommand(env *deployer.Environment, commonOpts *deploy.Options) *co
 				Replicas:          int32(commonOpts.Replicas),
 				RTEConfigData:     commonOpts.RTEConfigData,
 				PullIfNotPresent:  commonOpts.PullIfNotPresent,
+				ProfileName:       commonOpts.SchedProfileName,
 				CacheResyncPeriod: commonOpts.SchedResyncPeriod,
 				CtrlPlaneAffinity: commonOpts.SchedCtrlPlaneAffinity,
 			})
@@ -158,6 +159,7 @@ func NewRemoveSchedulerPluginCommand(env *deployer.Environment, commonOpts *depl
 				Replicas:          int32(commonOpts.Replicas),
 				RTEConfigData:     commonOpts.RTEConfigData,
 				PullIfNotPresent:  commonOpts.PullIfNotPresent,
+				ProfileName:       commonOpts.SchedProfileName,
 				CacheResyncPeriod: commonOpts.SchedResyncPeriod,
 				CtrlPlaneAffinity: commonOpts.SchedCtrlPlaneAffinity,
 				Verbose:           commonOpts.SchedVerbose,
