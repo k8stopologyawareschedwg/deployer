@@ -38,7 +38,7 @@ import (
 // TODO: move elsewhere
 const (
 	DefaultSchedulerProfileName  = "topology-aware-scheduler"
-	DefaultSchedulerResyncPeriod = 0 * time.Second
+	DefaultSchedulerResyncPeriod = 5 * time.Second
 	DefaultUpdaterSyncPeriod     = 10 * time.Second
 )
 
