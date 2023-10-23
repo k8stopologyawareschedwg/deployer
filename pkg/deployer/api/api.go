@@ -24,6 +24,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	apimanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
+	apiwait "github.com/k8stopologyawareschedwg/deployer/pkg/objectwait/api"
 )
 
 type Options struct {
@@ -45,8 +46,19 @@ func Deploy(env *deployer.Environment, opts Options) error {
 	}
 	env.Log.V(3).Info("API manifests loaded")
 
-	if err = env.CreateObject(mf.Crd); err != nil {
-		return err
+	for _, wo := range apiwait.Creatable(mf, env.Cli, env.Log) {
+		if err := env.CreateObject(wo.Obj); err != nil {
+			return err
+		}
+
+		if wo.Wait == nil {
+			continue
+		}
+
+		err = wo.Wait(env.Ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	env.Log.Info("deployed topology-aware-scheduling API")
@@ -64,8 +76,20 @@ func Remove(env *deployer.Environment, opts Options) error {
 	}
 	env.Log.V(3).Info("API manifests loaded")
 
-	if err = env.DeleteObject(mf.Crd); err != nil {
-		return err
+	for _, wo := range apiwait.Deletable(mf, env.Cli, env.Log) {
+		err = env.DeleteObject(wo.Obj)
+		if err != nil {
+			continue
+		}
+
+		if wo.Wait == nil {
+			continue
+		}
+
+		err = wo.Wait(env.Ctx)
+		if err != nil {
+			env.Log.Info("failed to wait for removal", "error", err)
+		}
 	}
 
 	env.Log.Info("removed topology-aware-scheduling API!")

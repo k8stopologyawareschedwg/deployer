@@ -69,11 +69,14 @@ func Deploy(env *deployer.Environment, opts Options) error {
 		if err := env.CreateObject(wo.Obj); err != nil {
 			return err
 		}
-		if opts.WaitCompletion && wo.Wait != nil {
-			err = wo.Wait(env.Ctx)
-			if err != nil {
-				return err
-			}
+
+		if !opts.WaitCompletion || wo.Wait == nil {
+			continue
+		}
+
+		err = wo.Wait(env.Ctx)
+		if err != nil {
+			return err
 		}
 	}
 
