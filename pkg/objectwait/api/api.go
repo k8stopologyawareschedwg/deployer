@@ -17,22 +17,36 @@
 package api
 
 import (
+	"context"
+
 	"github.com/go-logr/logr"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	apimf "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/objectwait"
 )
 
 func Creatable(mf apimf.Manifests, cli client.Client, log logr.Logger) []objectwait.WaitableObject {
 	return []objectwait.WaitableObject{
-		{Obj: mf.Crd},
+		{
+			Obj: mf.Crd,
+			Wait: func(ctx context.Context) error {
+				_, err := wait.With(cli, log).ForCRDCreated(ctx, mf.Crd.Name)
+				return err
+			},
+		},
 	}
 }
 
 func Deletable(mf apimf.Manifests, cli client.Client, log logr.Logger) []objectwait.WaitableObject {
 	return []objectwait.WaitableObject{
-		{Obj: mf.Crd},
+		{
+			Obj: mf.Crd,
+			Wait: func(ctx context.Context) error {
+				return wait.With(cli, log).ForCRDDeleted(ctx, mf.Crd.Name)
+			},
+		},
 	}
 }
