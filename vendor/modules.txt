@@ -388,10 +388,6 @@ k8s.io/apimachinery/pkg/version
 k8s.io/apimachinery/pkg/watch
 k8s.io/apimachinery/third_party/forked/golang/json
 k8s.io/apimachinery/third_party/forked/golang/reflect
-# k8s.io/apiserver v0.25.4 => k8s.io/apiserver v0.25.4
-## explicit; go 1.19
-k8s.io/apiserver/pkg/features
-k8s.io/apiserver/pkg/util/feature
 # k8s.io/client-go v0.25.4 => k8s.io/client-go v0.25.4
 ## explicit; go 1.19
 k8s.io/client-go/applyconfigurations/admissionregistration/v1
@@ -517,8 +513,6 @@ k8s.io/client-go/util/workqueue
 # k8s.io/component-base v0.25.4 => k8s.io/component-base v0.25.4
 ## explicit; go 1.19
 k8s.io/component-base/cli/flag
-k8s.io/component-base/config
-k8s.io/component-base/config/v1alpha1
 k8s.io/component-base/featuregate
 k8s.io/component-base/logs/api/v1
 k8s.io/component-base/tracing/api/v1
@@ -542,23 +536,9 @@ k8s.io/kube-openapi/pkg/schemamutation
 k8s.io/kube-openapi/pkg/spec3
 k8s.io/kube-openapi/pkg/util/proto
 k8s.io/kube-openapi/pkg/validation/spec
-# k8s.io/kube-scheduler v0.25.4 => k8s.io/kube-scheduler v0.25.4
-## explicit; go 1.19
-k8s.io/kube-scheduler/config/v1
-k8s.io/kube-scheduler/config/v1beta2
-k8s.io/kube-scheduler/config/v1beta3
 # k8s.io/kubelet v0.25.4 => k8s.io/kubelet v0.25.4
 ## explicit; go 1.19
 k8s.io/kubelet/config/v1beta1
-# k8s.io/kubernetes v1.25.4
-## explicit; go 1.19
-k8s.io/kubernetes/pkg/features
-k8s.io/kubernetes/pkg/scheduler/apis/config
-k8s.io/kubernetes/pkg/scheduler/apis/config/scheme
-k8s.io/kubernetes/pkg/scheduler/apis/config/v1
-k8s.io/kubernetes/pkg/scheduler/apis/config/v1beta2
-k8s.io/kubernetes/pkg/scheduler/apis/config/v1beta3
-k8s.io/kubernetes/pkg/scheduler/framework/plugins/names
 # k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73
 ## explicit; go 1.12
 k8s.io/utils/clock
@@ -581,12 +561,6 @@ sigs.k8s.io/controller-runtime/pkg/log
 ## explicit; go 1.18
 sigs.k8s.io/json
 sigs.k8s.io/json/internal/golang/encoding/json
-# sigs.k8s.io/scheduler-plugins v0.24.9
-## explicit; go 1.17
-sigs.k8s.io/scheduler-plugins/apis/config
-sigs.k8s.io/scheduler-plugins/apis/config/scheme
-sigs.k8s.io/scheduler-plugins/apis/config/v1beta2
-sigs.k8s.io/scheduler-plugins/apis/config/v1beta3
 # sigs.k8s.io/structured-merge-diff/v4 v4.2.3
 ## explicit; go 1.13
 sigs.k8s.io/structured-merge-diff/v4/fieldpath
