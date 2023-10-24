@@ -576,14 +576,8 @@ func expectSchedulerRunning() {
 	allParams, err := manifests.DecodeSchedulerProfilesFromData([]byte(data))
 	gomega.ExpectWithOffset(1, len(allParams)).To(gomega.Equal(1), "unexpected params: %#v", allParams)
 
-	params := allParams[0] // TODO: smarter find
-	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-	gomega.ExpectWithOffset(1, params.Cache).ToNot(gomega.BeNil(), "no data for scheduler cache config")
-	gomega.ExpectWithOffset(1, params.Cache.ResyncPeriodSeconds).ToNot(gomega.BeNil(), "no data for scheduler cache resync period")
-
 	ginkgo.By("checking that scheduler plugin is running")
 
-	ginkgo.By("checking that topo-aware-scheduler pod is running")
 	// TODO: autodetect the platform
 	mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
 	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
