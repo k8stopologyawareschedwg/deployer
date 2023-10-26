@@ -34,6 +34,9 @@ import (
 func GetKubeletConfigForNodes(kc *Kubectl, nodeNames []string, logger logr.Logger) (map[string]*kubeletconfigv1beta1.KubeletConfiguration, error) {
 	cmd := kc.Command("proxy", "-p", "0")
 	stdout, stderr, err := StartWithStreamOutput(cmd)
+	if err != nil {
+		return nil, err
+	}
 	defer stdout.Close()
 	defer stderr.Close()
 	defer cmd.Process.Kill()
@@ -65,7 +68,8 @@ func GetKubeletConfigForNodes(kc *Kubectl, nodeNames []string, logger logr.Logge
 			logger.Info("request creation failed - skipped", "endpoint", endpoint, "error", err)
 			continue
 		}
-		if resp.StatusCode != 200 {
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
 			logger.Info("unexpected response status code - skipped", "endpoint", endpoint, "statusCode", resp.StatusCode)
 			continue
 		}
