@@ -26,8 +26,8 @@ import (
 func (wt Waiter) ForCRDCreated(ctx context.Context, name string) (*apiextensionv1.CustomResourceDefinition, error) {
 	key := ObjectKey{Name: name}
 	crd := &apiextensionv1.CustomResourceDefinition{}
-	err := k8swait.PollImmediate(wt.PollInterval, wt.PollTimeout, func() (bool, error) {
-		err := wt.Cli.Get(ctx, key.AsKey(), crd)
+	err := k8swait.PollUntilContextTimeout(ctx, wt.PollInterval, wt.PollTimeout, true, func(fctx context.Context) (bool, error) {
+		err := wt.Cli.Get(fctx, key.AsKey(), crd)
 		if err != nil {
 			wt.Log.Info("failed to get the CRD", "key", key.String(), "error", err)
 			return false, err
@@ -40,10 +40,10 @@ func (wt Waiter) ForCRDCreated(ctx context.Context, name string) (*apiextensionv
 }
 
 func (wt Waiter) ForCRDDeleted(ctx context.Context, name string) error {
-	return k8swait.PollImmediate(wt.PollInterval, wt.PollTimeout, func() (bool, error) {
+	return k8swait.PollUntilContextTimeout(ctx, wt.PollInterval, wt.PollTimeout, true, func(fctx context.Context) (bool, error) {
 		obj := apiextensionv1.CustomResourceDefinition{}
 		key := ObjectKey{Name: name}
-		err := wt.Cli.Get(ctx, key.AsKey(), &obj)
+		err := wt.Cli.Get(fctx, key.AsKey(), &obj)
 		return deletionStatusFromError(wt.Log, "CRD", key, err)
 	})
 }
