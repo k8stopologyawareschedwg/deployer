@@ -74,7 +74,7 @@ func TestRenderConfig(t *testing.T) {
 				},
 			},
 			initial: configTemplateAllValues,
-			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta2
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -105,7 +105,7 @@ profiles:
 				},
 			},
 			initial: configTemplateEmpty,
-			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta2
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -145,7 +145,7 @@ profiles:
 				ProfileName: "renamed-sched",
 			},
 			initial: configTemplateAllValuesMulti,
-			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta2
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -183,7 +183,7 @@ profiles:
 				},
 			},
 			initial: configTemplateAllValuesMulti,
-			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta2
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -239,7 +239,7 @@ profiles:
 	}
 }
 
-var configTemplateEmpty string = `apiVersion: kubescheduler.config.k8s.io/v1beta2
+var configTemplateEmpty string = `apiVersion: kubescheduler.config.k8s.io/v1beta3
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -260,7 +260,7 @@ profiles:
   schedulerName: test-sched-name
 `
 
-var configTemplateAllValues string = `apiVersion: kubescheduler.config.k8s.io/v1beta2
+var configTemplateAllValues string = `apiVersion: kubescheduler.config.k8s.io/v1beta3
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -282,7 +282,7 @@ profiles:
   schedulerName: test-sched-name
 `
 
-var configTemplateAllValuesMulti string = `apiVersion: kubescheduler.config.k8s.io/v1beta2
+var configTemplateAllValuesMulti string = `apiVersion: kubescheduler.config.k8s.io/v1beta3
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -311,7 +311,7 @@ profiles:
   schedulerName: test-sched-name
 `
 
-var configTemplateAllValuesMultiRenamed string = `apiVersion: kubescheduler.config.k8s.io/v1beta2
+var configTemplateAllValuesMultiRenamed string = `apiVersion: kubescheduler.config.k8s.io/v1beta3
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
