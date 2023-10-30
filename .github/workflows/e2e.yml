@@ -83,3 +83,41 @@ jobs:
     - name: run E2E tests
       run: |
         _out/e2e.test -ginkgo.focus='\[NegativeFlow\]' -ginkgo.v
+
+  e2e-manifests:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: checkout sources
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: setup golang
+      uses: actions/setup-go@v3
+      id: go
+      with:
+        go-version: 1.20.10
+
+    - name: build test binary
+      run: |
+        go version
+        make build-e2e
+
+    - name: build tool
+      run: |
+        go version
+        make release-manifests-k8s
+
+    - name: create K8S kind cluster
+      run: |
+        # kind is part of 20.04 image, see: https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
+        kind version
+        # see image listing in https://github.com/kubernetes-sigs/kind/releases/tag/v0.20.0
+        kind create cluster --config=hack/kind-config-e2e-positive.yaml --image kindest/node:v1.27.3@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72
+        kubectl label node kind-worker node-role.kubernetes.io/worker=''
+        hack/wait-nodes-ready.sh
+        kubectl describe nodes
+
+    - name: run E2E tests
+      run: |
+        _out/e2e.test -ginkgo.focus='\[ManifestFlow\]' -ginkgo.v

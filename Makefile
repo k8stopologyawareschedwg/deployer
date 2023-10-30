@@ -42,7 +42,7 @@ outdir:
 
 .PHONY: release-manifests
 release-manifests-k8s: deployer
-	@_out/deployer -P kubernetes:v1.24 render > _out/deployer-manifests-allinone.yaml
+	@_out/deployer -P kubernetes:v1.27 render > _out/deployer-manifests-allinone.yaml
 
 .PHONY: test-unit
 test-unit:
