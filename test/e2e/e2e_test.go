@@ -177,6 +177,21 @@ func dumpNRT(tc topologyclientset.Interface) {
 	fmt.Fprintf(ginkgo.GinkgoWriter, "%s\n", stringify.NodeResourceTopologyList(nrts.Items, "cluster NRTs"))
 }
 
+func deployWithManifests() error {
+	cmdline := []string{
+		"kubectl",
+		"create",
+		"-f",
+		filepath.Join(binariesPath, "deployer-manifests-allinone.yaml"),
+	}
+	// TODO: use error wrapping
+	err := runCmdline(cmdline, "failed to deploy components before test started")
+	if err != nil {
+		dumpSchedulerPods()
+	}
+	return err
+}
+
 func deploy(updaterType string, pfpEnable bool) error {
 	cmdline := []string{
 		filepath.Join(binariesPath, "deployer"),
