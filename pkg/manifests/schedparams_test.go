@@ -40,7 +40,7 @@ func TestDecodeSchedulerConfigFromData(t *testing.T) {
 		},
 		{
 			name: "bad scheduler name",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta2
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -65,7 +65,7 @@ profiles:
 		},
 		{
 			name: "bad scheduler params name",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta2
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -90,7 +90,7 @@ profiles:
 		},
 		{
 			name: "empty params",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta2
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -119,7 +119,7 @@ profiles:
 		},
 		{
 			name: "nonzero resync period",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta2
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
