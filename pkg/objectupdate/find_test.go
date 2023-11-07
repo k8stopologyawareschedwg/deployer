@@ -19,6 +19,7 @@ package objectupdate
 import (
 	"testing"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -79,5 +80,70 @@ func TestFindContainerByName(t *testing.T) {
 				t.Errorf("container found=%v expected=%v", found, tc.expectedFound)
 			}
 		})
+	}
+}
+
+func TestFindContainerByNameMutablePod(t *testing.T) {
+	testImageName := "test.io/image"
+
+	pod := corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name: "foo",
+				},
+				{
+					Name: "bar",
+				},
+				{
+					Name: "baz",
+				},
+			},
+		},
+	}
+
+	got := FindContainerByName(pod.Spec.Containers, "bar")
+	if got == nil {
+		t.Fatalf("missing container")
+	}
+
+	got.Image = testImageName
+
+	// intentionally hardcode the path
+	if pod.Spec.Containers[1].Image != testImageName {
+		t.Fatalf("failed to mutate through the FindContainerByName reference")
+	}
+}
+
+func TestFindContainerByNameMutableDeployment(t *testing.T) {
+	testWorkingDir := "/foo/bar"
+
+	dp := appsv1.Deployment{
+		Spec: appsv1.DeploymentSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "foo",
+						},
+						{
+							Name: "bar",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	got := FindContainerByName(dp.Spec.Template.Spec.Containers, "foo")
+	if got == nil {
+		t.Fatalf("missing container")
+	}
+
+	got.WorkingDir = testWorkingDir
+
+	// intentionally hardcode the path
+	if dp.Spec.Template.Spec.Containers[0].WorkingDir != testWorkingDir {
+		t.Fatalf("failed to mutate through the FindContainerByName reference")
 	}
 }
