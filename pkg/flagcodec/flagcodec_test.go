@@ -24,6 +24,60 @@ import (
 func TestParseStringRoundTrip(t *testing.T) {
 	type testCase struct {
 		name     string
+		argv     []string
+		expected []string
+	}
+
+	testCases := []testCase{
+		{
+			name: "nil",
+		},
+		{
+			name: "empty",
+			argv: []string{},
+		},
+		{
+			name: "only command",
+			argv: []string{
+				"/bin/true",
+			},
+			expected: []string{
+				"/bin/true",
+			},
+		},
+		{
+			name: "simple",
+			argv: []string{
+				"/bin/resource-topology-exporter",
+				"--sleep-interval=10s",
+				"--sysfs=/host-sys",
+				"--kubelet-state-dir=/host-var/lib/kubelet",
+				"--podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock",
+			},
+			expected: []string{
+				"/bin/resource-topology-exporter",
+				"--sleep-interval=10s",
+				"--sysfs=/host-sys",
+				"--kubelet-state-dir=/host-var/lib/kubelet",
+				"--podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			fl := ParseArgvKeyValue(tc.argv)
+			got := fl.Argv()
+			if !reflect.DeepEqual(tc.expected, got) {
+				t.Errorf("expected %v got %v", tc.expected, got)
+			}
+		})
+	}
+}
+
+func TestParseStringRoundTripWithCommand(t *testing.T) {
+	type testCase struct {
+		name     string
 		command  string
 		args     []string
 		expected []string
@@ -165,6 +219,26 @@ func TestDeleteFlags(t *testing.T) {
 			},
 		},
 		{
+			name:    "remove-option-inexistent",
+			command: "/bin/resource-topology-exporter",
+			args: []string{
+				"--sleep-interval=10s",
+				"--sysfs=/host-sys",
+				"--kubelet-state-dir=/host-var/lib/kubelet",
+				"--podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock",
+			},
+			options: []string{
+				"--foo=bar",
+			},
+			expected: []string{
+				"/bin/resource-topology-exporter",
+				"--sleep-interval=10s",
+				"--sysfs=/host-sys",
+				"--kubelet-state-dir=/host-var/lib/kubelet",
+				"--podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock",
+			},
+		},
+		{
 			name:    "remove-toggle",
 			command: "/bin/resource-topology-exporter",
 			args: []string{
@@ -185,6 +259,28 @@ func TestDeleteFlags(t *testing.T) {
 				"--podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock",
 			},
 		},
+		{
+			name:    "remove-toggle-inexistent",
+			command: "/bin/resource-topology-exporter",
+			args: []string{
+				"--sleep-interval=10s",
+				"--sysfs=/host-sys",
+				"--kubelet-state-dir=/host-var/lib/kubelet",
+				"--podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock",
+				"--pods-fingerprint",
+			},
+			options: []string{
+				"--fizz-buzz",
+			},
+			expected: []string{
+				"/bin/resource-topology-exporter",
+				"--sleep-interval=10s",
+				"--sysfs=/host-sys",
+				"--kubelet-state-dir=/host-var/lib/kubelet",
+				"--podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock",
+				"--pods-fingerprint",
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -196,6 +292,105 @@ func TestDeleteFlags(t *testing.T) {
 			got := fl.Argv()
 			if !reflect.DeepEqual(tc.expected, got) {
 				t.Errorf("expected %v got %v", tc.expected, got)
+			}
+		})
+	}
+}
+
+func TestGetFlags(t *testing.T) {
+	type testOpt struct {
+		value Val
+		found bool
+	}
+
+	type testCase struct {
+		name     string
+		command  string
+		args     []string
+		params   []string
+		expected []testOpt
+	}
+
+	testCases := []testCase{
+		{
+			name:    "get-option-missing",
+			command: "/bin/resource-topology-exporter",
+			args: []string{
+				"--sleep-interval=10s",
+				"--sysfs=/host-sys",
+				"--kubelet-state-dir=/host-var/lib/kubelet",
+				"--podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock",
+			},
+			params: []string{
+				"--blah",
+			},
+			expected: []testOpt{
+				{
+					value: Val{},
+					found: false,
+				},
+			},
+		},
+		{
+			name:    "get-flag-option-existing",
+			command: "/bin/resource-topology-exporter",
+			args: []string{
+				"--sleep-interval=10s",
+				"--sysfs=/host-sys",
+				"--kubelet-state-dir=/host-var/lib/kubelet",
+				"--podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock",
+			},
+			params: []string{
+				"--sysfs",
+			},
+			expected: []testOpt{
+				{
+					value: Val{
+						Kind: FlagOption,
+						Data: "/host-sys",
+					},
+					found: true,
+				},
+			},
+		},
+		{
+			name:    "get-toggle-option-existing",
+			command: "/bin/resource-topology-exporter",
+			args: []string{
+				"--sleep-interval=10s",
+				"--sysfs=/host-sys",
+				"--kubelet-state-dir=/host-var/lib/kubelet",
+				"--podresources-socket=unix:///host-var/lib/kubelet/pod-resources/kubelet.sock",
+				"--pods-fingerprint",
+			},
+			params: []string{
+				"--pods-fingerprint",
+			},
+			expected: []testOpt{
+				{
+					value: Val{
+						Kind: FlagToggle,
+						Data: "",
+					},
+					found: true,
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			fl := ParseArgvKeyValueWithCommand(tc.command, tc.args)
+			for idx := range tc.params {
+				param := tc.params[idx]
+				exp := tc.expected[idx]
+				got, ok := fl.GetFlag(param)
+				if ok != exp.found {
+					t.Fatalf("flag %q found %v expected %v", param, ok, exp.found)
+				}
+				if !reflect.DeepEqual(got, exp.value) {
+					t.Errorf(" flag %q got %+v expected %+v", param, got, exp.value)
+				}
 			}
 		})
 	}
