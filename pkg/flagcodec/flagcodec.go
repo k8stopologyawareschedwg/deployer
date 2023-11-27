@@ -43,18 +43,28 @@ type Flags struct {
 	keys    []string
 }
 
-func ParseArgvKeyValue(args []string) *Flags {
-	return ParseArgvKeyValueWithCommand("", args)
-}
-
-// ParseArgvKeyValue parses a clean (trimmed) argv whose components are
-// either toggles or key=value pairs. IOW, this is a restricted and easier
+// ParseArgvKeyValue parses a clean (trimmed) argv whose components
+// are either toggles or key=value pairs. IOW, this is a restricted and easier
 // to parse flavor of argv on which option and value are guaranteed to
 // be in the same item.
 // IOW, we expect
 // "--opt=foo"
 // AND NOT
 // "--opt", "foo"
+// The value of argv[0], whatever it is, is taken at command.
+func ParseArgvKeyValue(args []string) *Flags {
+	return ParseArgvKeyValueWithCommand("", args)
+}
+
+// ParseArgvKeyValueWithCommand parses a clean (trimmed) argv whose components
+// are either toggles or key=value pairs. IOW, this is a restricted and easier
+// to parse flavor of argv on which option and value are guaranteed to
+// be in the same item.
+// IOW, we expect
+// "--opt=foo"
+// AND NOT
+// "--opt", "foo"
+// The command is supplied explicitely as parameter.
 func ParseArgvKeyValueWithCommand(command string, args []string) *Flags {
 	ret := &Flags{
 		command: command,
