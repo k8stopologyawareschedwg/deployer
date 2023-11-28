@@ -19,6 +19,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 
@@ -139,7 +140,7 @@ var _ = ginkgo.Describe("[ManifestFlow] Deployer rendering", func() {
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 				ginkgo.By("checking the pod goes running")
-				e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name)
+				e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name, 2*time.Minute)
 			})
 		})
 	})
