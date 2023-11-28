@@ -213,6 +213,182 @@ profiles:
 `,
 			expectedUpdate: true,
 		},
+		{
+			name: "all params updated from empty",
+			params: &manifests.ConfigParams{
+				Cache: &manifests.ConfigCacheParams{
+					ResyncPeriodSeconds:   newInt64(42),
+					ResyncMethod:          newString("OnlyExclusiveResources"),
+					ForeignPodsDetectMode: newString("OnlyExclusiveResources"),
+				},
+			},
+			initial: configTemplateEmpty,
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        foreignPodsDetect: OnlyExclusiveResources
+        resyncMethod: OnlyExclusiveResources
+      cacheResyncPeriodSeconds: 42
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expectedUpdate: true,
+		},
+		{
+			name: "cache params updated from empty",
+			params: &manifests.ConfigParams{
+				Cache: &manifests.ConfigCacheParams{
+					ResyncPeriodSeconds:   newInt64(11),
+					ResyncMethod:          newString("OnlyExclusiveResources"),
+					ForeignPodsDetectMode: newString("OnlyExclusiveResources"),
+				},
+			},
+			initial: configTemplateAllValues,
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        foreignPodsDetect: OnlyExclusiveResources
+        resyncMethod: OnlyExclusiveResources
+      cacheResyncPeriodSeconds: 11
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expectedUpdate: true,
+		},
+		{
+			name: "all params updated from nonempty",
+			params: &manifests.ConfigParams{
+				Cache: &manifests.ConfigCacheParams{
+					ResyncPeriodSeconds:   newInt64(7),
+					ResyncMethod:          newString("Autodetect"),
+					ForeignPodsDetectMode: newString("None"),
+				},
+			},
+			initial: configTemplateAllValuesFineTuned,
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        foreignPodsDetect: None
+        resyncMethod: Autodetect
+      cacheResyncPeriodSeconds: 7
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expectedUpdate: true,
+		},
+		{
+			name: "partial cache params updated from empty",
+			params: &manifests.ConfigParams{
+				Cache: &manifests.ConfigCacheParams{
+					ResyncPeriodSeconds:   newInt64(42),
+					ForeignPodsDetectMode: newString("None"),
+				},
+			},
+			initial: configTemplateEmpty,
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        foreignPodsDetect: None
+      cacheResyncPeriodSeconds: 42
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expectedUpdate: true,
+		},
+		{
+			name: "partial params updated from nonempty",
+			params: &manifests.ConfigParams{
+				Cache: &manifests.ConfigCacheParams{
+					ForeignPodsDetectMode: newString("All"),
+				},
+			},
+			initial: configTemplateAllValuesFineTuned,
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        foreignPodsDetect: All
+        resyncMethod: OnlyExclusiveResources
+      cacheResyncPeriodSeconds: 5
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expectedUpdate: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -267,6 +443,31 @@ leaderElection:
 profiles:
 - pluginConfig:
   - args:
+      cacheResyncPeriodSeconds: 5
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`
+
+var configTemplateAllValuesFineTuned string = `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        foreignPodsDetect: OnlyExclusiveResources
+        resyncMethod: OnlyExclusiveResources
       cacheResyncPeriodSeconds: 5
     name: NodeResourceTopologyMatch
   plugins:
@@ -341,5 +542,9 @@ profiles:
 `
 
 func newInt64(value int64) *int64 {
+	return &value
+}
+
+func newString(value string) *string {
 	return &value
 }
