@@ -18,6 +18,7 @@ package pods
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -68,9 +69,10 @@ func GuaranteedSleeperPod(namespace, schedulerName string) *corev1.Pod {
 	}
 }
 
-func WaitForPodToBeRunning(cli *kubernetes.Clientset, podNamespace, podName string) *corev1.Pod {
+func WaitForPodToBeRunning(cli *kubernetes.Clientset, podNamespace, podName string, timeout time.Duration) *corev1.Pod {
 	var err error
 	var pod *corev1.Pod
+	startTime := time.Now()
 	gomega.EventuallyWithOffset(1, func() error {
 		pod, err = cli.CoreV1().Pods(podNamespace).Get(context.TODO(), podName, metav1.GetOptions{})
 		if err != nil {
@@ -80,11 +82,13 @@ func WaitForPodToBeRunning(cli *kubernetes.Clientset, podNamespace, podName stri
 		case corev1.PodFailed, corev1.PodSucceeded:
 			return fmt.Errorf("pod %q status %q which is unexpected", podName, pod.Status.Phase)
 		case corev1.PodRunning:
-			fmt.Fprintf(ginkgo.GinkgoWriter, "Pod %q is running!\n", podName)
+			fmt.Fprintf(ginkgo.GinkgoWriter, "Pod %q is running! (took %v)\n", podName, time.Since(startTime))
 			return nil
 		}
-		return fmt.Errorf("pod %q status %q, waiting for it to be Running (with Ready = true)", podName, pod.Status.Phase)
-	}, 1*time.Minute, 15*time.Second).ShouldNot(gomega.HaveOccurred())
+		msg := fmt.Sprintf("pod %q status %q, waiting for it to be Running (with Ready = true)", podName, pod.Status.Phase)
+		fmt.Fprintln(ginkgo.GinkgoWriter, msg)
+		return errors.New(msg)
+	}, timeout, 10*time.Second).ShouldNot(gomega.HaveOccurred())
 	return pod
 }
 
@@ -92,6 +96,7 @@ func WaitPodsToBeRunningByRegex(pattern string) {
 	cs, err := clientutil.New()
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
+	startTime := time.Now()
 	gomega.EventuallyWithOffset(1, func() error {
 		pods, err := GetByRegex(cs, fmt.Sprintf("%s-*", pattern))
 		if err != nil {
@@ -103,11 +108,14 @@ func WaitPodsToBeRunningByRegex(pattern string) {
 
 		for _, pod := range pods {
 			if pod.Status.Phase != corev1.PodRunning {
-				return fmt.Errorf("pod %q is not in %v state", pod.Name, corev1.PodRunning)
+				msg := fmt.Sprintf("pod %q is not in %v state", pod.Name, corev1.PodRunning)
+				fmt.Println(ginkgo.GinkgoWriter, msg)
+				return errors.New(msg)
 			}
 		}
+		fmt.Fprintf(ginkgo.GinkgoWriter, "all pods running! (took %v)\n", time.Since(startTime))
 		return nil
-	}, 1*time.Minute, 15*time.Second).ShouldNot(gomega.HaveOccurred())
+	}, 1*time.Minute, 10*time.Second).ShouldNot(gomega.HaveOccurred())
 }
 
 func GetByRegex(cs client.Client, reg string) ([]*corev1.Pod, error) {

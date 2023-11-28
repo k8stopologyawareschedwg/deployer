@@ -331,7 +331,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 				ginkgo.By("checking the pod goes running")
-				e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name)
+				e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name, 2*time.Minute)
 			})
 		})
 
@@ -426,9 +426,8 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 				ginkgo.By("checking the pod goes running")
-				e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name)
+				e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name, 2*time.Minute)
 			})
-
 		})
 	})
 })
