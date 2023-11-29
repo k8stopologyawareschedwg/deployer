@@ -18,6 +18,8 @@ the `deployer` project wants to help anyone which want to work with the topology
 - a set of reusable golang packages which can be used by other golang projects to deploy/undeploy or in general
   interact with the topology-aware stack components (e.g. operators)
 
+please check `RATIONALE.md` for more detailed development notes about rationale for technical decisions.
+
 ## requirements
 
 * kubernetes >= 1.21
