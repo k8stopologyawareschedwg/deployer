@@ -36,7 +36,7 @@ func UpdaterDaemonSet(ds *appsv1.DaemonSet, opts objectupdate.DaemonSetOptions) 
 			c.ImagePullPolicy = corev1.PullIfNotPresent
 		}
 
-		flags := flagcodec.ParseArgvKeyValue(c.Args)
+		flags := flagcodec.ParseArgvKeyValue(c.Args, flagcodec.WithFlagNormalization)
 		flags.SetOption("-v", fmt.Sprintf("%d", opts.Verbose))
 		if opts.UpdateInterval > 0 {
 			flags.SetOption("--sleep-interval", fmt.Sprintf("%v", opts.UpdateInterval))

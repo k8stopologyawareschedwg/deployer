@@ -115,7 +115,7 @@ spec:
       - args:
         - /bin/kube-scheduler
         - --config=/etc/kubernetes/scheduler-config.yaml
-        - --v=4
+        - -v=4
         image: test.com/image:latest
         imagePullPolicy: Always
         livenessProbe:
@@ -176,7 +176,7 @@ spec:
       - args:
         - /bin/kube-scheduler
         - --config=/etc/kubernetes/scheduler-config.yaml
-        - --v=4
+        - -v=4
         image: test.com/image:latest
         imagePullPolicy: Always
         livenessProbe:
@@ -239,7 +239,7 @@ spec:
       - args:
         - /bin/kube-scheduler
         - --config=/etc/kubernetes/scheduler-config.yaml
-        - --v=6
+        - -v=6
         image: test.com/image:latest
         imagePullPolicy: Always
         livenessProbe:
