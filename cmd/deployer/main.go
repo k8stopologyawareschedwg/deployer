@@ -22,6 +22,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"k8s.io/klog/v2/klogr"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
+
 	"github.com/k8stopologyawareschedwg/deployer/pkg/commands"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deploy"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
@@ -56,6 +59,8 @@ func NewVersionCommand(env *deployer.Environment, commonOpts *deploy.Options) *c
 }
 
 func main() {
+	ctrllog.SetLogger(klogr.NewWithOptions(klogr.WithFormat(klogr.FormatKlog)))
+
 	root := commands.NewRootCommand(NewVersionCommand)
 	if err := root.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)

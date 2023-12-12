@@ -30,10 +30,12 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/klog/v2/klogr"
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 	nrtattrv1alpha2 "github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2/helper/attribute"
@@ -53,6 +55,7 @@ var (
 )
 
 func TestE2E(t *testing.T) {
+	ctrllog.SetLogger(klogr.NewWithOptions(klogr.WithFormat(klogr.FormatKlog)))
 	gomega.RegisterFailHandler(ginkgo.Fail)
 	ginkgo.RunSpecs(t, "Deployer Suite")
 }
