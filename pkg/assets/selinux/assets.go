@@ -8,15 +8,10 @@ import (
 )
 
 const (
-	// OCPVersion4.11 is DEPRECATED and will be removed in the next versions
-	OCPVersion411 = "v4.11"
-)
-
-const (
 	policyDir = "policy"
 
 	ocpVersion410 = "v4.10"
-	// TODO: demote public constant here once we can remove from the public API
+	ocpVersion411 = "v4.11"
 	ocpVersion412 = "v4.12"
 	ocpVersion413 = "v4.13"
 )
