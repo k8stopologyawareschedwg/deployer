@@ -52,7 +52,7 @@ func knownVersions() []string {
 		ocpVersion414,
 		ocpVersion413,
 		ocpVersion412,
-		ocpVersion411,
+		OCPVersion411,
 		ocpVersion410,
 	}
 }
