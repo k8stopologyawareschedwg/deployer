@@ -31,6 +31,11 @@ func TestGetPolicy(t *testing.T) {
 
 	testCases := []testCase{
 		{
+			name:          "latest", // at time of writing. Keep me updated!
+			ver:           platform.Version("v4.16"),
+			expectedError: false,
+		},
+		{
 			name:          "supported",
 			ver:           platform.Version("v4.12"),
 			expectedError: false,
