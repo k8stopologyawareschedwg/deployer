@@ -54,10 +54,6 @@ func (mf Manifests) Clone() Manifests {
 
 type RenderOptions struct {
 	DaemonSet objectupdate.DaemonSetOptions
-
-	// Deployment option
-	Replicas int32
-
 	// General options
 	Namespace string
 }
