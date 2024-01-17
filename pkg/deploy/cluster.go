@@ -64,7 +64,6 @@ func OnCluster(env *deployer.Environment, commonOpts *Options) error {
 		Platform:          commonOpts.ClusterPlatform,
 		WaitCompletion:    commonOpts.WaitCompletion,
 		Replicas:          int32(commonOpts.Replicas),
-		RTEConfigData:     commonOpts.RTEConfigData,
 		PullIfNotPresent:  commonOpts.PullIfNotPresent,
 		ProfileName:       commonOpts.SchedProfileName,
 		CacheResyncPeriod: commonOpts.SchedResyncPeriod,

@@ -33,7 +33,6 @@ type Options struct {
 	WaitCompletion    bool
 	Replicas          int32
 	ProfileName       string
-	RTEConfigData     string
 	PullIfNotPresent  bool
 	CacheResyncPeriod time.Duration
 	CtrlPlaneAffinity bool
