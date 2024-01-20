@@ -19,6 +19,7 @@ package sched
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 )
 
@@ -220,6 +221,7 @@ profiles:
 					ResyncPeriodSeconds:   newInt64(42),
 					ResyncMethod:          newString("OnlyExclusiveResources"),
 					ForeignPodsDetectMode: newString("OnlyExclusiveResources"),
+					InformerMode:          newString("Dedicated"),
 				},
 			},
 			initial: configTemplateEmpty,
@@ -232,6 +234,7 @@ profiles:
   - args:
       cache:
         foreignPodsDetect: OnlyExclusiveResources
+        informerMode: Dedicated
         resyncMethod: OnlyExclusiveResources
       cacheResyncPeriodSeconds: 42
     name: NodeResourceTopologyMatch
@@ -292,6 +295,7 @@ profiles:
 					ResyncPeriodSeconds:   newInt64(7),
 					ResyncMethod:          newString("Autodetect"),
 					ForeignPodsDetectMode: newString("None"),
+					InformerMode:          newString("Shared"),
 				},
 			},
 			initial: configTemplateAllValuesFineTuned,
@@ -304,6 +308,7 @@ profiles:
   - args:
       cache:
         foreignPodsDetect: None
+        informerMode: Shared
         resyncMethod: Autodetect
       cacheResyncPeriodSeconds: 7
     name: NodeResourceTopologyMatch
@@ -372,6 +377,7 @@ profiles:
   - args:
       cache:
         foreignPodsDetect: All
+        informerMode: Dedicated
         resyncMethod: OnlyExclusiveResources
       cacheResyncPeriodSeconds: 5
     name: NodeResourceTopologyMatch
@@ -409,7 +415,7 @@ profiles:
 
 			rendered := string(data)
 			if rendered != tc.expected {
-				t.Errorf("rendering failed.\nrendered=[%s]\nexpected=[%s]\n", rendered, tc.expected)
+				t.Errorf("rendering failed.\nrendered=[%s]\nexpected=[%s]\ndiff=[%s]\n", rendered, tc.expected, cmp.Diff(rendered, tc.expected))
 			}
 		})
 	}
@@ -467,6 +473,7 @@ profiles:
   - args:
       cache:
         foreignPodsDetect: OnlyExclusiveResources
+        informerMode: Dedicated
         resyncMethod: OnlyExclusiveResources
       cacheResyncPeriodSeconds: 5
     name: NodeResourceTopologyMatch
