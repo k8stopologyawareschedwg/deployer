@@ -24,9 +24,9 @@ import (
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 	nfdupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/nfd"
 	rbacupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/rbac"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
 type Manifests struct {
@@ -52,24 +52,18 @@ func (mf Manifests) Clone() Manifests {
 	return ret
 }
 
-type RenderOptions struct {
-	DaemonSet objectupdate.DaemonSetOptions
-	// General options
-	Namespace string
-}
-
-func (mf Manifests) Render(options RenderOptions) (Manifests, error) {
+func (mf Manifests) Render(opts options.UpdaterDaemon) (Manifests, error) {
 	ret := mf.Clone()
 
-	if options.Namespace != "" {
-		ret.Namespace.Name = options.Namespace
+	if opts.Namespace != "" {
+		ret.Namespace.Name = opts.Namespace
 	}
 
 	rbacupdate.ClusterRoleBinding(ret.CRBTopologyUpdater, mf.SATopologyUpdater.Name, ret.Namespace.Name)
 
 	ret.DSTopologyUpdater.Spec.Template.Spec.ServiceAccountName = mf.SATopologyUpdater.Name
 
-	nfdupdate.UpdaterDaemonSet(ret.DSTopologyUpdater, options.DaemonSet)
+	nfdupdate.UpdaterDaemonSet(ret.DSTopologyUpdater, opts.DaemonSet)
 
 	return ret, nil
 }

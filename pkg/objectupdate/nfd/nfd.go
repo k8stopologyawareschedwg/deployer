@@ -27,9 +27,10 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
-func UpdaterDaemonSet(ds *appsv1.DaemonSet, opts objectupdate.DaemonSetOptions) {
+func UpdaterDaemonSet(ds *appsv1.DaemonSet, opts options.DaemonSet) {
 	if c := objectupdate.FindContainerByName(ds.Spec.Template.Spec.Containers, manifests.ContainerNameNFDTopologyUpdater); c != nil {
 		c.ImagePullPolicy = corev1.PullAlways
 		if opts.PullIfNotPresent {

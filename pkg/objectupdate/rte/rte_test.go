@@ -24,7 +24,7 @@ import (
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
@@ -256,7 +256,7 @@ func TestDaemonSet(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error getting the manifests: %v", err)
 			}
-			DaemonSet(ds, tc.plat, "", objectupdate.DaemonSetOptions{
+			DaemonSet(ds, tc.plat, "", options.DaemonSet{
 				PFPEnable:          tc.pfpEnable,
 				NotificationEnable: true,
 				UpdateInterval:     10 * time.Second,

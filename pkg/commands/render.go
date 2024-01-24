@@ -24,19 +24,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deploy"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
-type RenderOptions struct{}
-
-func NewRenderCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
-	opts := &RenderOptions{}
+func NewRenderCommand(env *deployer.Environment, commonOpts *options.Options) *cobra.Command {
+	opts := &options.Scheduler{}
 	render := &cobra.Command{
 		Use:   "render",
 		Short: "render all the manifests",
@@ -55,7 +53,7 @@ func NewRenderCommand(env *deployer.Environment, commonOpts *deploy.Options) *co
 	return render
 }
 
-func NewRenderAPICommand(env *deployer.Environment, commonOpts *deploy.Options, opts *RenderOptions) *cobra.Command {
+func NewRenderAPICommand(env *deployer.Environment, commonOpts *options.Options, opts *options.Scheduler) *cobra.Command {
 	render := &cobra.Command{
 		Use:   "api",
 		Short: "render the APIs needed for topology-aware-scheduling",
@@ -78,7 +76,7 @@ func NewRenderAPICommand(env *deployer.Environment, commonOpts *deploy.Options, 
 	return render
 }
 
-func NewRenderSchedulerPluginCommand(env *deployer.Environment, commonOpts *deploy.Options, opts *RenderOptions) *cobra.Command {
+func NewRenderSchedulerPluginCommand(env *deployer.Environment, commonOpts *options.Options, opts *options.Scheduler) *cobra.Command {
 	render := &cobra.Command{
 		Use:   "scheduler-plugin",
 		Short: "render the scheduler plugin needed for topology-aware-scheduling",
@@ -97,7 +95,7 @@ func NewRenderSchedulerPluginCommand(env *deployer.Environment, commonOpts *depl
 				return err
 			}
 
-			renderOpts := sched.RenderOptions{
+			renderOpts := options.Scheduler{
 				Replicas:         int32(commonOpts.Replicas),
 				PullIfNotPresent: commonOpts.PullIfNotPresent,
 			}
@@ -112,7 +110,7 @@ func NewRenderSchedulerPluginCommand(env *deployer.Environment, commonOpts *depl
 	return render
 }
 
-func NewRenderTopologyUpdaterCommand(env *deployer.Environment, commonOpts *deploy.Options, opts *RenderOptions) *cobra.Command {
+func NewRenderTopologyUpdaterCommand(env *deployer.Environment, commonOpts *options.Options, opts *options.Scheduler) *cobra.Command {
 	render := &cobra.Command{
 		Use:   "topology-updater",
 		Short: "render the topology updater needed for topology-aware-scheduling",
@@ -131,17 +129,17 @@ func NewRenderTopologyUpdaterCommand(env *deployer.Environment, commonOpts *depl
 	return render
 }
 
-func makeUpdaterObjects(commonOpts *deploy.Options) ([]client.Object, string, error) {
+func makeUpdaterObjects(commonOpts *options.Options) ([]client.Object, string, error) {
 	ns, namespace, err := updaters.SetupNamespace(commonOpts.UpdaterType)
 	if err != nil {
 		return nil, namespace, err
 	}
 
-	opts := updaters.Options{
+	opts := options.Updater{
 		PlatformVersion: commonOpts.UserPlatformVersion,
 		Platform:        commonOpts.UserPlatform,
 		RTEConfigData:   commonOpts.RTEConfigData,
-		DaemonSet:       deploy.DaemonSetOptionsFrom(commonOpts),
+		DaemonSet:       options.ForDaemonSet(commonOpts),
 		EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 	}
 	objs, err := updaters.GetObjects(opts, commonOpts.UpdaterType, namespace)
@@ -152,7 +150,7 @@ func makeUpdaterObjects(commonOpts *deploy.Options) ([]client.Object, string, er
 	return append([]client.Object{ns}, objs...), namespace, nil
 }
 
-func RenderManifests(env *deployer.Environment, commonOpts *deploy.Options) error {
+func RenderManifests(env *deployer.Environment, commonOpts *options.Options) error {
 	var objs []client.Object
 
 	apiManifests, err := api.GetManifests(commonOpts.UserPlatform)
@@ -176,7 +174,7 @@ func RenderManifests(env *deployer.Environment, commonOpts *deploy.Options) erro
 		return err
 	}
 
-	schedRenderOpts := sched.RenderOptions{
+	schedRenderOpts := options.Scheduler{
 		Replicas:          int32(commonOpts.Replicas),
 		PullIfNotPresent:  commonOpts.PullIfNotPresent,
 		ProfileName:       commonOpts.SchedProfileName,
@@ -194,7 +192,7 @@ func RenderManifests(env *deployer.Environment, commonOpts *deploy.Options) erro
 	return manifests.RenderObjects(objs, os.Stdout)
 }
 
-func NewRenderPolicyCommand(env *deployer.Environment, commonOpts *deploy.Options, opts *RenderOptions) *cobra.Command {
+func NewRenderPolicyCommand(env *deployer.Environment, commonOpts *options.Options, opts *options.Scheduler) *cobra.Command {
 	render := &cobra.Command{
 		Use:   "policy",
 		Short: "render the SELinux policy needed for topology-aware-scheduling",

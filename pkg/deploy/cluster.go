@@ -25,10 +25,10 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
-func OnCluster(env *deployer.Environment, commonOpts *Options) error {
+func OnCluster(env *deployer.Environment, commonOpts *options.Options) error {
 	if err := env.EnsureClient(); err != nil {
 		return err
 	}
@@ -45,22 +45,22 @@ func OnCluster(env *deployer.Environment, commonOpts *Options) error {
 	}
 
 	env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
-	if err := api.Deploy(env, api.Options{
+	if err := api.Deploy(env, options.API{
 		Platform: commonOpts.ClusterPlatform,
 	}); err != nil {
 		return err
 	}
-	if err := updaters.Deploy(env, commonOpts.UpdaterType, updaters.Options{
+	if err := updaters.Deploy(env, commonOpts.UpdaterType, options.Updater{
 		Platform:        commonOpts.ClusterPlatform,
 		PlatformVersion: commonOpts.ClusterVersion,
 		WaitCompletion:  commonOpts.WaitCompletion,
 		RTEConfigData:   commonOpts.RTEConfigData,
-		DaemonSet:       DaemonSetOptionsFrom(commonOpts),
+		DaemonSet:       options.ForDaemonSet(commonOpts),
 		EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 	}); err != nil {
 		return err
 	}
-	if err := sched.Deploy(env, sched.Options{
+	if err := sched.Deploy(env, options.Scheduler{
 		Platform:          commonOpts.ClusterPlatform,
 		WaitCompletion:    commonOpts.WaitCompletion,
 		Replicas:          int32(commonOpts.Replicas),
@@ -73,14 +73,4 @@ func OnCluster(env *deployer.Environment, commonOpts *Options) error {
 		return err
 	}
 	return nil
-}
-
-func DaemonSetOptionsFrom(commonOpts *Options) objectupdate.DaemonSetOptions {
-	return objectupdate.DaemonSetOptions{
-		PullIfNotPresent:   commonOpts.PullIfNotPresent,
-		PFPEnable:          commonOpts.UpdaterPFPEnable,
-		NotificationEnable: commonOpts.UpdaterNotifEnable,
-		UpdateInterval:     commonOpts.UpdaterSyncPeriod,
-		Verbose:            commonOpts.UpdaterVerbose,
-	}
 }

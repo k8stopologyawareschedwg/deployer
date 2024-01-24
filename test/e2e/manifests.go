@@ -37,6 +37,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 
 	e2enodes "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/nodes"
 	e2epods "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/pods"
@@ -64,7 +65,7 @@ var _ = ginkgo.Describe("[ManifestFlow] Deployer rendering", func() {
 				enableCRIHooks := true
 				mf, err := rte.GetManifests(platform.Kubernetes, platform.Version("1.23"), ns.Name, enableCRIHooks)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				mf, err = mf.Render(rte.RenderOptions{
+				mf, err = mf.Render(options.UpdaterDaemon{
 					Namespace: ns.Name,
 				})
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -73,7 +74,7 @@ var _ = ginkgo.Describe("[ManifestFlow] Deployer rendering", func() {
 				ginkgo.By("checking that topo-aware-scheduler pod is running")
 				mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				mfs, err = mfs.Render(logr.Discard(), sched.RenderOptions{
+				mfs, err = mfs.Render(logr.Discard(), options.Scheduler{
 					Replicas: int32(1),
 				})
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())

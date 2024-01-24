@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
 const defaultNFDNamespace = "node-feature-discovery"
@@ -111,7 +112,7 @@ func TestRender(t *testing.T) {
 	for _, tc := range testCases {
 		tc.mf, _ = GetManifests(tc.plat, "")
 		mfBeforeUpdate := tc.mf.Clone()
-		uMf, err := tc.mf.Render(RenderOptions{})
+		uMf, err := tc.mf.Render(options.UpdaterDaemon{})
 		if err != nil {
 			t.Errorf("testcase %q, Render() failed: %v", tc.name, err)
 		}

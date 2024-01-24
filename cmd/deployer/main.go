@@ -26,8 +26,8 @@ import (
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/commands"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deploy"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 	deployerversion "github.com/k8stopologyawareschedwg/deployer/pkg/version"
 )
 
@@ -36,7 +36,7 @@ type versionOptions struct {
 	hashOnly   bool
 }
 
-func NewVersionCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
+func NewVersionCommand(env *deployer.Environment, commonOpts *options.Options) *cobra.Command {
 	opts := versionOptions{}
 	version := &cobra.Command{
 		Use:   "version",

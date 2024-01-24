@@ -11,13 +11,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Copyright 2023 Red Hat, Inc.
+ * Copyright 2024 Red Hat, Inc.
  */
 
-package deploy
+package options
 
 import (
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 )
@@ -43,4 +45,55 @@ type Options struct {
 	ClusterPlatform        platform.Platform
 	ClusterVersion         platform.Version
 	WaitCompletion         bool
+}
+
+type API struct {
+	Platform platform.Platform
+}
+
+type Scheduler struct {
+	Platform          platform.Platform
+	WaitCompletion    bool
+	Replicas          int32
+	ProfileName       string
+	PullIfNotPresent  bool
+	CacheResyncPeriod time.Duration
+	CtrlPlaneAffinity bool
+	Verbose           int
+}
+
+type DaemonSet struct {
+	Verbose            int
+	PullIfNotPresent   bool
+	PFPEnable          bool
+	NotificationEnable bool
+	NodeSelector       *metav1.LabelSelector
+	UpdateInterval     time.Duration
+}
+
+type UpdaterDaemon struct {
+	DaemonSet                 DaemonSet
+	MachineConfigPoolSelector *metav1.LabelSelector
+	ConfigData                string
+	Namespace                 string
+	Name                      string
+}
+
+type Updater struct {
+	Platform        platform.Platform
+	PlatformVersion platform.Version
+	WaitCompletion  bool
+	RTEConfigData   string
+	DaemonSet       DaemonSet
+	EnableCRIHooks  bool
+}
+
+func ForDaemonSet(commonOpts *Options) DaemonSet {
+	return DaemonSet{
+		PullIfNotPresent:   commonOpts.PullIfNotPresent,
+		PFPEnable:          commonOpts.UpdaterPFPEnable,
+		NotificationEnable: commonOpts.UpdaterNotifEnable,
+		UpdateInterval:     commonOpts.UpdaterSyncPeriod,
+		Verbose:            commonOpts.UpdaterVerbose,
+	}
 }

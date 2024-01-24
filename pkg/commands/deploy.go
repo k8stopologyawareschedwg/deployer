@@ -28,9 +28,10 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
-func NewDeployCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
+func NewDeployCommand(env *deployer.Environment, commonOpts *options.Options) *cobra.Command {
 	deploy := &cobra.Command{
 		Use:   "deploy",
 		Short: "deploy the components and configurations needed for topology-aware-scheduling",
@@ -46,7 +47,7 @@ func NewDeployCommand(env *deployer.Environment, commonOpts *deploy.Options) *co
 	return deploy
 }
 
-func NewDeployAPICommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
+func NewDeployAPICommand(env *deployer.Environment, commonOpts *options.Options) *cobra.Command {
 	deploy := &cobra.Command{
 		Use:   "api",
 		Short: "deploy the APIs needed for topology-aware-scheduling",
@@ -67,7 +68,7 @@ func NewDeployAPICommand(env *deployer.Environment, commonOpts *deploy.Options) 
 			}
 
 			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
-			if err := api.Deploy(env, api.Options{Platform: commonOpts.ClusterPlatform}); err != nil {
+			if err := api.Deploy(env, options.API{Platform: commonOpts.ClusterPlatform}); err != nil {
 				return err
 			}
 			return nil
@@ -77,7 +78,7 @@ func NewDeployAPICommand(env *deployer.Environment, commonOpts *deploy.Options) 
 	return deploy
 }
 
-func NewDeploySchedulerPluginCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
+func NewDeploySchedulerPluginCommand(env *deployer.Environment, commonOpts *options.Options) *cobra.Command {
 	deploy := &cobra.Command{
 		Use:   "scheduler-plugin",
 		Short: "deploy the scheduler plugin needed for topology-aware-scheduling",
@@ -100,7 +101,7 @@ func NewDeploySchedulerPluginCommand(env *deployer.Environment, commonOpts *depl
 			}
 
 			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
-			return sched.Deploy(env, sched.Options{
+			return sched.Deploy(env, options.Scheduler{
 				Platform:          commonOpts.ClusterPlatform,
 				WaitCompletion:    commonOpts.WaitCompletion,
 				Replicas:          int32(commonOpts.Replicas),
@@ -116,7 +117,7 @@ func NewDeploySchedulerPluginCommand(env *deployer.Environment, commonOpts *depl
 	return deploy
 }
 
-func NewDeployTopologyUpdaterCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
+func NewDeployTopologyUpdaterCommand(env *deployer.Environment, commonOpts *options.Options) *cobra.Command {
 	deploy := &cobra.Command{
 		Use:   "topology-updater",
 		Short: "deploy the topology updater needed for topology-aware-scheduling",
@@ -139,12 +140,12 @@ func NewDeployTopologyUpdaterCommand(env *deployer.Environment, commonOpts *depl
 			}
 
 			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
-			return updaters.Deploy(env, commonOpts.UpdaterType, updaters.Options{
+			return updaters.Deploy(env, commonOpts.UpdaterType, options.Updater{
 				Platform:        commonOpts.ClusterPlatform,
 				PlatformVersion: commonOpts.ClusterVersion,
 				WaitCompletion:  commonOpts.WaitCompletion,
 				RTEConfigData:   commonOpts.RTEConfigData,
-				DaemonSet:       deploy.DaemonSetOptionsFrom(commonOpts),
+				DaemonSet:       options.ForDaemonSet(commonOpts),
 				EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 			})
 		},

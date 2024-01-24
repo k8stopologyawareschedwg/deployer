@@ -21,16 +21,16 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deploy"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/api"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
-func NewRemoveCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
+func NewRemoveCommand(env *deployer.Environment, commonOpts *options.Options) *cobra.Command {
 	remove := &cobra.Command{
 		Use:   "remove",
 		Short: "remove the components and configurations needed for topology-aware-scheduling",
@@ -53,7 +53,7 @@ func NewRemoveCommand(env *deployer.Environment, commonOpts *deploy.Options) *co
 			}
 			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
 
-			err = sched.Remove(env, sched.Options{
+			err = sched.Remove(env, options.Scheduler{
 				Platform:          commonOpts.ClusterPlatform,
 				WaitCompletion:    commonOpts.WaitCompletion,
 				Replicas:          int32(commonOpts.Replicas),
@@ -66,19 +66,19 @@ func NewRemoveCommand(env *deployer.Environment, commonOpts *deploy.Options) *co
 				// intentionally keep going to remove as much as possible
 				env.Log.Info("while removing", "error", err)
 			}
-			err = updaters.Remove(env, commonOpts.UpdaterType, updaters.Options{
+			err = updaters.Remove(env, commonOpts.UpdaterType, options.Updater{
 				Platform:        commonOpts.ClusterPlatform,
 				PlatformVersion: commonOpts.ClusterVersion,
 				WaitCompletion:  commonOpts.WaitCompletion,
 				RTEConfigData:   commonOpts.RTEConfigData,
-				DaemonSet:       deploy.DaemonSetOptionsFrom(commonOpts),
+				DaemonSet:       options.ForDaemonSet(commonOpts),
 				EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
 				env.Log.Info("while removing", "error", err)
 			}
-			err = api.Remove(env, api.Options{
+			err = api.Remove(env, options.API{
 				Platform: commonOpts.ClusterPlatform,
 			})
 			if err != nil {
@@ -96,7 +96,7 @@ func NewRemoveCommand(env *deployer.Environment, commonOpts *deploy.Options) *co
 	return remove
 }
 
-func NewRemoveAPICommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
+func NewRemoveAPICommand(env *deployer.Environment, commonOpts *options.Options) *cobra.Command {
 	remove := &cobra.Command{
 		Use:   "api",
 		Short: "remove the APIs needed for topology-aware-scheduling",
@@ -119,7 +119,7 @@ func NewRemoveAPICommand(env *deployer.Environment, commonOpts *deploy.Options) 
 			}
 
 			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
-			if err := api.Remove(env, api.Options{Platform: commonOpts.ClusterPlatform}); err != nil {
+			if err := api.Remove(env, options.API{Platform: commonOpts.ClusterPlatform}); err != nil {
 				return err
 			}
 			return nil
@@ -129,7 +129,7 @@ func NewRemoveAPICommand(env *deployer.Environment, commonOpts *deploy.Options) 
 	return remove
 }
 
-func NewRemoveSchedulerPluginCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
+func NewRemoveSchedulerPluginCommand(env *deployer.Environment, commonOpts *options.Options) *cobra.Command {
 	remove := &cobra.Command{
 		Use:   "scheduler-plugin",
 		Short: "remove the scheduler plugin needed for topology-aware-scheduling",
@@ -152,7 +152,7 @@ func NewRemoveSchedulerPluginCommand(env *deployer.Environment, commonOpts *depl
 			}
 
 			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
-			return sched.Remove(env, sched.Options{
+			return sched.Remove(env, options.Scheduler{
 				Platform:          commonOpts.ClusterPlatform,
 				WaitCompletion:    commonOpts.WaitCompletion,
 				Replicas:          int32(commonOpts.Replicas),
@@ -168,7 +168,7 @@ func NewRemoveSchedulerPluginCommand(env *deployer.Environment, commonOpts *depl
 	return remove
 }
 
-func NewRemoveTopologyUpdaterCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
+func NewRemoveTopologyUpdaterCommand(env *deployer.Environment, commonOpts *options.Options) *cobra.Command {
 	remove := &cobra.Command{
 		Use:   "topology-updater",
 		Short: "remove the topology updater needed for topology-aware-scheduling",
@@ -191,12 +191,12 @@ func NewRemoveTopologyUpdaterCommand(env *deployer.Environment, commonOpts *depl
 			}
 
 			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
-			return updaters.Remove(env, commonOpts.UpdaterType, updaters.Options{
+			return updaters.Remove(env, commonOpts.UpdaterType, options.Updater{
 				Platform:        commonOpts.ClusterPlatform,
 				PlatformVersion: commonOpts.ClusterVersion,
 				WaitCompletion:  commonOpts.WaitCompletion,
 				RTEConfigData:   commonOpts.RTEConfigData,
-				DaemonSet:       deploy.DaemonSetOptionsFrom(commonOpts),
+				DaemonSet:       options.ForDaemonSet(commonOpts),
 				EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
 			})
 		},
