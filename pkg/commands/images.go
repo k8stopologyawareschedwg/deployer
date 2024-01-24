@@ -21,10 +21,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deploy"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
 type ImagesOptions struct {
@@ -33,7 +33,7 @@ type ImagesOptions struct {
 	useSHA     bool
 }
 
-func NewImagesCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
+func NewImagesCommand(env *deployer.Environment, commonOpts *options.Options) *cobra.Command {
 	opts := &ImagesOptions{}
 	images := &cobra.Command{
 		Use:   "images",

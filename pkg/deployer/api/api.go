@@ -25,17 +25,14 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	apimanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
 	apiwait "github.com/k8stopologyawareschedwg/deployer/pkg/objectwait/api"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
-
-type Options struct {
-	Platform platform.Platform
-}
 
 func SetupNamespace(plat platform.Platform) (*corev1.Namespace, string, error) {
 	return nil, "", fmt.Errorf("the API is a cluster scoped resource")
 }
 
-func Deploy(env *deployer.Environment, opts Options) error {
+func Deploy(env *deployer.Environment, opts options.API) error {
 	var err error
 	env = env.WithName("API")
 	env.Log.Info("deploying topology-aware-scheduling API")
@@ -65,7 +62,7 @@ func Deploy(env *deployer.Environment, opts Options) error {
 	return nil
 }
 
-func Remove(env *deployer.Environment, opts Options) error {
+func Remove(env *deployer.Environment, opts options.API) error {
 	var err error
 	env = env.WithName("API")
 	env.Log.Info("removing topology-aware-scheduling API")

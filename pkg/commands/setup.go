@@ -19,10 +19,11 @@ package commands
 import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deploy"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 	"github.com/spf13/cobra"
 )
 
-func NewSetupCommand(env *deployer.Environment, commonOpts *deploy.Options) *cobra.Command {
+func NewSetupCommand(env *deployer.Environment, commonOpts *options.Options) *cobra.Command {
 	valOpts := &validateOptions{
 		outputMode: ValidateOutputLog,
 	}

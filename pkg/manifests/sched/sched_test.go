@@ -23,6 +23,7 @@ import (
 	"github.com/go-logr/logr/testr"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
 func TestClone(t *testing.T) {
@@ -72,7 +73,7 @@ func TestRender(t *testing.T) {
 	for _, tc := range testCases {
 		mf, _ := GetManifests(tc.plat, "")
 		mfBeforeRender := mf.Clone()
-		uMf, err := mf.Render(testr.New(t), RenderOptions{
+		uMf, err := mf.Render(testr.New(t), options.Scheduler{
 			Replicas: int32(1),
 		})
 		if err != nil {

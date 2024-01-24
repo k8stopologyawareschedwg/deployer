@@ -18,7 +18,6 @@ package sched
 
 import (
 	"fmt"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -26,24 +25,14 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	schedmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 	schedwait "github.com/k8stopologyawareschedwg/deployer/pkg/objectwait/sched"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
-
-type Options struct {
-	Platform          platform.Platform
-	WaitCompletion    bool
-	Replicas          int32
-	ProfileName       string
-	PullIfNotPresent  bool
-	CacheResyncPeriod time.Duration
-	CtrlPlaneAffinity bool
-	Verbose           int
-}
 
 func SetupNamespace(plat platform.Platform) (*corev1.Namespace, string, error) {
 	return nil, "", fmt.Errorf("not yet implemented")
 }
 
-func Deploy(env *deployer.Environment, opts Options) error {
+func Deploy(env *deployer.Environment, opts options.Scheduler) error {
 	var err error
 	env = env.WithName("SCD")
 	env.Log.Info("deploying topology-aware-scheduling scheduler plugin")
@@ -53,14 +42,7 @@ func Deploy(env *deployer.Environment, opts Options) error {
 		return err
 	}
 
-	mf, err = mf.Render(env.Log, schedmanifests.RenderOptions{
-		ProfileName:       opts.ProfileName,
-		Replicas:          opts.Replicas,
-		PullIfNotPresent:  opts.PullIfNotPresent,
-		CacheResyncPeriod: opts.CacheResyncPeriod,
-		CtrlPlaneAffinity: opts.CtrlPlaneAffinity,
-		Verbose:           opts.Verbose,
-	})
+	mf, err = mf.Render(env.Log, opts)
 	if err != nil {
 		return err
 	}
@@ -85,7 +67,7 @@ func Deploy(env *deployer.Environment, opts Options) error {
 	return nil
 }
 
-func Remove(env *deployer.Environment, opts Options) error {
+func Remove(env *deployer.Environment, opts options.Scheduler) error {
 	var err error
 	env = env.WithName("SCD")
 	env.Log.Info("removing topology-aware-scheduling scheduler plugin")
@@ -95,14 +77,7 @@ func Remove(env *deployer.Environment, opts Options) error {
 		return err
 	}
 
-	mf, err = mf.Render(env.Log, schedmanifests.RenderOptions{
-		ProfileName:       opts.ProfileName,
-		Replicas:          opts.Replicas,
-		PullIfNotPresent:  opts.PullIfNotPresent,
-		CacheResyncPeriod: opts.CacheResyncPeriod,
-		CtrlPlaneAffinity: opts.CtrlPlaneAffinity,
-		Verbose:           opts.Verbose,
-	})
+	mf, err = mf.Render(env.Log, opts)
 	if err != nil {
 		return err
 	}

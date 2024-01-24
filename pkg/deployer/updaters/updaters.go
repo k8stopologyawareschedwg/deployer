@@ -23,11 +23,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/objectwait"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
 const (
@@ -35,16 +34,7 @@ const (
 	NFD string = "NFD"
 )
 
-type Options struct {
-	Platform        platform.Platform
-	PlatformVersion platform.Version
-	WaitCompletion  bool
-	RTEConfigData   string
-	DaemonSet       objectupdate.DaemonSetOptions
-	EnableCRIHooks  bool
-}
-
-func Deploy(env *deployer.Environment, updaterType string, opts Options) error {
+func Deploy(env *deployer.Environment, updaterType string, opts options.Updater) error {
 	env = env.WithName(updaterType)
 	env.Log.Info("deploying topology-aware-scheduling topology updater")
 
@@ -81,7 +71,7 @@ func Deploy(env *deployer.Environment, updaterType string, opts Options) error {
 	return nil
 }
 
-func Remove(env *deployer.Environment, updaterType string, opts Options) error {
+func Remove(env *deployer.Environment, updaterType string, opts options.Updater) error {
 	var err error
 	env = env.WithName(updaterType)
 	env.Log.Info("removing topology-aware-scheduling topology updater")

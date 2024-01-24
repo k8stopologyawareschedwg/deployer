@@ -53,6 +53,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/nfd"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/validator"
 
 	e2enodes "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/nodes"
@@ -255,7 +256,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				enableCRIHooks := true
 				mf, err := rte.GetManifests(platform.Kubernetes, platform.Version("1.23"), ns.Name, enableCRIHooks)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				mf, err = mf.Render(rte.RenderOptions{
+				mf, err = mf.Render(options.UpdaterDaemon{
 					Namespace: ns.Name,
 				})
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -264,7 +265,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				ginkgo.By("checking that topo-aware-scheduler pod is running")
 				mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				mfs, err = mfs.Render(logr.Discard(), sched.RenderOptions{
+				mfs, err = mfs.Render(logr.Discard(), options.Scheduler{
 					Replicas: int32(1),
 				})
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -350,7 +351,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 
 				mf, err := nfd.GetManifests(platform.Kubernetes, ns.Name)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				mf, err = mf.Render(nfd.RenderOptions{
+				mf, err = mf.Render(options.UpdaterDaemon{
 					Namespace: ns.Name,
 				})
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -359,7 +360,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				ginkgo.By("checking that topo-aware-scheduler pod is running")
 				mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				mfs, err = mfs.Render(logr.Discard(), sched.RenderOptions{
+				mfs, err = mfs.Render(logr.Discard(), options.Scheduler{
 					Replicas: int32(1),
 				})
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -513,7 +514,7 @@ func dumpSchedulerPods() {
 	// TODO: autodetect the platform
 	mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
 	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-	mfs, err = mfs.Render(logr.Discard(), sched.RenderOptions{
+	mfs, err = mfs.Render(logr.Discard(), options.Scheduler{
 		Replicas: int32(1),
 	})
 	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
@@ -586,7 +587,7 @@ func expectSchedulerRunning() {
 	// TODO: autodetect the platform
 	mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
 	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-	mfs, err = mfs.Render(logr.Discard(), sched.RenderOptions{
+	mfs, err = mfs.Render(logr.Discard(), options.Scheduler{
 		Replicas: int32(1),
 	})
 	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())

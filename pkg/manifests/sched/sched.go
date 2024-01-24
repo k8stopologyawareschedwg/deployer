@@ -18,7 +18,6 @@ package sched
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/go-logr/logr"
 
@@ -33,6 +32,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	rbacupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/rbac"
 	schedupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/sched"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
 const (
@@ -80,18 +80,9 @@ func (mf Manifests) Clone() Manifests {
 	}
 }
 
-type RenderOptions struct {
-	Replicas          int32
-	PullIfNotPresent  bool
-	ProfileName       string
-	CacheResyncPeriod time.Duration
-	CtrlPlaneAffinity bool
-	Verbose           int
-}
-
-func (mf Manifests) Render(logger logr.Logger, options RenderOptions) (Manifests, error) {
+func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifests, error) {
 	ret := mf.Clone()
-	replicas := options.Replicas
+	replicas := opts.Replicas
 	if replicas <= 0 {
 		return ret, fmt.Errorf("non-positive replicas: %d", replicas)
 	}
@@ -100,17 +91,17 @@ func (mf Manifests) Render(logger logr.Logger, options RenderOptions) (Manifests
 
 	params := manifests.ConfigParams{
 		Cache: &manifests.ConfigCacheParams{
-			ResyncPeriodSeconds: newInt64(int64(options.CacheResyncPeriod.Seconds())),
+			ResyncPeriodSeconds: newInt64(int64(opts.CacheResyncPeriod.Seconds())),
 		},
 	}
 
-	err := schedupdate.SchedulerConfig(ret.ConfigMap, options.ProfileName, &params)
+	err := schedupdate.SchedulerConfig(ret.ConfigMap, opts.ProfileName, &params)
 	if err != nil {
 		return ret, err
 	}
 
-	schedupdate.SchedulerDeployment(ret.DPScheduler, options.PullIfNotPresent, options.CtrlPlaneAffinity, options.Verbose)
-	schedupdate.ControllerDeployment(ret.DPController, options.PullIfNotPresent, options.CtrlPlaneAffinity)
+	schedupdate.SchedulerDeployment(ret.DPScheduler, opts.PullIfNotPresent, opts.CtrlPlaneAffinity, opts.Verbose)
+	schedupdate.ControllerDeployment(ret.DPController, opts.PullIfNotPresent, opts.CtrlPlaneAffinity)
 	if mf.plat == platform.OpenShift {
 		ret.Namespace.Name = NamespaceOpenShift
 	}

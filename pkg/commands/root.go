@@ -28,11 +28,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deploy"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
 // TODO: move elsewhere
@@ -52,7 +52,7 @@ func ShowHelp(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-type NewCommandFunc func(ev *deployer.Environment, ko *deploy.Options) *cobra.Command
+type NewCommandFunc func(ev *deployer.Environment, ko *options.Options) *cobra.Command
 
 // NewRootCommand returns entrypoint command to interact with all other commands
 func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
@@ -61,7 +61,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 		Log: stdr.New(log.New(os.Stderr, "", log.LstdFlags)),
 	}
 	internalOpts := internalOptions{}
-	commonOpts := deploy.Options{}
+	commonOpts := options.Options{}
 
 	root := &cobra.Command{
 		Use:   "deployer",
@@ -95,7 +95,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	return root
 }
 
-func InitFlags(flags *pflag.FlagSet, commonOpts *deploy.Options, internalOpts *internalOptions) {
+func InitFlags(flags *pflag.FlagSet, commonOpts *options.Options, internalOpts *internalOptions) {
 	flags.StringVarP(&internalOpts.plat, "platform", "P", "", "platform kind:version to deploy on (example kubernetes:v1.22)")
 	flags.StringVar(&internalOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
 
@@ -115,7 +115,7 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *deploy.Options, internalOpts *i
 	flags.BoolVar(&commonOpts.SchedCtrlPlaneAffinity, "sched-ctrlplane-affinity", true, "toggle the scheduler control plane affinity.")
 }
 
-func PostSetupOptions(env *deployer.Environment, commonOpts *deploy.Options, internalOpts *internalOptions) error {
+func PostSetupOptions(env *deployer.Environment, commonOpts *options.Options, internalOpts *internalOptions) error {
 	env.Log.V(3).Info("global polling interval=%v timeout=%v", commonOpts.WaitInterval, commonOpts.WaitTimeout)
 	wait.SetBaseValues(commonOpts.WaitInterval, commonOpts.WaitTimeout)
 

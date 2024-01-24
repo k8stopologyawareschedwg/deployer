@@ -26,7 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
 func TestUpdaterDaemonSet(t *testing.T) {
@@ -78,7 +78,7 @@ func TestUpdaterDaemonSet(t *testing.T) {
 		mutatedDs := ds.DeepCopy()
 		pSpec := &mutatedDs.Spec.Template.Spec
 		pSpec.Containers[0].Name = tc.cntName
-		UpdaterDaemonSet(mutatedDs, objectupdate.DaemonSetOptions{
+		UpdaterDaemonSet(mutatedDs, options.DaemonSet{
 			PullIfNotPresent: tc.pullIfNotPresent,
 			PFPEnable:        tc.pfpEnable,
 			NodeSelector:     tc.nodeSelector,
