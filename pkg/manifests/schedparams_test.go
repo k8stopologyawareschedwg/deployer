@@ -149,6 +149,146 @@ profiles:
 			},
 			expectedFound: true,
 		},
+		{
+			name: "nonzero resync period and all cache params",
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        foreignPodsDetect: None
+        resyncMethod: Autodetect
+        informerMode: Dedicated
+      cacheResyncPeriodSeconds: 5
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: topology-aware-scheduler
+`),
+			schedulerName: "topology-aware-scheduler",
+			expectedParams: ConfigParams{
+				ProfileName: "topology-aware-scheduler",
+				Cache: &ConfigCacheParams{
+					ResyncPeriodSeconds:   newInt64(5),
+					ResyncMethod:          newString("Autodetect"),
+					ForeignPodsDetectMode: newString("None"),
+					InformerMode:          newString("Dedicated"),
+				},
+			},
+			expectedFound: true,
+		},
+		{
+			name: "nonzero resync period and some cache params",
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        resyncMethod: OnlyExclusiveResources
+      cacheResyncPeriodSeconds: 5
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: topology-aware-scheduler
+`),
+			schedulerName: "topology-aware-scheduler",
+			expectedParams: ConfigParams{
+				ProfileName: "topology-aware-scheduler",
+				Cache: &ConfigCacheParams{
+					ResyncPeriodSeconds: newInt64(5),
+					ResyncMethod:        newString("OnlyExclusiveResources"),
+				},
+			},
+			expectedFound: true,
+		},
+		{
+			name: "zero resync period and some cache params - 2",
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        foreignPodsDetect: OnlyExclusiveResources
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: topology-aware-scheduler
+`),
+			schedulerName: "topology-aware-scheduler",
+			expectedParams: ConfigParams{
+				ProfileName: "topology-aware-scheduler",
+				Cache: &ConfigCacheParams{
+					ForeignPodsDetectMode: newString("OnlyExclusiveResources"),
+				},
+			},
+			expectedFound: true,
+		},
+		{
+			name: "zero resync period and some cache params - 3",
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        informerMode: Shared
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: topology-aware-scheduler
+`),
+			schedulerName: "topology-aware-scheduler",
+			expectedParams: ConfigParams{
+				ProfileName: "topology-aware-scheduler",
+				Cache: &ConfigCacheParams{
+					InformerMode: newString("Shared"),
+				},
+			},
+			expectedFound: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -185,5 +325,9 @@ func toJSON(v any) string {
 }
 
 func newInt64(value int64) *int64 {
+	return &value
+}
+
+func newString(value string) *string {
 	return &value
 }
