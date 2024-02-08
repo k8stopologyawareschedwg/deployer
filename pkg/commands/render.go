@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deploy"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
@@ -50,6 +51,7 @@ func NewRenderCommand(env *deployer.Environment, commonOpts *deploy.Options) *co
 	render.AddCommand(NewRenderAPICommand(env, commonOpts, opts))
 	render.AddCommand(NewRenderSchedulerPluginCommand(env, commonOpts, opts))
 	render.AddCommand(NewRenderTopologyUpdaterCommand(env, commonOpts, opts))
+	render.AddCommand(NewRenderPolicyCommand(env, commonOpts, opts))
 	return render
 }
 
@@ -190,4 +192,24 @@ func RenderManifests(env *deployer.Environment, commonOpts *deploy.Options) erro
 	objs = append(objs, schedObjs.ToObjects()...)
 
 	return manifests.RenderObjects(objs, os.Stdout)
+}
+
+func NewRenderPolicyCommand(env *deployer.Environment, commonOpts *deploy.Options, opts *RenderOptions) *cobra.Command {
+	render := &cobra.Command{
+		Use:   "policy",
+		Short: "render the SELinux policy needed for topology-aware-scheduling",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if commonOpts.UserPlatform != platform.OpenShift {
+				return fmt.Errorf("must explicitly select the OpenShift platform")
+			}
+			selinuxPolicy, err := selinuxassets.GetPolicy(commonOpts.UserPlatformVersion)
+			if err != nil {
+				return err
+			}
+			_, err = os.Stdout.Write(selinuxPolicy)
+			return err
+		},
+		Args: cobra.NoArgs,
+	}
+	return render
 }
