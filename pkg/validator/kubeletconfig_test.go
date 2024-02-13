@@ -56,11 +56,6 @@ func TestKubeletValidations(t *testing.T) {
 				{
 					Node:      nodeName,
 					Area:      AreaKubelet,
-					Component: ComponentFeatureGates,
-				},
-				{
-					Node:      nodeName,
-					Area:      AreaKubelet,
 					Component: ComponentCPUManager,
 					Setting:   "policy",
 				},
@@ -100,9 +95,6 @@ func TestKubeletValidations(t *testing.T) {
 		{
 			name: "correct",
 			kubeletConf: &kubeletconfigv1beta1.KubeletConfiguration{
-				FeatureGates: map[string]bool{
-					ExpectedPodResourcesFeatureGate: true,
-				},
 				CPUManagerPolicy: ExpectedCPUManagerPolicy,
 				CPUManagerReconcilePeriod: metav1.Duration{
 					Duration: 5 * time.Second,
@@ -119,35 +111,8 @@ func TestKubeletValidations(t *testing.T) {
 			expected: []ValidationResult{},
 		},
 		{
-			name: "missing feature gate",
-			kubeletConf: &kubeletconfigv1beta1.KubeletConfiguration{
-				CPUManagerPolicy: ExpectedCPUManagerPolicy,
-				CPUManagerReconcilePeriod: metav1.Duration{
-					Duration: 5 * time.Second,
-				},
-				MemoryManagerPolicy: ExpectedMemoryManagerPolicy,
-				ReservedMemory: []kubeletconfigv1beta1.MemoryReservation{
-					{
-						NumaNode: 1,
-					},
-				},
-				ReservedSystemCPUs:    "0,1",
-				TopologyManagerPolicy: ExpectedTopologyManagerPolicy,
-			},
-			expected: []ValidationResult{
-				{
-					Node:      nodeName,
-					Area:      AreaKubelet,
-					Component: ComponentFeatureGates,
-				},
-			},
-		},
-		{
 			name: "missing topology manager policy",
 			kubeletConf: &kubeletconfigv1beta1.KubeletConfiguration{
-				FeatureGates: map[string]bool{
-					ExpectedPodResourcesFeatureGate: true,
-				},
 				CPUManagerPolicy: ExpectedCPUManagerPolicy,
 				CPUManagerReconcilePeriod: metav1.Duration{
 					Duration: 5 * time.Second,
@@ -172,9 +137,6 @@ func TestKubeletValidations(t *testing.T) {
 		{
 			name: "wrong topology manager policy",
 			kubeletConf: &kubeletconfigv1beta1.KubeletConfiguration{
-				FeatureGates: map[string]bool{
-					ExpectedPodResourcesFeatureGate: true,
-				},
 				CPUManagerPolicy: ExpectedCPUManagerPolicy,
 				CPUManagerReconcilePeriod: metav1.Duration{
 					Duration: 5 * time.Second,
@@ -200,9 +162,6 @@ func TestKubeletValidations(t *testing.T) {
 		{
 			name: "missing cpumanager configuration",
 			kubeletConf: &kubeletconfigv1beta1.KubeletConfiguration{
-				FeatureGates: map[string]bool{
-					ExpectedPodResourcesFeatureGate: true,
-				},
 				MemoryManagerPolicy: ExpectedMemoryManagerPolicy,
 				ReservedMemory: []kubeletconfigv1beta1.MemoryReservation{
 					{
@@ -236,9 +195,6 @@ func TestKubeletValidations(t *testing.T) {
 		{
 			name: "wrong cpumanager reconcile period",
 			kubeletConf: &kubeletconfigv1beta1.KubeletConfiguration{
-				FeatureGates: map[string]bool{
-					ExpectedPodResourcesFeatureGate: true,
-				},
 				CPUManagerPolicy: ExpectedCPUManagerPolicy,
 				CPUManagerReconcilePeriod: metav1.Duration{
 					Duration: 30 * time.Second,
@@ -259,38 +215,6 @@ func TestKubeletValidations(t *testing.T) {
 					Area:      AreaKubelet,
 					Component: ComponentCPUManager,
 					Setting:   "reconcile period",
-				},
-			},
-		},
-		{
-			// CAUTION: I'm not actually sure k8s <= 1.20 had all these
-			// fields in the KubeletConfig, so we're bending the rules a bit here
-			name: "version too old, no feature gate",
-			kubeletConf: &kubeletconfigv1beta1.KubeletConfiguration{
-				FeatureGates:     map[string]bool{},
-				CPUManagerPolicy: ExpectedCPUManagerPolicy,
-				CPUManagerReconcilePeriod: metav1.Duration{
-					Duration: 5 * time.Second,
-				},
-				MemoryManagerPolicy: ExpectedMemoryManagerPolicy,
-				ReservedMemory: []kubeletconfigv1beta1.MemoryReservation{
-					{
-						NumaNode: 1,
-					},
-				},
-				ReservedSystemCPUs:    "0,1",
-				TopologyManagerPolicy: ExpectedTopologyManagerPolicy,
-			},
-			nodeVersion: &version.Info{
-				Major:      "1",
-				Minor:      "20",
-				GitVersion: "v1.20.5",
-			},
-			expected: []ValidationResult{
-				{
-					Node:      nodeName,
-					Area:      AreaKubelet,
-					Component: ComponentFeatureGates,
 				},
 			},
 		},
