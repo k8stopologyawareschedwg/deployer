@@ -78,8 +78,6 @@ kubeadmConfigPatches:
   cpuManagerPolicy: "static"
   topologyManagerPolicy: "single-numa-node"
   reservedSystemCPUs: "0,16"
-  featureGates:
-    KubeletPodResourcesGetAllocatable: true
 nodes:
 - role: control-plane
 - role: worker
@@ -158,8 +156,6 @@ kubeadmConfigPatches:
   cpuManagerPolicy: "static"
   topologyManagerPolicy: "single-numa-node"
   reservedSystemCPUs: "0,16"
-  featureGates:
-    KubeletPodResourcesGetAllocatable: true
 nodes:
 - role: control-plane
 - role: worker
