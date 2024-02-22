@@ -395,6 +395,137 @@ profiles:
 `,
 			expectedUpdate: true,
 		},
+		{
+			name: "partial scoring strategy params updated from empty",
+			params: &manifests.ConfigParams{
+				ScoringStrategy: &manifests.ScoringStrategyParams{
+					Type: manifests.ScoringStrategyBalancedAllocation,
+				},
+			},
+			initial: configTemplateEmpty,
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      scoringStrategy:
+        type: BalancedAllocation
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expectedUpdate: true,
+		},
+		{
+			name: "partial scoring strategy params updated from empty - 2",
+			params: &manifests.ConfigParams{
+				ScoringStrategy: &manifests.ScoringStrategyParams{
+					Type: manifests.ScoringStrategyBalancedAllocation,
+					Resources: []manifests.ResourceSpecParams{
+						{
+							Name:   "cpu",
+							Weight: int64(20),
+						},
+						{
+							Name:   "fancy.com/device",
+							Weight: int64(100),
+						},
+					},
+				},
+			},
+			initial: configTemplateEmpty,
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      scoringStrategy:
+        resources:
+        - name: cpu
+          weight: 20
+        - name: fancy.com/device
+          weight: 100
+        type: BalancedAllocation
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expectedUpdate: true,
+		},
+		{
+			name: "partial scoring strategy params updated from nonempty",
+			params: &manifests.ConfigParams{
+				ScoringStrategy: &manifests.ScoringStrategyParams{
+					Type: manifests.ScoringStrategyBalancedAllocation,
+					Resources: []manifests.ResourceSpecParams{
+						{
+							Name:   "cpu",
+							Weight: int64(20),
+						},
+						{
+							Name:   "fancy.com/device",
+							Weight: int64(100),
+						},
+					},
+				},
+			},
+			initial: configTemplateAllValuesScoringFineTuned,
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        foreignPodsDetect: OnlyExclusiveResources
+        informerMode: Dedicated
+        resyncMethod: OnlyExclusiveResources
+      cacheResyncPeriodSeconds: 5
+      scoringStrategy:
+        resources:
+        - name: cpu
+          weight: 20
+        - name: fancy.com/device
+          weight: 100
+        type: BalancedAllocation
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expectedUpdate: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -505,6 +636,37 @@ profiles:
 - pluginConfig:
   - args:
       cacheResyncPeriodSeconds: 5
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`
+
+var configTemplateAllValuesScoringFineTuned string = `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        foreignPodsDetect: OnlyExclusiveResources
+        informerMode: Dedicated
+        resyncMethod: OnlyExclusiveResources
+      cacheResyncPeriodSeconds: 5
+      scoringStrategy:
+        resources:
+        - name: cpu
+          weight: 2	
+        type: MostAllocated            
     name: NodeResourceTopologyMatch
   plugins:
     filter:

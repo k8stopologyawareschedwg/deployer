@@ -43,8 +43,9 @@ const (
 )
 
 type internalOptions struct {
-	rteConfigFile string
-	plat          string
+	rteConfigFile               string
+	schedScoringStratConfigFile string
+	plat                        string
 }
 
 func ShowHelp(cmd *cobra.Command, args []string) error {
@@ -98,6 +99,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 func InitFlags(flags *pflag.FlagSet, commonOpts *options.Options, internalOpts *internalOptions) {
 	flags.StringVarP(&internalOpts.plat, "platform", "P", "", "platform kind:version to deploy on (example kubernetes:v1.22)")
 	flags.StringVar(&internalOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
+	flags.StringVar(&internalOpts.schedScoringStratConfigFile, "sched-scoring-strat-config-file", "", "inject scheduler scoring strategy configuration reading from this file.")
 
 	flags.IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
 	flags.DurationVarP(&commonOpts.WaitInterval, "wait-interval", "E", 2*time.Second, "wait interval.")
@@ -141,6 +143,14 @@ func PostSetupOptions(env *deployer.Environment, commonOpts *options.Options, in
 		}
 		commonOpts.RTEConfigData = string(data)
 		env.Log.Info("RTE config: read", "bytes", len(commonOpts.RTEConfigData))
+	}
+	if internalOpts.schedScoringStratConfigFile != "" {
+		data, err := os.ReadFile(internalOpts.schedScoringStratConfigFile)
+		if err != nil {
+			return err
+		}
+		commonOpts.SchedScoringStratConfigData = string(data)
+		env.Log.Info("Scheduler Scoring Strategy config: read", "bytes", len(commonOpts.SchedScoringStratConfigData))
 	}
 	return validateUpdaterType(commonOpts.UpdaterType)
 }

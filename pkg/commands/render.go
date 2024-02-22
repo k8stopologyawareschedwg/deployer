@@ -96,8 +96,9 @@ func NewRenderSchedulerPluginCommand(env *deployer.Environment, commonOpts *opti
 			}
 
 			renderOpts := options.Scheduler{
-				Replicas:         int32(commonOpts.Replicas),
-				PullIfNotPresent: commonOpts.PullIfNotPresent,
+				Replicas:               int32(commonOpts.Replicas),
+				PullIfNotPresent:       commonOpts.PullIfNotPresent,
+				ScoringStratConfigData: commonOpts.SchedScoringStratConfigData,
 			}
 			schedObjs, err := schedManifests.Render(env.Log, renderOpts)
 			if err != nil {

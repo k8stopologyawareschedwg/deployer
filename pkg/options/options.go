@@ -25,26 +25,27 @@ import (
 )
 
 type Options struct {
-	UserPlatform           platform.Platform
-	UserPlatformVersion    platform.Version
-	Replicas               int
-	RTEConfigData          string
-	PullIfNotPresent       bool
-	UpdaterType            string
-	UpdaterPFPEnable       bool
-	UpdaterNotifEnable     bool
-	UpdaterCRIHooksEnable  bool
-	UpdaterSyncPeriod      time.Duration
-	UpdaterVerbose         int
-	SchedProfileName       string
-	SchedResyncPeriod      time.Duration
-	SchedVerbose           int
-	SchedCtrlPlaneAffinity bool
-	WaitInterval           time.Duration
-	WaitTimeout            time.Duration
-	ClusterPlatform        platform.Platform
-	ClusterVersion         platform.Version
-	WaitCompletion         bool
+	UserPlatform                platform.Platform
+	UserPlatformVersion         platform.Version
+	Replicas                    int
+	RTEConfigData               string
+	PullIfNotPresent            bool
+	UpdaterType                 string
+	UpdaterPFPEnable            bool
+	UpdaterNotifEnable          bool
+	UpdaterCRIHooksEnable       bool
+	UpdaterSyncPeriod           time.Duration
+	UpdaterVerbose              int
+	SchedProfileName            string
+	SchedResyncPeriod           time.Duration
+	SchedVerbose                int
+	SchedCtrlPlaneAffinity      bool
+	WaitInterval                time.Duration
+	WaitTimeout                 time.Duration
+	ClusterPlatform             platform.Platform
+	ClusterVersion              platform.Version
+	WaitCompletion              bool
+	SchedScoringStratConfigData string
 }
 
 type API struct {
@@ -52,14 +53,15 @@ type API struct {
 }
 
 type Scheduler struct {
-	Platform          platform.Platform
-	WaitCompletion    bool
-	Replicas          int32
-	ProfileName       string
-	PullIfNotPresent  bool
-	CacheResyncPeriod time.Duration
-	CtrlPlaneAffinity bool
-	Verbose           int
+	Platform               platform.Platform
+	WaitCompletion         bool
+	Replicas               int32
+	ProfileName            string
+	PullIfNotPresent       bool
+	CacheResyncPeriod      time.Duration
+	CtrlPlaneAffinity      bool
+	Verbose                int
+	ScoringStratConfigData string
 }
 
 type DaemonSet struct {
