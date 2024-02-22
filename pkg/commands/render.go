@@ -98,6 +98,7 @@ func NewRenderSchedulerPluginCommand(env *deployer.Environment, commonOpts *opti
 			renderOpts := options.Scheduler{
 				Replicas:               int32(commonOpts.Replicas),
 				PullIfNotPresent:       commonOpts.PullIfNotPresent,
+				CacheResyncPeriod:      commonOpts.SchedResyncPeriod,
 				ScoringStratConfigData: commonOpts.SchedScoringStratConfigData,
 				CacheParamsConfigData:  commonOpts.SchedCacheParamsConfigData,
 			}
