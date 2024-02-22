@@ -30,7 +30,8 @@ please check `RATIONALE.md` for more detailed development notes about rationale 
 
 | Deployer        | NodeResourceTopology CRD version | Scheduler plugins version | RTE version | NFD version           |
 |-----------------|----------------------------------|---------------------------|-------------|-----------------------|
-| 0.16.0 - 0.18.0 | v0.1.1                           | v0.26.7                   | v0.14.z     | v0.14.z               |
+| 0.20.0          | v0.1.1                           | v0.27.8                   | v0.18.z     | v0.15.z               |
+| 0.16.0 - 0.19.0 | v0.1.1                           | v0.26.7                   | v0.14.z     | v0.14.z               |
 | 0.15.0          | v0.1.1                           | v0.26.7                   | v0.13.z     | v0.14.z               |
 | 0.11.0 - 0.14.0 | v0.1.1                           | dev snapshot 20230315     | v0.10.z     | dev snapshot 20230315 |
 | 0.10.0          | v0.0.12                          | v0.24.9                   | v0.9.z      | v0.12.z               |
