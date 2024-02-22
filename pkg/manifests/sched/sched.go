@@ -18,6 +18,7 @@ package sched
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 
@@ -34,6 +35,12 @@ import (
 	rbacupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/rbac"
 	schedupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
+)
+
+const (
+	DefaultProfileName  = "topology-aware-scheduler"
+	DefaultResyncPeriod = 5 * time.Second
+	DefaultVerbose      = 4
 )
 
 const (
