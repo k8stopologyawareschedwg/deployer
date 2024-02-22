@@ -17,6 +17,7 @@
 package sched
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -90,13 +91,20 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 	ret.DPScheduler.Spec.Replicas = newInt32(replicas)
 	ret.DPController.Spec.Replicas = newInt32(replicas)
 
+	var err error
 	params := manifests.ConfigParams{
-		Cache: &manifests.ConfigCacheParams{
-			ResyncPeriodSeconds: newInt64(int64(opts.CacheResyncPeriod.Seconds())),
-		},
+		Cache: &manifests.ConfigCacheParams{},
 	}
 
-	var err error
+	if len(opts.CacheParamsConfigData) > 0 {
+		err = yaml.Unmarshal([]byte(opts.CacheParamsConfigData), params.Cache)
+		if err != nil {
+			return ret, err
+		}
+	}
+
+	// always override
+	params.Cache.ResyncPeriodSeconds = newInt64(int64(opts.CacheResyncPeriod.Seconds()))
 
 	if len(opts.ScoringStratConfigData) > 0 {
 		params.ScoringStrategy = &manifests.ScoringStrategyParams{}
@@ -222,4 +230,12 @@ func newInt32(value int32) *int32 {
 
 func newInt64(value int64) *int64 {
 	return &value
+}
+
+func toJSON(v any) string {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return fmt.Sprintf("<err=%v>", err)
+	}
+	return string(data)
 }

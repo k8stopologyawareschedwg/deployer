@@ -70,6 +70,7 @@ func OnCluster(env *deployer.Environment, commonOpts *options.Options) error {
 		CtrlPlaneAffinity:      commonOpts.SchedCtrlPlaneAffinity,
 		Verbose:                commonOpts.SchedVerbose,
 		ScoringStratConfigData: commonOpts.SchedScoringStratConfigData,
+		CacheParamsConfigData:  commonOpts.SchedCacheParamsConfigData,
 	}); err != nil {
 		return err
 	}

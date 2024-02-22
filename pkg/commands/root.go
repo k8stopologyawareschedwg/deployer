@@ -45,6 +45,7 @@ const (
 type internalOptions struct {
 	rteConfigFile               string
 	schedScoringStratConfigFile string
+	schedCacheParamsConfigFile  string
 	plat                        string
 }
 
@@ -100,6 +101,7 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *options.Options, internalOpts *
 	flags.StringVarP(&internalOpts.plat, "platform", "P", "", "platform kind:version to deploy on (example kubernetes:v1.22)")
 	flags.StringVar(&internalOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
 	flags.StringVar(&internalOpts.schedScoringStratConfigFile, "sched-scoring-strat-config-file", "", "inject scheduler scoring strategy configuration reading from this file.")
+	flags.StringVar(&internalOpts.schedCacheParamsConfigFile, "sched-cache-params-config-file", "", "inject scheduler fine cache params configuration reading from this file.")
 
 	flags.IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
 	flags.DurationVarP(&commonOpts.WaitInterval, "wait-interval", "E", 2*time.Second, "wait interval.")
@@ -152,6 +154,15 @@ func PostSetupOptions(env *deployer.Environment, commonOpts *options.Options, in
 		commonOpts.SchedScoringStratConfigData = string(data)
 		env.Log.Info("Scheduler Scoring Strategy config: read", "bytes", len(commonOpts.SchedScoringStratConfigData))
 	}
+	if internalOpts.schedCacheParamsConfigFile != "" {
+		data, err := os.ReadFile(internalOpts.schedCacheParamsConfigFile)
+		if err != nil {
+			return err
+		}
+		commonOpts.SchedCacheParamsConfigData = string(data)
+		env.Log.Info("Scheduler Cache Parameters config: read", "bytes", len(commonOpts.SchedCacheParamsConfigData))
+	}
+
 	return validateUpdaterType(commonOpts.UpdaterType)
 }
 

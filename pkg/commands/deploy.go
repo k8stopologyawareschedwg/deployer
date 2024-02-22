@@ -111,6 +111,7 @@ func NewDeploySchedulerPluginCommand(env *deployer.Environment, commonOpts *opti
 				CtrlPlaneAffinity:      commonOpts.SchedCtrlPlaneAffinity,
 				Verbose:                commonOpts.SchedVerbose,
 				ScoringStratConfigData: commonOpts.SchedScoringStratConfigData,
+				CacheParamsConfigData:  commonOpts.SchedCacheParamsConfigData,
 			})
 		},
 		Args: cobra.NoArgs,

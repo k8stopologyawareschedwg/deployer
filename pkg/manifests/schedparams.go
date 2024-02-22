@@ -91,10 +91,10 @@ func ValidateCacheInformerMode(value string) error {
 }
 
 type ConfigCacheParams struct {
-	ResyncPeriodSeconds   *int64
-	ResyncMethod          *string
-	ForeignPodsDetectMode *string
-	InformerMode          *string
+	ResyncPeriodSeconds   *int64  `json:"-"`
+	ResyncMethod          *string `json:"resyncMethod,omitempty"`
+	ForeignPodsDetectMode *string `json:"foreignPodsDetect,omitempty"`
+	InformerMode          *string `json:"informerMode,omitempty"`
 }
 
 type ResourceSpecParams struct {
