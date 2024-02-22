@@ -32,14 +32,9 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	schedmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
-)
-
-// TODO: move elsewhere
-const (
-	DefaultSchedulerProfileName  = "topology-aware-scheduler"
-	DefaultSchedulerResyncPeriod = 5 * time.Second
-	DefaultUpdaterSyncPeriod     = 10 * time.Second
 )
 
 type internalOptions struct {
@@ -111,11 +106,11 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *options.Options, internalOpts *
 	flags.BoolVar(&commonOpts.UpdaterPFPEnable, "updater-pfp-enable", true, "toggle PFP support on the updater side.")
 	flags.BoolVar(&commonOpts.UpdaterNotifEnable, "updater-notif-enable", true, "toggle event-based notification support on the updater side.")
 	flags.BoolVar(&commonOpts.UpdaterCRIHooksEnable, "updater-cri-hooks-enable", true, "toggle installation of CRI hooks on the updater side.")
-	flags.DurationVar(&commonOpts.UpdaterSyncPeriod, "updater-sync-period", DefaultUpdaterSyncPeriod, "tune the updater synchronization (nrt update) interval. Use 0 to disable.")
-	flags.IntVar(&commonOpts.UpdaterVerbose, "updater-verbose", 1, "set the updater verbosiness.")
-	flags.StringVar(&commonOpts.SchedProfileName, "sched-profile-name", DefaultSchedulerProfileName, "inject scheduler profile name.")
-	flags.DurationVar(&commonOpts.SchedResyncPeriod, "sched-resync-period", DefaultSchedulerResyncPeriod, "inject scheduler resync period.")
-	flags.IntVar(&commonOpts.SchedVerbose, "sched-verbose", 4, "set the scheduler verbosiness.")
+	flags.DurationVar(&commonOpts.UpdaterSyncPeriod, "updater-sync-period", manifests.DefaultUpdaterSyncPeriod, "tune the updater synchronization (nrt update) interval. Use 0 to disable.")
+	flags.IntVar(&commonOpts.UpdaterVerbose, "updater-verbose", manifests.DefaultUpdaterVerbose, "set the updater verbosiness.")
+	flags.StringVar(&commonOpts.SchedProfileName, "sched-profile-name", schedmanifests.DefaultProfileName, "inject scheduler profile name.")
+	flags.DurationVar(&commonOpts.SchedResyncPeriod, "sched-resync-period", schedmanifests.DefaultResyncPeriod, "inject scheduler resync period.")
+	flags.IntVar(&commonOpts.SchedVerbose, "sched-verbose", schedmanifests.DefaultVerbose, "set the scheduler verbosiness.")
 	flags.BoolVar(&commonOpts.SchedCtrlPlaneAffinity, "sched-ctrlplane-affinity", true, "toggle the scheduler control plane affinity.")
 }
 
