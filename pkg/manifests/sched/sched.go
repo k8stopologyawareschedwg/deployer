@@ -100,7 +100,8 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 
 	var err error
 	params := manifests.ConfigParams{
-		Cache: &manifests.ConfigCacheParams{},
+		ProfileName: opts.ProfileName,
+		Cache:       &manifests.ConfigCacheParams{},
 	}
 
 	if len(opts.CacheParamsConfigData) > 0 {
@@ -121,7 +122,7 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 		}
 	}
 
-	err = schedupdate.SchedulerConfig(ret.ConfigMap, opts.ProfileName, &params)
+	err = schedupdate.SchedulerConfig(ret.ConfigMap, DefaultProfileName, &params)
 	if err != nil {
 		return ret, err
 	}
