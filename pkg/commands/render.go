@@ -176,12 +176,13 @@ func RenderManifests(env *deployer.Environment, commonOpts *options.Options) err
 	}
 
 	schedRenderOpts := options.Scheduler{
-		Replicas:          int32(commonOpts.Replicas),
-		PullIfNotPresent:  commonOpts.PullIfNotPresent,
-		ProfileName:       commonOpts.SchedProfileName,
-		CacheResyncPeriod: commonOpts.SchedResyncPeriod,
-		CtrlPlaneAffinity: commonOpts.SchedCtrlPlaneAffinity,
-		Verbose:           commonOpts.SchedVerbose,
+		Replicas:               int32(commonOpts.Replicas),
+		PullIfNotPresent:       commonOpts.PullIfNotPresent,
+		ProfileName:            commonOpts.SchedProfileName,
+		CacheResyncPeriod:      commonOpts.SchedResyncPeriod,
+		CtrlPlaneAffinity:      commonOpts.SchedCtrlPlaneAffinity,
+		Verbose:                commonOpts.SchedVerbose,
+		ScoringStratConfigData: commonOpts.SchedScoringStratConfigData,
 	}
 
 	schedObjs, err := schedManifests.Render(env.Log, schedRenderOpts)

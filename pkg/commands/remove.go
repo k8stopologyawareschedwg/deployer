@@ -54,13 +54,15 @@ func NewRemoveCommand(env *deployer.Environment, commonOpts *options.Options) *c
 			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
 
 			err = sched.Remove(env, options.Scheduler{
-				Platform:          commonOpts.ClusterPlatform,
-				WaitCompletion:    commonOpts.WaitCompletion,
-				Replicas:          int32(commonOpts.Replicas),
-				PullIfNotPresent:  commonOpts.PullIfNotPresent,
-				ProfileName:       commonOpts.SchedProfileName,
-				CacheResyncPeriod: commonOpts.SchedResyncPeriod,
-				CtrlPlaneAffinity: commonOpts.SchedCtrlPlaneAffinity,
+				Platform:               commonOpts.ClusterPlatform,
+				WaitCompletion:         commonOpts.WaitCompletion,
+				Replicas:               int32(commonOpts.Replicas),
+				PullIfNotPresent:       commonOpts.PullIfNotPresent,
+				ProfileName:            commonOpts.SchedProfileName,
+				CacheResyncPeriod:      commonOpts.SchedResyncPeriod,
+				CtrlPlaneAffinity:      commonOpts.SchedCtrlPlaneAffinity,
+				Verbose:                commonOpts.SchedVerbose,
+				ScoringStratConfigData: commonOpts.SchedScoringStratConfigData,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
@@ -153,14 +155,15 @@ func NewRemoveSchedulerPluginCommand(env *deployer.Environment, commonOpts *opti
 
 			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
 			return sched.Remove(env, options.Scheduler{
-				Platform:          commonOpts.ClusterPlatform,
-				WaitCompletion:    commonOpts.WaitCompletion,
-				Replicas:          int32(commonOpts.Replicas),
-				PullIfNotPresent:  commonOpts.PullIfNotPresent,
-				ProfileName:       commonOpts.SchedProfileName,
-				CacheResyncPeriod: commonOpts.SchedResyncPeriod,
-				CtrlPlaneAffinity: commonOpts.SchedCtrlPlaneAffinity,
-				Verbose:           commonOpts.SchedVerbose,
+				Platform:               commonOpts.ClusterPlatform,
+				WaitCompletion:         commonOpts.WaitCompletion,
+				Replicas:               int32(commonOpts.Replicas),
+				PullIfNotPresent:       commonOpts.PullIfNotPresent,
+				ProfileName:            commonOpts.SchedProfileName,
+				CacheResyncPeriod:      commonOpts.SchedResyncPeriod,
+				CtrlPlaneAffinity:      commonOpts.SchedCtrlPlaneAffinity,
+				Verbose:                commonOpts.SchedVerbose,
+				ScoringStratConfigData: commonOpts.SchedScoringStratConfigData,
 			})
 		},
 		Args: cobra.NoArgs,
