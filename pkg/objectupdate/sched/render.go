@@ -70,7 +70,7 @@ func RenderConfig(data []byte, schedulerName string, params *manifests.ConfigPar
 	for _, prof := range profiles {
 		profile, ok := prof.(map[string]interface{})
 		if !ok {
-			klog.V(1).InfoS("unexpected profile data")
+			klog.InfoS("unexpected profile data")
 			return data, false, nil
 		}
 
