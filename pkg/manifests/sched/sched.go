@@ -27,6 +27,7 @@ import (
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
@@ -95,7 +96,17 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 		},
 	}
 
-	err := schedupdate.SchedulerConfig(ret.ConfigMap, opts.ProfileName, &params)
+	var err error
+
+	if len(opts.ScoringStratConfigData) > 0 {
+		params.ScoringStrategy = &manifests.ScoringStrategyParams{}
+		err = yaml.Unmarshal([]byte(opts.ScoringStratConfigData), params.ScoringStrategy)
+		if err != nil {
+			return ret, err
+		}
+	}
+
+	err = schedupdate.SchedulerConfig(ret.ConfigMap, opts.ProfileName, &params)
 	if err != nil {
 		return ret, err
 	}

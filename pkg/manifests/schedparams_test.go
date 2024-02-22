@@ -289,6 +289,197 @@ profiles:
 			},
 			expectedFound: true,
 		},
+		{
+			name: "all scoringStrategy params",
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      scoringStrategy:
+        type: MostAllocated
+        resources:
+        - name: cpu
+          weight: 10
+        - name: memory
+          weight: 5
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: topology-aware-scheduler
+`),
+			schedulerName: "topology-aware-scheduler",
+			expectedParams: ConfigParams{
+				ProfileName: "topology-aware-scheduler",
+				Cache:       &ConfigCacheParams{},
+				ScoringStrategy: &ScoringStrategyParams{
+					Type: "MostAllocated",
+					Resources: []ResourceSpecParams{
+						{
+							Name:   "cpu",
+							Weight: int64(10),
+						},
+						{
+							Name:   "memory",
+							Weight: int64(5),
+						},
+					},
+				},
+			},
+			expectedFound: true,
+		},
+		{
+			name: "some scoringStrategy params - 1",
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      scoringStrategy:
+        type: BalancedAllocation
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: topology-aware-scheduler
+`),
+			schedulerName: "topology-aware-scheduler",
+			expectedParams: ConfigParams{
+				ProfileName: "topology-aware-scheduler",
+				Cache:       &ConfigCacheParams{},
+				ScoringStrategy: &ScoringStrategyParams{
+					Type: "BalancedAllocation",
+				},
+			},
+			expectedFound: true,
+		},
+		{
+			name: "some scoringStrategy params - 2",
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      scoringStrategy:
+        resources:
+        - name: device.io/foobar
+          weight: 100
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: topology-aware-scheduler
+`),
+			schedulerName: "topology-aware-scheduler",
+			expectedParams: ConfigParams{
+				ProfileName: "topology-aware-scheduler",
+				Cache:       &ConfigCacheParams{},
+				ScoringStrategy: &ScoringStrategyParams{
+					Resources: []ResourceSpecParams{
+						{
+							Name:   "device.io/foobar",
+							Weight: int64(100),
+						},
+					},
+				},
+			},
+			expectedFound: true,
+		},
+
+		// keep this the last one
+		{
+			name: "nonzero resync period all cache params all scoringStrategyParams",
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        foreignPodsDetect: None
+        resyncMethod: Autodetect
+        informerMode: Dedicated
+      cacheResyncPeriodSeconds: 5
+      scoringStrategy:
+        type: BalancedAllocation
+        resources:
+        - name: cpu
+          weight: 10
+        - name: memory
+          weight: 5
+        - name: device.io/foobar
+          weight: 20
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: topology-aware-scheduler
+`),
+			schedulerName: "topology-aware-scheduler",
+			expectedParams: ConfigParams{
+				ProfileName: "topology-aware-scheduler",
+				Cache: &ConfigCacheParams{
+					ResyncPeriodSeconds:   newInt64(5),
+					ResyncMethod:          newString("Autodetect"),
+					ForeignPodsDetectMode: newString("None"),
+					InformerMode:          newString("Dedicated"),
+				},
+				ScoringStrategy: &ScoringStrategyParams{
+					Type: "BalancedAllocation",
+					Resources: []ResourceSpecParams{
+						{
+							Name:   "cpu",
+							Weight: int64(10),
+						},
+						{
+							Name:   "memory",
+							Weight: int64(5),
+						},
+						{
+							Name:   "device.io/foobar",
+							Weight: int64(20),
+						},
+					},
+				},
+			},
+			expectedFound: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -310,14 +501,14 @@ profiles:
 			}
 
 			if !reflect.DeepEqual(params, &tc.expectedParams) {
-				t.Fatalf("params got %q expected %q", toJSON(params), toJSON(tc.expectedParams))
+				t.Fatalf("params got %s expected %s", toJSON(params), toJSON(tc.expectedParams))
 			}
 		})
 	}
 }
 
 func toJSON(v any) string {
-	data, err := json.Marshal(v)
+	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return fmt.Sprintf("<err=%v>", err)
 	}
