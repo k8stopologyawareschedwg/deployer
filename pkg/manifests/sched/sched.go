@@ -98,6 +98,7 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 	ret.DPController.Spec.Replicas = newInt32(replicas)
 
 	params := manifests.ConfigParams{
+		ProfileName: opts.ProfileName,
 		Cache: &manifests.ConfigCacheParams{
 			ResyncPeriodSeconds: newInt64(int64(opts.CacheResyncPeriod.Seconds())),
 		},
@@ -113,7 +114,7 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 		}
 	}
 
-	err = schedupdate.SchedulerConfig(ret.ConfigMap, opts.ProfileName, &params)
+	err = schedupdate.SchedulerConfig(ret.ConfigMap, DefaultProfileName, &params)
 	if err != nil {
 		return ret, err
 	}
