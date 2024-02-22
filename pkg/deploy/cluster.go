@@ -61,14 +61,15 @@ func OnCluster(env *deployer.Environment, commonOpts *options.Options) error {
 		return err
 	}
 	if err := sched.Deploy(env, options.Scheduler{
-		Platform:          commonOpts.ClusterPlatform,
-		WaitCompletion:    commonOpts.WaitCompletion,
-		Replicas:          int32(commonOpts.Replicas),
-		PullIfNotPresent:  commonOpts.PullIfNotPresent,
-		ProfileName:       commonOpts.SchedProfileName,
-		CacheResyncPeriod: commonOpts.SchedResyncPeriod,
-		CtrlPlaneAffinity: commonOpts.SchedCtrlPlaneAffinity,
-		Verbose:           commonOpts.SchedVerbose,
+		Platform:               commonOpts.ClusterPlatform,
+		WaitCompletion:         commonOpts.WaitCompletion,
+		Replicas:               int32(commonOpts.Replicas),
+		PullIfNotPresent:       commonOpts.PullIfNotPresent,
+		ProfileName:            commonOpts.SchedProfileName,
+		CacheResyncPeriod:      commonOpts.SchedResyncPeriod,
+		CtrlPlaneAffinity:      commonOpts.SchedCtrlPlaneAffinity,
+		Verbose:                commonOpts.SchedVerbose,
+		ScoringStratConfigData: commonOpts.SchedScoringStratConfigData,
 	}); err != nil {
 		return err
 	}
