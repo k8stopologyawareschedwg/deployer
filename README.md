@@ -211,3 +211,5 @@ make
 
 You can download pre-built binaries for Linux from the `releases` section.
 No container images are available nor planned.
+
+foobar
