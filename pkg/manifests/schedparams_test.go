@@ -514,11 +514,3 @@ func toJSON(v any) string {
 	}
 	return string(data)
 }
-
-func newInt64(value int64) *int64 {
-	return &value
-}
-
-func newString(value string) *string {
-	return &value
-}

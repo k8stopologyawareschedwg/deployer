@@ -46,6 +46,7 @@ type Options struct {
 	ClusterVersion              platform.Version
 	WaitCompletion              bool
 	SchedScoringStratConfigData string
+	SchedCacheParamsConfigData  string
 }
 
 type API struct {
@@ -62,6 +63,7 @@ type Scheduler struct {
 	CtrlPlaneAffinity      bool
 	Verbose                int
 	ScoringStratConfigData string
+	CacheParamsConfigData  string
 }
 
 type DaemonSet struct {

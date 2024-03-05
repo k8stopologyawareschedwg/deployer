@@ -50,7 +50,7 @@ func SchedulerConfig(cm *corev1.ConfigMap, schedulerName string, params *manifes
 
 func RenderConfig(data []byte, schedulerName string, params *manifests.ConfigParams) ([]byte, bool, error) {
 	if schedulerName == "" || params == nil {
-		klog.V(2).InfoS("missing parameters, passing through", "schedulerName", schedulerName, "params", toJSON(params))
+		klog.InfoS("missing parameters, passing through", "schedulerName", schedulerName, "params", toJSON(params))
 		return data, false, nil
 	}
 
@@ -70,7 +70,7 @@ func RenderConfig(data []byte, schedulerName string, params *manifests.ConfigPar
 	for _, prof := range profiles {
 		profile, ok := prof.(map[string]interface{})
 		if !ok {
-			klog.V(1).InfoS("unexpected profile data")
+			klog.InfoS("unexpected profile data")
 			return data, false, nil
 		}
 

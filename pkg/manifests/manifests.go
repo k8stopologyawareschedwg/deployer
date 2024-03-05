@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"text/template"
+	"time"
 
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
 	securityv1 "github.com/openshift/api/security/v1"
@@ -57,6 +58,10 @@ const (
 const (
 	ContainerNameRTE                = "resource-topology-exporter"
 	ContainerNameNFDTopologyUpdater = "nfd-topology-updater"
+)
+const (
+	DefaultUpdaterSyncPeriod = 10 * time.Second
+	DefaultUpdaterVerbose    = 1
 )
 
 const (

@@ -32,19 +32,15 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	schedmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
-)
-
-// TODO: move elsewhere
-const (
-	DefaultSchedulerProfileName  = "topology-aware-scheduler"
-	DefaultSchedulerResyncPeriod = 5 * time.Second
-	DefaultUpdaterSyncPeriod     = 10 * time.Second
 )
 
 type internalOptions struct {
 	rteConfigFile               string
 	schedScoringStratConfigFile string
+	schedCacheParamsConfigFile  string
 	plat                        string
 }
 
@@ -100,6 +96,7 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *options.Options, internalOpts *
 	flags.StringVarP(&internalOpts.plat, "platform", "P", "", "platform kind:version to deploy on (example kubernetes:v1.22)")
 	flags.StringVar(&internalOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
 	flags.StringVar(&internalOpts.schedScoringStratConfigFile, "sched-scoring-strat-config-file", "", "inject scheduler scoring strategy configuration reading from this file.")
+	flags.StringVar(&internalOpts.schedCacheParamsConfigFile, "sched-cache-params-config-file", "", "inject scheduler fine cache params configuration reading from this file.")
 
 	flags.IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
 	flags.DurationVarP(&commonOpts.WaitInterval, "wait-interval", "E", 2*time.Second, "wait interval.")
@@ -109,11 +106,11 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *options.Options, internalOpts *
 	flags.BoolVar(&commonOpts.UpdaterPFPEnable, "updater-pfp-enable", true, "toggle PFP support on the updater side.")
 	flags.BoolVar(&commonOpts.UpdaterNotifEnable, "updater-notif-enable", true, "toggle event-based notification support on the updater side.")
 	flags.BoolVar(&commonOpts.UpdaterCRIHooksEnable, "updater-cri-hooks-enable", true, "toggle installation of CRI hooks on the updater side.")
-	flags.DurationVar(&commonOpts.UpdaterSyncPeriod, "updater-sync-period", DefaultUpdaterSyncPeriod, "tune the updater synchronization (nrt update) interval. Use 0 to disable.")
-	flags.IntVar(&commonOpts.UpdaterVerbose, "updater-verbose", 1, "set the updater verbosiness.")
-	flags.StringVar(&commonOpts.SchedProfileName, "sched-profile-name", DefaultSchedulerProfileName, "inject scheduler profile name.")
-	flags.DurationVar(&commonOpts.SchedResyncPeriod, "sched-resync-period", DefaultSchedulerResyncPeriod, "inject scheduler resync period.")
-	flags.IntVar(&commonOpts.SchedVerbose, "sched-verbose", 4, "set the scheduler verbosiness.")
+	flags.DurationVar(&commonOpts.UpdaterSyncPeriod, "updater-sync-period", manifests.DefaultUpdaterSyncPeriod, "tune the updater synchronization (nrt update) interval. Use 0 to disable.")
+	flags.IntVar(&commonOpts.UpdaterVerbose, "updater-verbose", manifests.DefaultUpdaterVerbose, "set the updater verbosiness.")
+	flags.StringVar(&commonOpts.SchedProfileName, "sched-profile-name", schedmanifests.DefaultProfileName, "inject scheduler profile name.")
+	flags.DurationVar(&commonOpts.SchedResyncPeriod, "sched-resync-period", schedmanifests.DefaultResyncPeriod, "inject scheduler resync period.")
+	flags.IntVar(&commonOpts.SchedVerbose, "sched-verbose", schedmanifests.DefaultVerbose, "set the scheduler verbosiness.")
 	flags.BoolVar(&commonOpts.SchedCtrlPlaneAffinity, "sched-ctrlplane-affinity", true, "toggle the scheduler control plane affinity.")
 }
 
@@ -152,6 +149,15 @@ func PostSetupOptions(env *deployer.Environment, commonOpts *options.Options, in
 		commonOpts.SchedScoringStratConfigData = string(data)
 		env.Log.Info("Scheduler Scoring Strategy config: read", "bytes", len(commonOpts.SchedScoringStratConfigData))
 	}
+	if internalOpts.schedCacheParamsConfigFile != "" {
+		data, err := os.ReadFile(internalOpts.schedCacheParamsConfigFile)
+		if err != nil {
+			return err
+		}
+		commonOpts.SchedCacheParamsConfigData = string(data)
+		env.Log.Info("Scheduler Cache Parameters config: read", "bytes", len(commonOpts.SchedCacheParamsConfigData))
+	}
+
 	return validateUpdaterType(commonOpts.UpdaterType)
 }
 

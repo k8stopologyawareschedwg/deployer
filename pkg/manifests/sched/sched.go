@@ -17,7 +17,9 @@
 package sched
 
 import (
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 
@@ -34,6 +36,12 @@ import (
 	rbacupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/rbac"
 	schedupdate "github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
+)
+
+const (
+	DefaultProfileName  = "topology-aware-scheduler"
+	DefaultResyncPeriod = 5 * time.Second
+	DefaultVerbose      = 4
 )
 
 const (
@@ -90,13 +98,21 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 	ret.DPScheduler.Spec.Replicas = newInt32(replicas)
 	ret.DPController.Spec.Replicas = newInt32(replicas)
 
+	var err error
 	params := manifests.ConfigParams{
-		Cache: &manifests.ConfigCacheParams{
-			ResyncPeriodSeconds: newInt64(int64(opts.CacheResyncPeriod.Seconds())),
-		},
+		ProfileName: opts.ProfileName,
+		Cache:       manifests.NewConfigCacheParams(),
 	}
 
-	var err error
+	if len(opts.CacheParamsConfigData) > 0 {
+		err = yaml.Unmarshal([]byte(opts.CacheParamsConfigData), params.Cache)
+		if err != nil {
+			return ret, err
+		}
+	}
+
+	// always override
+	params.Cache.ResyncPeriodSeconds = newInt64(int64(opts.CacheResyncPeriod.Seconds()))
 
 	if len(opts.ScoringStratConfigData) > 0 {
 		params.ScoringStrategy = &manifests.ScoringStrategyParams{}
@@ -106,7 +122,7 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 		}
 	}
 
-	err = schedupdate.SchedulerConfig(ret.ConfigMap, opts.ProfileName, &params)
+	err = schedupdate.SchedulerConfig(ret.ConfigMap, DefaultProfileName, &params)
 	if err != nil {
 		return ret, err
 	}
@@ -222,4 +238,12 @@ func newInt32(value int32) *int32 {
 
 func newInt64(value int64) *int64 {
 	return &value
+}
+
+func toJSON(v any) string {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return fmt.Sprintf("<err=%v>", err)
+	}
+	return string(data)
 }
