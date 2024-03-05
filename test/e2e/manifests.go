@@ -29,10 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
-
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil/nodes"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
@@ -81,25 +78,7 @@ var _ = ginkgo.Describe("[ManifestFlow] Deployer rendering", func() {
 				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
 
 				ginkgo.By("checking that noderesourcetopolgy has some information in it")
-				tc, err := clientutil.NewTopologyClient()
-				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-				workers, err := nodes.GetWorkers(NullEnv())
-				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				for _, node := range workers {
-					ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
-
-					// the name of the nrt object is the same as the worker node's name
-					_ = getNodeResourceTopology(tc, node.Name, func(nrt *v1alpha2.NodeResourceTopology) error {
-						if err := checkHasCPU(nrt); err != nil {
-							return err
-						}
-						if err := checkHasPFP(nrt); err != nil {
-							return err
-						}
-						return nil
-					})
-				}
+				expectNodeResourceTopologyData()
 			})
 
 			ginkgo.It("should verify a test pod scheduled with the topology aware scheduler goes running", func() {

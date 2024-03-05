@@ -161,18 +161,7 @@ var _ = ginkgo.Describe("[NegativeFlow] Deployer execution with PFP disabled", f
 					e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
 
 					ginkgo.By("checking that noderesourcetopolgy has some information in it")
-					tc, err := clientutil.NewTopologyClient()
-					gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-					workers, err := nodes.GetWorkers(NullEnv())
-					gomega.Expect(err).ToNot(gomega.HaveOccurred())
-					for _, node := range workers {
-						ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
-
-						// the name of the nrt object is the same as the worker node's name
-						err = ensureNodeResourceTopology(tc, node.Name, checkLacksPFP)
-						gomega.Expect(err).ToNot(gomega.HaveOccurred())
-					}
+					expectNodeResourceTopologyData()
 				})
 			})
 		})
