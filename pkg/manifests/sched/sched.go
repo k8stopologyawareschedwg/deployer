@@ -101,7 +101,7 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 	var err error
 	params := manifests.ConfigParams{
 		ProfileName: opts.ProfileName,
-		Cache:       &manifests.ConfigCacheParams{},
+		Cache:       manifests.NewConfigCacheParams(),
 	}
 
 	if len(opts.CacheParamsConfigData) > 0 {

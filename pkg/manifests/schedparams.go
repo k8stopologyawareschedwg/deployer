@@ -18,6 +18,7 @@ package manifests
 
 import (
 	"fmt"
+	"time"
 
 	"sigs.k8s.io/yaml"
 
@@ -95,6 +96,19 @@ type ConfigCacheParams struct {
 	ResyncMethod          *string `json:"resyncMethod,omitempty"`
 	ForeignPodsDetectMode *string `json:"foreignPodsDetect,omitempty"`
 	InformerMode          *string `json:"informerMode,omitempty"`
+}
+
+func SetDefaultsConfigCacheParams(params *ConfigCacheParams) {
+	params.ResyncPeriodSeconds = newInt64(int64(5 * time.Second))
+	params.ResyncMethod = newString(CacheResyncAutodetect)
+	params.ForeignPodsDetectMode = newString(ForeignPodsDetectOnlyExclusiveResources)
+	// InformerMode support intentionally left unspecified
+}
+
+func NewConfigCacheParams() *ConfigCacheParams {
+	params := ConfigCacheParams{}
+	SetDefaultsConfigCacheParams(&params)
+	return &params
 }
 
 type ResourceSpecParams struct {
@@ -308,4 +322,12 @@ func extractParams(profileName string, args map[string]interface{}) (ConfigParam
 	}
 
 	return params, nil
+}
+
+func newInt64(v int64) *int64 {
+	return &v
+}
+
+func newString(v string) *string {
+	return &v
 }
