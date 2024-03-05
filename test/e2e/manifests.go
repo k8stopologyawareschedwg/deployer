@@ -101,6 +101,8 @@ var _ = ginkgo.Describe("[ManifestFlow] Deployer rendering", func() {
 					ginkgo.Skip("skipping the pod check - not enough resources")
 				}
 
+				expectNodeResourceTopologyData()
+
 				testNs := &corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						GenerateName: "tas-test-",

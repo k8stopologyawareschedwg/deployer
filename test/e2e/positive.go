@@ -277,6 +277,8 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 					ginkgo.Fail("no worker nodes found in the cluster")
 				}
 
+				expectNodeResourceTopologyData()
+
 				// min 1 reserved + min 1 allocatable = 2
 				nodes, err := e2enodes.FilterNodesWithEnoughCores(workerNodes, "2")
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
@@ -361,6 +363,8 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 					// TODO: it is unusual to skip so late, maybe split this spec in 2?
 					ginkgo.Skip("skipping the pod check - not enough resources")
 				}
+
+				expectNodeResourceTopologyData()
 
 				testNs := &corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
