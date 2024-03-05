@@ -442,7 +442,11 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 				"failed to deploy partial components before test started",
 			)
 			if err != nil {
-				dumpSchedulerPods()
+				cli, cerr := clientutil.New()
+				if cerr == nil {
+					// don't hide the previous error
+					dumpSchedulerPods(context.Background(), cli)
+				} // else?
 			}
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
@@ -460,7 +464,10 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			}()
 
-			expectSchedulerRunning()
+			cli, err := clientutil.New()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			expectSchedulerRunning(context.Background(), cli)
 		})
 
 		ginkgo.It("should perform the deployment of scheduler plugin (with extreme verbosity) + API and verify all pods are running", func() {
@@ -477,7 +484,11 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 				"failed to deploy partial components before test started",
 			)
 			if err != nil {
-				dumpSchedulerPods()
+				cli, cerr := clientutil.New()
+				if cerr == nil {
+					// don't hide the previous error
+					dumpSchedulerPods(context.Background(), cli)
+				} // else?
 			}
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
@@ -495,7 +506,10 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			}()
 
-			expectSchedulerRunning()
+			cli, err := clientutil.New()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			expectSchedulerRunning(context.Background(), cli)
 		})
 	})
 })
