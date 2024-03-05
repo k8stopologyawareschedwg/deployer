@@ -49,6 +49,7 @@ import (
 	"github.com/k8stopologyawareschedwg/podfingerprint"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil/nodes"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
@@ -369,4 +370,29 @@ func expectSchedulerRunning(ctx context.Context, cli client.Client) {
 		}(dp)
 	}
 	wg.Wait()
+}
+
+func expectNodeResourceTopologyData() {
+	ginkgo.GinkgoHelper()
+
+	tc, err := clientutil.NewTopologyClient()
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+	workers, err := nodes.GetWorkers(NullEnv())
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+	for _, node := range workers {
+		ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
+
+		// the name of the nrt object is the same as the worker node's name
+		_ = getNodeResourceTopology(tc, node.Name, func(nrt *v1alpha2.NodeResourceTopology) error {
+			if err := checkHasCPU(nrt); err != nil {
+				return err
+			}
+			if err := checkHasPFP(nrt); err != nil {
+				return err
+			}
+			return nil
+		})
+	}
 }
