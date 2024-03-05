@@ -122,7 +122,17 @@ var _ = ginkgo.Describe("[ManifestFlow] Deployer rendering", func() {
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 				ginkgo.By("checking the pod goes running")
-				e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name, 2*time.Minute)
+				updatedPod, err := e2epods.WaitForPodToBeRunning(context.TODO(), cli, testPod.Namespace, testPod.Name, 3*time.Minute)
+				if err != nil {
+					ctx := context.Background()
+					cli, cerr := clientutil.New()
+					if cerr != nil {
+						dumpResourceTopologyExporterPods(ctx, cli)
+						dumpSchedulerPods(ctx, cli)
+						dumpWorkloadPods(ctx, updatedPod)
+					}
+				}
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			})
 		})
 	})
