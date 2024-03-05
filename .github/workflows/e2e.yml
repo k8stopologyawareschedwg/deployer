@@ -43,6 +43,7 @@ jobs:
         kubectl label node kind-worker node-role.kubernetes.io/worker=''
         hack/wait-nodes-ready.sh
         kubectl describe nodes
+        uname -a
 
     - name: run E2E tests
       run: |
@@ -79,6 +80,7 @@ jobs:
         kubectl label node kind-worker node-role.kubernetes.io/worker=''
         hack/wait-nodes-ready.sh
         kubectl describe nodes
+        uname -a
 
     - name: run E2E tests
       run: |
@@ -117,6 +119,7 @@ jobs:
         kubectl label node kind-worker node-role.kubernetes.io/worker=''
         hack/wait-nodes-ready.sh
         kubectl describe nodes
+        uname -a
 
     - name: run E2E tests
       run: |

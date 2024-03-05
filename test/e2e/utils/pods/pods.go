@@ -30,6 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8swait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -69,26 +70,34 @@ func GuaranteedSleeperPod(namespace, schedulerName string) *corev1.Pod {
 	}
 }
 
-func WaitForPodToBeRunning(cli *kubernetes.Clientset, podNamespace, podName string, timeout time.Duration) *corev1.Pod {
+func WaitForPodToBeRunning(ctx context.Context, cli kubernetes.Interface, podNamespace, podName string, timeout time.Duration) (*corev1.Pod, error) {
 	var err error
 	var pod *corev1.Pod
 	startTime := time.Now()
-	gomega.EventuallyWithOffset(1, func() error {
-		pod, err = cli.CoreV1().Pods(podNamespace).Get(context.TODO(), podName, metav1.GetOptions{})
-		if err != nil {
-			return err
+	err = k8swait.PollUntilContextTimeout(ctx, 10*time.Second, timeout, true, func(fctx context.Context) (bool, error) {
+		var err2 error
+		pod, err2 = cli.CoreV1().Pods(podNamespace).Get(fctx, podName, metav1.GetOptions{})
+		if err2 != nil {
+			return false, err2
 		}
 		switch pod.Status.Phase {
 		case corev1.PodFailed, corev1.PodSucceeded:
-			return fmt.Errorf("pod %q status %q which is unexpected", podName, pod.Status.Phase)
+			return false, fmt.Errorf("pod %q status %q which is unexpected", podName, pod.Status.Phase)
 		case corev1.PodRunning:
 			fmt.Fprintf(ginkgo.GinkgoWriter, "Pod %q is running! (took %v)\n", podName, time.Since(startTime))
-			return nil
+			return true, nil
 		}
 		msg := fmt.Sprintf("pod %q status %q, waiting for it to be Running (with Ready = true)", podName, pod.Status.Phase)
 		fmt.Fprintln(ginkgo.GinkgoWriter, msg)
-		return errors.New(msg)
-	}, timeout, 10*time.Second).ShouldNot(gomega.HaveOccurred())
+		return false, nil
+	})
+	return pod, err
+}
+
+func ExpectPodToBeRunning(cli kubernetes.Interface, podNamespace, podName string, timeout time.Duration) *corev1.Pod {
+	ginkgo.GinkgoHelper()
+	pod, err := WaitForPodToBeRunning(context.Background(), cli, podNamespace, podName, timeout)
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 	return pod
 }
 
@@ -147,6 +156,21 @@ func GetByDeployment(cli client.Client, ctx context.Context, deployment appsv1.D
 	}
 
 	err = cli.List(ctx, podList, &client.ListOptions{Namespace: deployment.Namespace, LabelSelector: sel})
+	if err != nil {
+		return nil, err
+	}
+
+	return podList.Items, nil
+}
+
+func GetByDaemonSet(cli client.Client, ctx context.Context, daemonset appsv1.DaemonSet) ([]corev1.Pod, error) {
+	podList := &corev1.PodList{}
+	sel, err := metav1.LabelSelectorAsSelector(daemonset.Spec.Selector)
+	if err != nil {
+		return nil, err
+	}
+
+	err = cli.List(ctx, podList, &client.ListOptions{Namespace: daemonset.Namespace, LabelSelector: sel})
 	if err != nil {
 		return nil, err
 	}
