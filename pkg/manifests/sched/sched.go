@@ -39,9 +39,11 @@ import (
 )
 
 const (
-	DefaultProfileName  = "topology-aware-scheduler"
-	DefaultResyncPeriod = 5 * time.Second
-	DefaultVerbose      = 4
+	DefaultProfileName         = "topology-aware-scheduler"
+	DefaultResyncPeriod        = 5 * time.Second
+	DefaultVerbose             = 4
+	DefaultCtrlPlaneAffinity   = true
+	DefaultLeaderElectResource = manifests.LeaderElectionDefaultNamespace + "/" + manifests.LeaderElectionDefaultName
 )
 
 const (

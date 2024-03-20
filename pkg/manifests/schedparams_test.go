@@ -33,10 +33,12 @@ func TestDecodeSchedulerConfigFromData(t *testing.T) {
 	}
 	testCases := []testCase{
 		{
-			name:           "nil",
-			data:           nil,
-			schedulerName:  "",
-			expectedParams: ConfigParams{},
+			name:          "nil",
+			data:          nil,
+			schedulerName: "",
+			expectedParams: ConfigParams{
+				LeaderElection: &LeaderElectionParams{},
+			},
 		},
 		{
 			name: "bad scheduler name",
@@ -60,8 +62,10 @@ profiles:
       - name: NodeResourceTopologyMatch
   schedulerName: topology-aware-scheduler
 `),
-			schedulerName:  "topo-aware-scheduler",
-			expectedParams: ConfigParams{},
+			schedulerName: "topo-aware-scheduler",
+			expectedParams: ConfigParams{
+				LeaderElection: &LeaderElectionParams{},
+			},
 		},
 		{
 			name: "bad scheduler params name",
@@ -85,8 +89,10 @@ profiles:
       - name: NodeResourceTopologyMatch
   schedulerName: topology-aware-scheduler
 `),
-			schedulerName:  "topology-aware-scheduler",
-			expectedParams: ConfigParams{},
+			schedulerName: "topology-aware-scheduler",
+			expectedParams: ConfigParams{
+				LeaderElection: &LeaderElectionParams{},
+			},
 		},
 		{
 			name: "empty params",
@@ -112,8 +118,9 @@ profiles:
 `),
 			schedulerName: "topology-aware-scheduler",
 			expectedParams: ConfigParams{
-				ProfileName: "topology-aware-scheduler",
-				Cache:       &ConfigCacheParams{},
+				ProfileName:    "topology-aware-scheduler",
+				Cache:          &ConfigCacheParams{},
+				LeaderElection: &LeaderElectionParams{},
 			},
 			expectedFound: true,
 		},
@@ -146,6 +153,7 @@ profiles:
 				Cache: &ConfigCacheParams{
 					ResyncPeriodSeconds: newInt64(5),
 				},
+				LeaderElection: &LeaderElectionParams{},
 			},
 			expectedFound: true,
 		},
@@ -185,6 +193,7 @@ profiles:
 					ForeignPodsDetectMode: newString("None"),
 					InformerMode:          newString("Dedicated"),
 				},
+				LeaderElection: &LeaderElectionParams{},
 			},
 			expectedFound: true,
 		},
@@ -220,6 +229,7 @@ profiles:
 					ResyncPeriodSeconds: newInt64(5),
 					ResyncMethod:        newString("OnlyExclusiveResources"),
 				},
+				LeaderElection: &LeaderElectionParams{},
 			},
 			expectedFound: true,
 		},
@@ -253,6 +263,7 @@ profiles:
 				Cache: &ConfigCacheParams{
 					ForeignPodsDetectMode: newString("OnlyExclusiveResources"),
 				},
+				LeaderElection: &LeaderElectionParams{},
 			},
 			expectedFound: true,
 		},
@@ -286,6 +297,7 @@ profiles:
 				Cache: &ConfigCacheParams{
 					InformerMode: newString("Shared"),
 				},
+				LeaderElection: &LeaderElectionParams{},
 			},
 			expectedFound: true,
 		},
@@ -335,6 +347,7 @@ profiles:
 						},
 					},
 				},
+				LeaderElection: &LeaderElectionParams{},
 			},
 			expectedFound: true,
 		},
@@ -369,6 +382,7 @@ profiles:
 				ScoringStrategy: &ScoringStrategyParams{
 					Type: "BalancedAllocation",
 				},
+				LeaderElection: &LeaderElectionParams{},
 			},
 			expectedFound: true,
 		},
@@ -410,17 +424,167 @@ profiles:
 						},
 					},
 				},
+				LeaderElection: &LeaderElectionParams{},
 			},
 			expectedFound: true,
 		},
-
-		// keep this the last one
 		{
-			name: "nonzero resync period all cache params all scoringStrategyParams",
+			name: "minimal leader election params",
 			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
 kind: KubeSchedulerConfiguration
 leaderElection:
-  leaderElect: false
+  leaderElect: true
+profiles:
+- pluginConfig:
+  - args:
+      cacheResyncPeriodSeconds: 7
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: topology-aware-scheduler-leader-elect
+`),
+			schedulerName: "topology-aware-scheduler-leader-elect",
+			expectedParams: ConfigParams{
+				ProfileName: "topology-aware-scheduler-leader-elect",
+				Cache: &ConfigCacheParams{
+					ResyncPeriodSeconds: newInt64(7),
+				},
+				LeaderElection: &LeaderElectionParams{
+					LeaderElect: true,
+				},
+			},
+			expectedFound: true,
+		},
+		{
+			name: "partial leader election params - 1",
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: true
+  resourceNamespace: numa-aware-sched
+profiles:
+- pluginConfig:
+  - args:
+      cacheResyncPeriodSeconds: 7
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: topology-aware-scheduler-leader-elect
+`),
+			schedulerName: "topology-aware-scheduler-leader-elect",
+			expectedParams: ConfigParams{
+				ProfileName: "topology-aware-scheduler-leader-elect",
+				Cache: &ConfigCacheParams{
+					ResyncPeriodSeconds: newInt64(7),
+				},
+				LeaderElection: &LeaderElectionParams{
+					LeaderElect:       true,
+					ResourceNamespace: "numa-aware-sched",
+				},
+			},
+			expectedFound: true,
+		},
+		{
+			name: "partial leader election params - 2",
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: true
+  resourceName: numa-nrtmatch-sched
+profiles:
+- pluginConfig:
+  - args:
+      cacheResyncPeriodSeconds: 7
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: topology-aware-scheduler-leader-elect
+`),
+			schedulerName: "topology-aware-scheduler-leader-elect",
+			expectedParams: ConfigParams{
+				ProfileName: "topology-aware-scheduler-leader-elect",
+				Cache: &ConfigCacheParams{
+					ResyncPeriodSeconds: newInt64(7),
+				},
+				LeaderElection: &LeaderElectionParams{
+					LeaderElect:  true,
+					ResourceName: "numa-nrtmatch-sched",
+				},
+			},
+			expectedFound: true,
+		},
+		{
+			name: "full leader election params",
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: true
+  resourceNamespace: numa-aware-sched
+  resourceName: numa-nrtmatch-sched
+profiles:
+- pluginConfig:
+  - args:
+      cacheResyncPeriodSeconds: 7
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: topology-aware-scheduler-leader-elect
+`),
+			schedulerName: "topology-aware-scheduler-leader-elect",
+			expectedParams: ConfigParams{
+				ProfileName: "topology-aware-scheduler-leader-elect",
+				Cache: &ConfigCacheParams{
+					ResyncPeriodSeconds: newInt64(7),
+				},
+				LeaderElection: &LeaderElectionParams{
+					LeaderElect:       true,
+					ResourceNamespace: "numa-aware-sched",
+					ResourceName:      "numa-nrtmatch-sched",
+				},
+			},
+			expectedFound: true,
+		},
+		// keep this the last one
+		{
+			name: "nonzero resync period all params",
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: true
+  resourceNamespace: numa-aware-sched
+  resourceName: numa-nrtmatch-sched
 profiles:
 - pluginConfig:
   - args:
@@ -476,6 +640,11 @@ profiles:
 							Weight: int64(20),
 						},
 					},
+				},
+				LeaderElection: &LeaderElectionParams{
+					LeaderElect:       true,
+					ResourceNamespace: "numa-aware-sched",
+					ResourceName:      "numa-nrtmatch-sched",
 				},
 			},
 			expectedFound: true,
