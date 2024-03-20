@@ -64,6 +64,8 @@ func NewRemoveCommand(env *deployer.Environment, commonOpts *options.Options) *c
 				Verbose:                commonOpts.SchedVerbose,
 				ScoringStratConfigData: commonOpts.SchedScoringStratConfigData,
 				CacheParamsConfigData:  commonOpts.SchedCacheParamsConfigData,
+				LeaderElection:         commonOpts.Replicas > 1,
+				LeaderElectionResource: commonOpts.SchedLeaderElectResource,
 			})
 			if err != nil {
 				// intentionally keep going to remove as much as possible
@@ -166,6 +168,8 @@ func NewRemoveSchedulerPluginCommand(env *deployer.Environment, commonOpts *opti
 				Verbose:                commonOpts.SchedVerbose,
 				ScoringStratConfigData: commonOpts.SchedScoringStratConfigData,
 				CacheParamsConfigData:  commonOpts.SchedCacheParamsConfigData,
+				LeaderElection:         commonOpts.Replicas > 1,
+				LeaderElectionResource: commonOpts.SchedLeaderElectResource,
 			})
 		},
 		Args: cobra.NoArgs,
