@@ -157,10 +157,11 @@ func SetDefaultsLeaderElection(lep *LeaderElectionParams) {
 }
 
 type ConfigParams struct {
-	ProfileName     string // can't be empty, so no need for pointer
-	Cache           *ConfigCacheParams
-	ScoringStrategy *ScoringStrategyParams
-	LeaderElection  *LeaderElectionParams
+	// can't be empty, so no need for pointer
+	ProfileName     string                 `json:"profileName"`
+	Cache           *ConfigCacheParams     `json:"cache"`
+	ScoringStrategy *ScoringStrategyParams `json:"scoringStrategy,omitempty"`
+	LeaderElection  *LeaderElectionParams  `json:"leaderElection"`
 }
 
 func DecodeSchedulerProfilesFromData(data []byte) ([]ConfigParams, error) {
