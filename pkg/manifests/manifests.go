@@ -148,7 +148,7 @@ func Role(component, subComponent, namespace string) (*rbacv1.Role, error) {
 	return role, nil
 }
 
-func RoleBinding(component, subComponent, namespace string) (*rbacv1.RoleBinding, error) {
+func RoleBinding(component, subComponent, roleName, namespace string) (*rbacv1.RoleBinding, error) {
 	if err := validateComponent(component); err != nil {
 		return nil, err
 	}
@@ -156,7 +156,11 @@ func RoleBinding(component, subComponent, namespace string) (*rbacv1.RoleBinding
 		return nil, err
 	}
 
-	obj, err := loadObject(filepath.Join("yaml", component, subComponent, "rolebinding.yaml"))
+	fileName := "rolebinding.yaml"
+	if roleName != "" {
+		fileName = "rolebinding_" + roleName + ".yaml"
+	}
+	obj, err := loadObject(filepath.Join("yaml", component, subComponent, fileName))
 	if err != nil {
 		return nil, err
 	}

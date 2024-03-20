@@ -61,6 +61,8 @@ type Scheduler struct {
 	PullIfNotPresent       bool
 	CacheResyncPeriod      time.Duration
 	CtrlPlaneAffinity      bool
+	LeaderElection         bool
+	LeaderElectionResource string
 	Verbose                int
 	ScoringStratConfigData string
 	CacheParamsConfigData  string
