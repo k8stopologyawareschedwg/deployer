@@ -40,6 +40,7 @@ type Options struct {
 	SchedResyncPeriod           time.Duration
 	SchedVerbose                int
 	SchedCtrlPlaneAffinity      bool
+	SchedLeaderElectResource    string
 	WaitInterval                time.Duration
 	WaitTimeout                 time.Duration
 	ClusterPlatform             platform.Platform
