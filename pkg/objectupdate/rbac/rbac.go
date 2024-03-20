@@ -20,6 +20,10 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
+func Role(ro *rbacv1.Role, namespace string) {
+	ro.Namespace = namespace
+}
+
 func RoleBinding(rb *rbacv1.RoleBinding, serviceAccount, namespace string) {
 	for idx := 0; idx < len(rb.Subjects); idx++ {
 		if serviceAccount != "" {
