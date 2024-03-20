@@ -101,6 +101,8 @@ func NewRenderSchedulerPluginCommand(env *deployer.Environment, commonOpts *opti
 				CacheResyncPeriod:      commonOpts.SchedResyncPeriod,
 				ScoringStratConfigData: commonOpts.SchedScoringStratConfigData,
 				CacheParamsConfigData:  commonOpts.SchedCacheParamsConfigData,
+				LeaderElection:         commonOpts.Replicas > 1,
+				LeaderElectionResource: commonOpts.SchedLeaderElectResource,
 			}
 			schedObjs, err := schedManifests.Render(env.Log, renderOpts)
 			if err != nil {
@@ -186,6 +188,8 @@ func RenderManifests(env *deployer.Environment, commonOpts *options.Options) err
 		Verbose:                commonOpts.SchedVerbose,
 		ScoringStratConfigData: commonOpts.SchedScoringStratConfigData,
 		CacheParamsConfigData:  commonOpts.SchedCacheParamsConfigData,
+		LeaderElection:         commonOpts.Replicas > 1,
+		LeaderElectionResource: commonOpts.SchedLeaderElectResource,
 	}
 
 	schedObjs, err := schedManifests.Render(env.Log, schedRenderOpts)
