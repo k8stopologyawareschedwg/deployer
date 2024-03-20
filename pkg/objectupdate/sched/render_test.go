@@ -526,6 +526,174 @@ profiles:
 `,
 			expectedUpdate: true,
 		},
+		{
+			name: "all params including leader election updated from empty",
+			params: &manifests.ConfigParams{
+				Cache: &manifests.ConfigCacheParams{
+					ResyncPeriodSeconds:   newInt64(7),
+					ResyncMethod:          newString("Autodetect"),
+					ForeignPodsDetectMode: newString("None"),
+					InformerMode:          newString("Shared"),
+				},
+				ScoringStrategy: &manifests.ScoringStrategyParams{
+					Type: manifests.ScoringStrategyBalancedAllocation,
+					Resources: []manifests.ResourceSpecParams{
+						{
+							Name:   "cpu",
+							Weight: int64(20),
+						},
+						{
+							Name:   "fancy.com/device",
+							Weight: int64(100),
+						},
+					},
+				},
+				LeaderElection: &manifests.LeaderElectionParams{
+					LeaderElect:       true,
+					ResourceNamespace: "numaresources",
+					ResourceName:      "nrtmatch-scheduler",
+				},
+			},
+			initial: configTemplateEmpty,
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: true
+  resourceName: nrtmatch-scheduler
+  resourceNamespace: numaresources
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        foreignPodsDetect: None
+        informerMode: Shared
+        resyncMethod: Autodetect
+      cacheResyncPeriodSeconds: 7
+      scoringStrategy:
+        resources:
+        - name: cpu
+          weight: 20
+        - name: fancy.com/device
+          weight: 100
+        type: BalancedAllocation
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expectedUpdate: true,
+		},
+		{
+			name: "leader election updated from empty",
+			params: &manifests.ConfigParams{
+				Cache: &manifests.ConfigCacheParams{
+					ResyncPeriodSeconds: newInt64(11),
+				},
+				LeaderElection: &manifests.LeaderElectionParams{
+					LeaderElect:       true,
+					ResourceNamespace: "numaresources",
+					ResourceName:      "nrtmatch-scheduler",
+				},
+			},
+			initial: configTemplateEmpty,
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: true
+  resourceName: nrtmatch-scheduler
+  resourceNamespace: numaresources
+profiles:
+- pluginConfig:
+  - args:
+      cacheResyncPeriodSeconds: 11
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expectedUpdate: true,
+		},
+		{
+			name: "all params including leader election updated from nonempty",
+			params: &manifests.ConfigParams{
+				Cache: &manifests.ConfigCacheParams{
+					ResyncPeriodSeconds:   newInt64(7),
+					ResyncMethod:          newString("Autodetect"),
+					ForeignPodsDetectMode: newString("None"),
+					InformerMode:          newString("Shared"),
+				},
+				ScoringStrategy: &manifests.ScoringStrategyParams{
+					Type: manifests.ScoringStrategyBalancedAllocation,
+					Resources: []manifests.ResourceSpecParams{
+						{
+							Name:   "cpu",
+							Weight: int64(20),
+						},
+						{
+							Name:   "fancy.com/device",
+							Weight: int64(100),
+						},
+					},
+				},
+				LeaderElection: &manifests.LeaderElectionParams{
+					LeaderElect:       true,
+					ResourceNamespace: "numaresources",
+					ResourceName:      "nrtmatch-scheduler",
+				},
+			},
+			initial: configTemplateAllValuesScoringFineTunedLeaderElect,
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: true
+  resourceName: nrtmatch-scheduler
+  resourceNamespace: numaresources
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        foreignPodsDetect: None
+        informerMode: Shared
+        resyncMethod: Autodetect
+      cacheResyncPeriodSeconds: 7
+      scoringStrategy:
+        resources:
+        - name: cpu
+          weight: 20
+        - name: fancy.com/device
+          weight: 100
+        type: BalancedAllocation
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expectedUpdate: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -667,6 +835,39 @@ profiles:
         - name: cpu
           weight: 2	
         type: MostAllocated            
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`
+
+var configTemplateAllValuesScoringFineTunedLeaderElect string = `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: true
+  resourceNamespace: numaresources
+  resourceName: nrmatch-scheduler
+profiles:
+- pluginConfig:
+  - args:
+      cache:
+        foreignPodsDetect: OnlyExclusiveResources
+        informerMode: Dedicated
+        resyncMethod: OnlyExclusiveResources
+      cacheResyncPeriodSeconds: 5
+      scoringStrategy:
+        resources:
+        - name: cpu
+          weight: 2
+        type: MostAllocated
     name: NodeResourceTopologyMatch
   plugins:
     filter:
