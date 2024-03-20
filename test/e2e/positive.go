@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -33,22 +32,13 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
-
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2"
-
-	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil/nodes"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/nfd"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
@@ -272,25 +262,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
 
 				ginkgo.By("checking that noderesourcetopolgy has some information in it")
-				tc, err := clientutil.NewTopologyClient()
-				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-				workers, err := nodes.GetWorkers(NullEnv())
-				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				for _, node := range workers {
-					ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
-
-					// the name of the nrt object is the same as the worker node's name
-					_ = getNodeResourceTopology(tc, node.Name, func(nrt *v1alpha2.NodeResourceTopology) error {
-						if err := checkHasCPU(nrt); err != nil {
-							return err
-						}
-						if err := checkHasPFP(nrt); err != nil {
-							return err
-						}
-						return nil
-					})
-				}
+				expectNodeResourceTopologyData()
 			})
 
 			ginkgo.It("should verify a test pod scheduled with the topology aware scheduler goes running", func() {
@@ -304,6 +276,8 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 					// how come did the validation pass?
 					ginkgo.Fail("no worker nodes found in the cluster")
 				}
+
+				expectNodeResourceTopologyData()
 
 				// min 1 reserved + min 1 allocatable = 2
 				nodes, err := e2enodes.FilterNodesWithEnoughCores(workerNodes, "2")
@@ -332,7 +306,17 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 				ginkgo.By("checking the pod goes running")
-				e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name, 2*time.Minute)
+				updatedPod, err := e2epods.WaitForPodToBeRunning(context.TODO(), cli, testPod.Namespace, testPod.Name, 3*time.Minute)
+				if err != nil {
+					ctx := context.Background()
+					cli, cerr := clientutil.New()
+					if cerr != nil {
+						dumpResourceTopologyExporterPods(ctx, cli)
+						dumpSchedulerPods(ctx, cli)
+						dumpWorkloadPods(ctx, updatedPod)
+					}
+				}
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			})
 		})
 
@@ -367,25 +351,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mfs.DPScheduler.Name))
 
 				ginkgo.By("checking that noderesourcetopolgy has some information in it")
-				tc, err := clientutil.NewTopologyClient()
-				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-				workers, err := nodes.GetWorkers(NullEnv())
-				gomega.Expect(err).ToNot(gomega.HaveOccurred())
-				for _, node := range workers {
-					ginkgo.By(fmt.Sprintf("checking node resource topology for %q", node.Name))
-
-					// the name of the nrt object is the same as the worker node's name
-					_ = getNodeResourceTopology(tc, node.Name, func(nrt *v1alpha2.NodeResourceTopology) error {
-						if err := checkHasCPU(nrt); err != nil {
-							return err
-						}
-						if err := checkHasPFP(nrt); err != nil {
-							return err
-						}
-						return nil
-					})
-				}
+				expectNodeResourceTopologyData()
 			})
 
 			ginkgo.It("should verify a test pod scheduled with the topology aware scheduler goes running", func() {
@@ -408,6 +374,8 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 					ginkgo.Skip("skipping the pod check - not enough resources")
 				}
 
+				expectNodeResourceTopologyData()
+
 				testNs := &corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						GenerateName: "tas-test-",
@@ -427,7 +395,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", func() {
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 				ginkgo.By("checking the pod goes running")
-				e2epods.WaitForPodToBeRunning(cli, testPod.Namespace, testPod.Name, 2*time.Minute)
+				e2epods.ExpectPodToBeRunning(cli, testPod.Namespace, testPod.Name, 2*time.Minute)
 			})
 		})
 	})
@@ -449,7 +417,11 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 				"failed to deploy partial components before test started",
 			)
 			if err != nil {
-				dumpSchedulerPods()
+				cli, cerr := clientutil.New()
+				if cerr == nil {
+					// don't hide the previous error
+					dumpSchedulerPods(context.Background(), cli)
+				} // else?
 			}
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
@@ -467,7 +439,10 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			}()
 
-			expectSchedulerRunning()
+			cli, err := clientutil.New()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			expectSchedulerRunning(context.Background(), cli)
 		})
 
 		ginkgo.It("should perform the deployment of scheduler plugin (with extreme verbosity) + API and verify all pods are running", func() {
@@ -484,7 +459,11 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 				"failed to deploy partial components before test started",
 			)
 			if err != nil {
-				dumpSchedulerPods()
+				cli, cerr := clientutil.New()
+				if cerr == nil {
+					// don't hide the previous error
+					dumpSchedulerPods(context.Background(), cli)
+				} // else?
 			}
 			gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
@@ -502,108 +481,10 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer partial execution", func() {
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			}()
 
-			expectSchedulerRunning()
+			cli, err := clientutil.New()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			expectSchedulerRunning(context.Background(), cli)
 		})
 	})
 })
-
-func dumpSchedulerPods() {
-	ns, err := manifests.Namespace(manifests.ComponentSchedulerPlugin)
-	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-
-	// TODO: autodetect the platform
-	mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
-	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-	mfs, err = mfs.Render(logr.Discard(), options.Scheduler{
-		Replicas: int32(1),
-	})
-	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-
-	cli, err := clientutil.New()
-	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-
-	k8sCli, err := clientutil.NewK8s()
-	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-
-	ctx := context.Background()
-
-	pods, err := e2epods.GetByDeployment(cli, ctx, *mfs.DPScheduler)
-	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-
-	klog.Warning(">>> scheduler pod status begin:\n")
-	for idx := range pods {
-		pod := &pods[idx]
-
-		// TODO
-		pod.ManagedFields = nil
-		// TODO
-
-		data, err := yaml.Marshal(pod)
-		gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-
-		klog.Warningf("%s\n---\n", string(data))
-
-		e2epods.LogEventsForPod(k8sCli, ctx, pod.Namespace, pod.Name)
-		klog.Warningf("---\n")
-	}
-	klog.Warning(">>> scheduler pod status end\n")
-}
-
-func expectSchedulerRunning() {
-	ns, err := manifests.Namespace(manifests.ComponentSchedulerPlugin)
-	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-
-	cli, err := clientutil.New()
-	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-
-	ctx := context.Background()
-
-	ginkgo.By("checking that scheduler plugin is configured")
-
-	confMap := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns.Name,
-			Name:      "scheduler-config", // TODO: duplicate from YAML
-		},
-	}
-	err = cli.Get(ctx, client.ObjectKeyFromObject(&confMap), &confMap)
-	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-	gomega.ExpectWithOffset(1, confMap.Data).ToNot(gomega.BeNil(), "empty config map for scheduler config")
-
-	data, ok := confMap.Data[manifests.SchedulerConfigFileName]
-	gomega.ExpectWithOffset(1, ok).To(gomega.BeTrue(), "empty config data for %q", manifests.SchedulerConfigFileName)
-
-	allParams, err := manifests.DecodeSchedulerProfilesFromData([]byte(data))
-	gomega.ExpectWithOffset(1, len(allParams)).To(gomega.Equal(1), "unexpected params: %#v", allParams)
-
-	params := allParams[0] // TODO: smarter find
-	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-	gomega.ExpectWithOffset(1, params.Cache).ToNot(gomega.BeNil(), "no data for scheduler cache config")
-	gomega.ExpectWithOffset(1, params.Cache.ResyncPeriodSeconds).ToNot(gomega.BeNil(), "no data for scheduler cache resync period")
-
-	ginkgo.By("checking that scheduler plugin is running")
-
-	ginkgo.By("checking that topo-aware-scheduler pod is running")
-	// TODO: autodetect the platform
-	mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
-	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-	mfs, err = mfs.Render(logr.Discard(), options.Scheduler{
-		Replicas: int32(1),
-	})
-	gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-
-	var wg sync.WaitGroup
-	for _, dp := range []*appsv1.Deployment{
-		mfs.DPScheduler,
-		mfs.DPController,
-	} {
-		wg.Add(1)
-		go func(dp *appsv1.Deployment) {
-			defer ginkgo.GinkgoRecover()
-			defer wg.Done()
-			_, err = wait.With(cli, logr.Discard()).Interval(10*time.Second).Timeout(3*time.Minute).ForDeploymentComplete(ctx, dp)
-			gomega.ExpectWithOffset(1, err).ToNot(gomega.HaveOccurred())
-		}(dp)
-	}
-	wg.Wait()
-}
