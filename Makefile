@@ -60,6 +60,10 @@ test-e2e-positive: build-e2e
 test-e2e-negative: build-e2e
 	_out/e2e.test -ginkgo.focus='\[NegativeFlow\]'
 
+.PHONY: test-e2e-local
+test-e2e-local: build-e2e
+	_out/e2e.test -ginkgo.focus='\[Local\]'
+
 .PHONY: gofmt
 gofmt:
 	@echo "Running gofmt"
