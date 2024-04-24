@@ -23,9 +23,9 @@ import (
 )
 
 func TestOutputBasics(t *testing.T) {
-	Setup(testGetImage)
+	imgs := GetWithFunc(false, testGetImage)
 
-	imo := NewOutput("foobar")
+	imo := NewOutput(imgs, "foobar")
 	images := imo.ToList()
 	if len(images) != 3 {
 		t.Errorf("unexpected image list content: %#v", images)
@@ -34,44 +34,44 @@ func TestOutputBasics(t *testing.T) {
 
 func TestOutput(t *testing.T) {
 	type testCase struct {
-		name         string
-		kind         int
-		updaterImage string
-		expected     string
+		name        string
+		kind        int
+		updaterType string
+		expected    string
 	}
 
 	testCases := []testCase{
 		{
-			name:         "text/rte",
-			kind:         FormatText,
-			updaterImage: ResourceTopologyExporterImage,
-			expected:     "TAS_SCHEDULER_PLUGIN_IMAGE=sched_sched\nTAS_SCHEDULER_PLUGIN_CONTROLLER_IMAGE=sched_ctrl\nTAS_RESOURCE_EXPORTER_IMAGE=rte",
+			name:        "text/rte",
+			kind:        FormatText,
+			updaterType: "RTE",
+			expected:    "TAS_SCHEDULER_PLUGIN_IMAGE=sched_sched\nTAS_SCHEDULER_PLUGIN_CONTROLLER_IMAGE=sched_ctrl\nTAS_RESOURCE_EXPORTER_IMAGE=rte",
 		},
 		{
-			name:         "text/nfd",
-			kind:         FormatText,
-			updaterImage: NodeFeatureDiscoveryImage,
-			expected:     "TAS_SCHEDULER_PLUGIN_IMAGE=sched_sched\nTAS_SCHEDULER_PLUGIN_CONTROLLER_IMAGE=sched_ctrl\nTAS_RESOURCE_EXPORTER_IMAGE=nfd",
+			name:        "text/nfd",
+			kind:        FormatText,
+			updaterType: "NFD",
+			expected:    "TAS_SCHEDULER_PLUGIN_IMAGE=sched_sched\nTAS_SCHEDULER_PLUGIN_CONTROLLER_IMAGE=sched_ctrl\nTAS_RESOURCE_EXPORTER_IMAGE=nfd",
 		},
 		{
-			name:         "json/rte",
-			kind:         FormatJSON,
-			updaterImage: ResourceTopologyExporterImage,
-			expected:     `{"topology_updater":"rte","scheduler_plugin":"sched_sched","scheduler_controller":"sched_ctrl"}`,
+			name:        "json/rte",
+			kind:        FormatJSON,
+			updaterType: "RTE",
+			expected:    `{"topology_updater":"rte","scheduler_plugin":"sched_sched","scheduler_controller":"sched_ctrl"}`,
 		},
 		{
-			name:         "json/nfd",
-			kind:         FormatJSON,
-			updaterImage: NodeFeatureDiscoveryImage,
-			expected:     `{"topology_updater":"nfd","scheduler_plugin":"sched_sched","scheduler_controller":"sched_ctrl"}`,
+			name:        "json/nfd",
+			kind:        FormatJSON,
+			updaterType: "NFD",
+			expected:    `{"topology_updater":"nfd","scheduler_plugin":"sched_sched","scheduler_controller":"sched_ctrl"}`,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			Setup(testGetImage)
+			imgs := GetWithFunc(false, testGetImage)
 
-			imo := NewOutput(tc.updaterImage)
+			imo := NewOutput(imgs, tc.updaterType)
 			var buf bytes.Buffer
 			imo.Format(tc.kind, &buf)
 			got := strings.TrimSpace(buf.String())

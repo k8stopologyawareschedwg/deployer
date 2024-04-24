@@ -52,7 +52,8 @@ func UpdaterDaemonSet(ds *appsv1.DaemonSet, opts options.DaemonSet) {
 
 		c.Args = flags.Argv()
 
-		c.Image = images.NodeFeatureDiscoveryImage
+		imgs := images.Get()
+		c.Image = imgs.NodeFeatureDiscovery
 	}
 
 	if opts.NodeSelector != nil {
