@@ -19,6 +19,7 @@ package e2e
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -78,6 +79,64 @@ var _ = ginkgo.Describe("[PositiveFlow][Local] Deployer images", func() {
 			gomega.Expect(imo.TopologyUpdater).ToNot(gomega.BeNil())
 			gomega.Expect(imo.SchedulerPlugin).ToNot(gomega.BeNil())
 			gomega.Expect(imo.SchedulerController).ToNot(gomega.BeNil())
+		})
+
+		ginkgo.It("it should enable to override the builtin images (scheduler)", func() {
+			testImageSpec := "quay.io/foobar/sched:dev"
+			gomega.Expect(os.Setenv("TAS_SCHEDULER_PLUGIN_IMAGE", testImageSpec)).To(gomega.Succeed())
+			defer func() {
+				ginkgo.GinkgoHelper()
+				gomega.Expect(os.Unsetenv("TAS_SCHEDULER_PLUGIN_IMAGE")).To(gomega.Succeed())
+			}()
+
+			cmdline := []string{
+				filepath.Join(binariesPath, "deployer"),
+				"images",
+				"--json",
+			}
+			fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
+
+			cmd := exec.Command(cmdline[0], cmdline[1:]...)
+			cmd.Stderr = ginkgo.GinkgoWriter
+
+			out, err := cmd.Output()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			imo := imageOutput{}
+			if err := json.Unmarshal(out, &imo); err != nil {
+				ginkgo.Fail(fmt.Sprintf("Error unmarshalling output %q: %v", out, err))
+			}
+
+			gomega.Expect(imo.SchedulerPlugin).To(gomega.Equal(testImageSpec))
+		})
+
+		ginkgo.It("it should enable to override the builtin images (controller)", func() {
+			testImageSpec := "quay.io/foobar/ctrl:dev"
+			gomega.Expect(os.Setenv("TAS_SCHEDULER_PLUGIN_CONTROLLER_IMAGE", testImageSpec)).To(gomega.Succeed())
+			defer func() {
+				ginkgo.GinkgoHelper()
+				gomega.Expect(os.Unsetenv("TAS_SCHEDULER_PLUGIN_CONTROLLER_IMAGE")).To(gomega.Succeed())
+			}()
+
+			cmdline := []string{
+				filepath.Join(binariesPath, "deployer"),
+				"images",
+				"--json",
+			}
+			fmt.Fprintf(ginkgo.GinkgoWriter, "running: %v\n", cmdline)
+
+			cmd := exec.Command(cmdline[0], cmdline[1:]...)
+			cmd.Stderr = ginkgo.GinkgoWriter
+
+			out, err := cmd.Output()
+			gomega.Expect(err).ToNot(gomega.HaveOccurred())
+
+			imo := imageOutput{}
+			if err := json.Unmarshal(out, &imo); err != nil {
+				ginkgo.Fail(fmt.Sprintf("Error unmarshalling output %q: %v", out, err))
+			}
+
+			gomega.Expect(imo.SchedulerController).To(gomega.Equal(testImageSpec))
 		})
 	})
 })
