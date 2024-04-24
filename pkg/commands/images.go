@@ -22,7 +22,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/images"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
@@ -39,13 +38,12 @@ func NewImagesCommand(env *deployer.Environment, commonOpts *options.Options) *c
 		Use:   "images",
 		Short: "dump the container images used to deploy",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			images.SetDefaults(opts.useSHA)
-			updaterImage := getUpdaterImage(commonOpts.UpdaterType)
+			imgs := images.GetWithFunc(opts.useSHA, os.LookupEnv)
 			fk := images.FormatText
 			if opts.jsonOutput {
 				fk = images.FormatJSON
 			}
-			imo := images.NewOutput(updaterImage)
+			imo := images.NewOutput(imgs, commonOpts.UpdaterType)
 			var of images.Formatter = imo
 			if opts.rawOutput {
 				of = imo.ToList()
@@ -59,11 +57,4 @@ func NewImagesCommand(env *deployer.Environment, commonOpts *options.Options) *c
 	images.Flags().BoolVarP(&opts.rawOutput, "raw", "r", false, "output raw list. Default is key=value object.")
 	images.Flags().BoolVarP(&opts.useSHA, "sha", "S", false, "emit SHA256 pullspects, not tag pullspecs.")
 	return images
-}
-
-func getUpdaterImage(updaterType string) string {
-	if updaterType == updaters.RTE {
-		return images.ResourceTopologyExporterImage
-	}
-	return images.NodeFeatureDiscoveryImage
 }

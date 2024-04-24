@@ -19,17 +19,18 @@ package images
 import "testing"
 
 func TestImageURISanity(t *testing.T) {
+	imgs := Get()
 	// TODO: check these are valid pullSpecs
-	if SchedulerPluginSchedulerImage == "" {
+	if imgs.SchedulerPluginScheduler == "" {
 		t.Fatalf("invalid Scheduler Plugin Scheduler Image pull URL")
 	}
-	if SchedulerPluginControllerImage == "" {
+	if imgs.SchedulerPluginController == "" {
 		t.Fatalf("invalid Scheduler Plugin Controller Image pull URL")
 	}
-	if ResourceTopologyExporterImage == "" {
+	if imgs.ResourceTopologyExporter == "" {
 		t.Fatalf("invalid Resource Topology Exporter Image pull URL")
 	}
-	if NodeFeatureDiscoveryImage == "" {
+	if imgs.NodeFeatureDiscovery == "" {
 		t.Fatalf("invalid Node Feature Discovery Image pull URL")
 	}
 }
