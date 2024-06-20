@@ -112,6 +112,8 @@ func NewDeploySchedulerPluginCommand(env *deployer.Environment, commonOpts *opti
 				Verbose:                commonOpts.SchedVerbose,
 				ScoringStratConfigData: commonOpts.SchedScoringStratConfigData,
 				CacheParamsConfigData:  commonOpts.SchedCacheParamsConfigData,
+				LeaderElection:         commonOpts.Replicas > 1,
+				LeaderElectionResource: commonOpts.SchedLeaderElectResource,
 			})
 		},
 		Args: cobra.NoArgs,
