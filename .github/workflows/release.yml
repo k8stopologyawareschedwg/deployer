@@ -56,7 +56,7 @@ jobs:
 
     - name: run E2E tests
       run: |
-        _out/e2e.test -ginkgo.focus='\[PositiveFlow\]' -ginkgo.v
+        _out/e2e.test --ginkgo.v --ginkgo.label-filter='release'
 
     - name: fix build artifacts
       run: |
