@@ -40,7 +40,7 @@ import (
 	e2epods "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/pods"
 )
 
-var _ = ginkgo.Describe("[ManifestFlow] Deployer rendering", func() {
+var _ = ginkgo.Describe("[ManifestFlow] Deployer rendering", ginkgo.Label("manifests"), func() {
 	ginkgo.Context("with a running cluster without any components", func() {
 		ginkgo.BeforeEach(func() {
 			err := deployWithManifests()

@@ -47,7 +47,7 @@ jobs:
 
     - name: run E2E tests
       run: |
-        _out/e2e.test -ginkgo.focus='\[PositiveFlow\]' -ginkgo.v
+        _out/e2e.test --ginkgo.v --ginkgo.label-filter='positive'
 
   e2e-negative:
     runs-on: ubuntu-22.04
@@ -84,7 +84,7 @@ jobs:
 
     - name: run E2E tests
       run: |
-        _out/e2e.test -ginkgo.focus='\[NegativeFlow\]' -ginkgo.v
+        _out/e2e.test --ginkgo.v --ginkgo.label-filter='negative'
 
   e2e-manifests:
     runs-on: ubuntu-22.04
@@ -123,4 +123,4 @@ jobs:
 
     - name: run E2E tests
       run: |
-        _out/e2e.test -ginkgo.focus='\[ManifestFlow\]' -ginkgo.v
+        _out/e2e.test --ginkgo.v --ginkgo.label-filter='manifests'

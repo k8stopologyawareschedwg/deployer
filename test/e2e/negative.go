@@ -38,7 +38,7 @@ import (
 	e2epods "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/pods"
 )
 
-var _ = ginkgo.Describe("[NegativeFlow] Deployer validation", func() {
+var _ = ginkgo.Describe("[NegativeFlow] Deployer validation", ginkgo.Label("negative"), func() {
 	ginkgo.Context("with cluster with default settings", func() {
 		ginkgo.It("it should fail the validation", func() {
 			cmdline := []string{
@@ -64,7 +64,7 @@ var _ = ginkgo.Describe("[NegativeFlow] Deployer validation", func() {
 	})
 })
 
-var _ = ginkgo.Describe("[NegativeFlow] Deployer option validation", func() {
+var _ = ginkgo.Describe("[NegativeFlow] Deployer option validation", ginkgo.Label("negative"), func() {
 	ginkgo.It("It should fail with invalid --updater-type", func() {
 		updaterType := "LOCAL"
 		err := deploy(updaterType, true)
@@ -72,7 +72,7 @@ var _ = ginkgo.Describe("[NegativeFlow] Deployer option validation", func() {
 	})
 })
 
-var _ = ginkgo.Describe("[NegativeFlow] Deployer execution with PFP disabled", func() {
+var _ = ginkgo.Describe("[NegativeFlow] Deployer execution with PFP disabled", ginkgo.Label("negative"), func() {
 	ginkgo.Context("with a running cluster without any components", func() {
 		var updaterType string
 		ginkgo.JustBeforeEach(func() {
