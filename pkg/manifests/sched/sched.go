@@ -19,6 +19,7 @@ package sched
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -61,12 +62,14 @@ type Manifests struct {
 	RBController  *rbacv1.RoleBinding
 	DPController  *appsv1.Deployment
 	// scheduler proper
-	SAScheduler  *corev1.ServiceAccount
-	CRScheduler  *rbacv1.ClusterRole
-	CRBScheduler *rbacv1.ClusterRoleBinding
-	RBScheduler  *rbacv1.RoleBinding
-	DPScheduler  *appsv1.Deployment
-	ConfigMap    *corev1.ConfigMap
+	SAScheduler      *corev1.ServiceAccount
+	CRScheduler      *rbacv1.ClusterRole
+	RSchedulerElect  *rbacv1.Role
+	CRBScheduler     *rbacv1.ClusterRoleBinding
+	RBSchedulerAuth  *rbacv1.RoleBinding
+	RBSchedulerElect *rbacv1.RoleBinding
+	DPScheduler      *appsv1.Deployment
+	ConfigMap        *corev1.ConfigMap
 	// internal fields
 	plat platform.Platform
 }
@@ -75,19 +78,21 @@ func (mf Manifests) Clone() Manifests {
 	return Manifests{
 		plat: mf.plat,
 		// objects
-		Crd:           mf.Crd.DeepCopy(),
-		Namespace:     mf.Namespace.DeepCopy(),
-		SAController:  mf.SAController.DeepCopy(),
-		CRController:  mf.CRController.DeepCopy(),
-		CRBController: mf.CRBController.DeepCopy(),
-		DPController:  mf.DPController.DeepCopy(),
-		RBController:  mf.RBController.DeepCopy(),
-		SAScheduler:   mf.SAScheduler.DeepCopy(),
-		CRScheduler:   mf.CRScheduler.DeepCopy(),
-		CRBScheduler:  mf.CRBScheduler.DeepCopy(),
-		DPScheduler:   mf.DPScheduler.DeepCopy(),
-		ConfigMap:     mf.ConfigMap.DeepCopy(),
-		RBScheduler:   mf.RBScheduler.DeepCopy(),
+		Crd:              mf.Crd.DeepCopy(),
+		Namespace:        mf.Namespace.DeepCopy(),
+		SAController:     mf.SAController.DeepCopy(),
+		CRController:     mf.CRController.DeepCopy(),
+		CRBController:    mf.CRBController.DeepCopy(),
+		DPController:     mf.DPController.DeepCopy(),
+		RBController:     mf.RBController.DeepCopy(),
+		SAScheduler:      mf.SAScheduler.DeepCopy(),
+		CRScheduler:      mf.CRScheduler.DeepCopy(),
+		RSchedulerElect:  mf.RSchedulerElect.DeepCopy(),
+		CRBScheduler:     mf.CRBScheduler.DeepCopy(),
+		RBSchedulerAuth:  mf.RBSchedulerAuth.DeepCopy(),
+		RBSchedulerElect: mf.RBSchedulerElect.DeepCopy(),
+		DPScheduler:      mf.DPScheduler.DeepCopy(),
+		ConfigMap:        mf.ConfigMap.DeepCopy(),
 	}
 }
 
@@ -100,10 +105,17 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 	ret.DPScheduler.Spec.Replicas = newInt32(replicas)
 	ret.DPController.Spec.Replicas = newInt32(replicas)
 
-	var err error
 	params := manifests.ConfigParams{
 		ProfileName: opts.ProfileName,
 		Cache:       manifests.NewConfigCacheParams(),
+	}
+
+	leap, ok, err := leaderElectionParamsFromOpts(opts)
+	if err != nil {
+		return ret, err
+	}
+	if ok {
+		params.LeaderElection = &leap
 	}
 
 	if len(opts.CacheParamsConfigData) > 0 {
@@ -131,7 +143,9 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 
 	schedupdate.SchedulerDeployment(ret.DPScheduler, opts.PullIfNotPresent, opts.CtrlPlaneAffinity, opts.Verbose)
 	schedupdate.ControllerDeployment(ret.DPController, opts.PullIfNotPresent, opts.CtrlPlaneAffinity)
-	if mf.plat == platform.OpenShift {
+	if opts.Namespace != "" {
+		ret.Namespace.Name = opts.Namespace
+	} else if mf.plat == platform.OpenShift {
 		ret.Namespace.Name = NamespaceOpenShift
 	}
 
@@ -140,9 +154,12 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 	rbacupdate.RoleBinding(ret.RBController, ret.SAController.Name, ret.Namespace.Name)
 	ret.DPController.Namespace = ret.Namespace.Name
 
+	rbacupdate.Role(ret.RSchedulerElect, ret.Namespace.Name)
+
 	ret.SAScheduler.Namespace = ret.Namespace.Name
 	rbacupdate.ClusterRoleBinding(ret.CRBScheduler, ret.SAScheduler.Name, ret.Namespace.Name)
-	rbacupdate.RoleBinding(ret.RBScheduler, ret.SAScheduler.Name, ret.Namespace.Name)
+	rbacupdate.RoleBinding(ret.RBSchedulerElect, ret.SAScheduler.Name, ret.Namespace.Name)
+	rbacupdate.RoleBinding(ret.RBSchedulerAuth, ret.SAScheduler.Name, ret.Namespace.Name)
 	ret.DPScheduler.Namespace = ret.Namespace.Name
 	ret.ConfigMap.Namespace = ret.Namespace.Name
 
@@ -157,7 +174,9 @@ func (mf Manifests) ToObjects() []client.Object {
 		mf.CRScheduler,
 		mf.CRBScheduler,
 		mf.ConfigMap,
-		mf.RBScheduler,
+		mf.RSchedulerElect,
+		mf.RBSchedulerAuth,
+		mf.RBSchedulerElect,
 		mf.DPScheduler,
 		mf.SAController,
 		mf.CRController,
@@ -201,7 +220,15 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
-	mf.RBScheduler, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, namespace)
+	mf.RSchedulerElect, err = manifests.Role(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, namespace)
+	if err != nil {
+		return mf, err
+	}
+	mf.RBSchedulerElect, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, manifests.RoleNameLeaderElect, namespace)
+	if err != nil {
+		return mf, err
+	}
+	mf.RBSchedulerAuth, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, manifests.RoleNameAuthReader, namespace)
 	if err != nil {
 		return mf, err
 	}
@@ -222,7 +249,7 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
-	mf.RBController, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController, namespace)
+	mf.RBController, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController, "", namespace)
 	if err != nil {
 		return mf, err
 	}
@@ -232,6 +259,37 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 	}
 
 	return mf, nil
+}
+
+func leaderElectionParamsFromOpts(opts options.Scheduler) (manifests.LeaderElectionParams, bool, error) {
+	leap := manifests.LeaderElectionParams{}
+	if !opts.LeaderElection {
+		return leap, false, nil
+	}
+
+	manifests.SetDefaultsLeaderElection(&leap)
+	leap.LeaderElect = true
+
+	var err error
+	tokens := strings.Split(opts.LeaderElectionResource, "/")
+	if len(tokens) == 1 {
+		// special case, see docs of strings.Split
+		if tokens[0] == opts.LeaderElectionResource {
+			err = fmt.Errorf("malformed leader election resource: %q", opts.LeaderElectionResource)
+		} else {
+			leap.ResourceNamespace = tokens[0]
+		}
+	} else if len(tokens) == 2 {
+		if len(tokens[0]) > 0 {
+			leap.ResourceNamespace = tokens[0]
+		}
+		if len(tokens[1]) > 0 {
+			leap.ResourceName = tokens[1]
+		}
+	} else {
+		err = fmt.Errorf("malformed leader election resource: %q", opts.LeaderElectionResource)
+	}
+	return leap, true, err
 }
 
 func newInt32(value int32) *int32 {

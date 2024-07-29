@@ -35,7 +35,9 @@ func Creatable(mf schedmf.Manifests, cli client.Client, log logr.Logger) []objec
 		{Obj: mf.SAScheduler},
 		{Obj: mf.CRScheduler},
 		{Obj: mf.CRBScheduler},
-		{Obj: mf.RBScheduler},
+		{Obj: mf.RSchedulerElect},
+		{Obj: mf.RBSchedulerElect},
+		{Obj: mf.RBSchedulerAuth},
 		{Obj: mf.ConfigMap},
 		{
 			Obj: mf.DPScheduler,
@@ -69,7 +71,9 @@ func Deletable(mf schedmf.Manifests, cli client.Client, log logr.Logger) []objec
 		// no need to remove objects created inside the namespace we just removed
 		{Obj: mf.CRBScheduler},
 		{Obj: mf.CRScheduler},
-		{Obj: mf.RBScheduler},
+		{Obj: mf.RBSchedulerAuth},
+		{Obj: mf.RBSchedulerElect},
+		{Obj: mf.RSchedulerElect},
 		{Obj: mf.CRBController},
 		{Obj: mf.CRController},
 		{Obj: mf.RBController},

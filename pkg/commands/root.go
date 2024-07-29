@@ -111,7 +111,8 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *options.Options, internalOpts *
 	flags.StringVar(&commonOpts.SchedProfileName, "sched-profile-name", schedmanifests.DefaultProfileName, "inject scheduler profile name.")
 	flags.DurationVar(&commonOpts.SchedResyncPeriod, "sched-resync-period", schedmanifests.DefaultResyncPeriod, "inject scheduler resync period.")
 	flags.IntVar(&commonOpts.SchedVerbose, "sched-verbose", schedmanifests.DefaultVerbose, "set the scheduler verbosiness.")
-	flags.BoolVar(&commonOpts.SchedCtrlPlaneAffinity, "sched-ctrlplane-affinity", true, "toggle the scheduler control plane affinity.")
+	flags.BoolVar(&commonOpts.SchedCtrlPlaneAffinity, "sched-ctrlplane-affinity", schedmanifests.DefaultCtrlPlaneAffinity, "toggle the scheduler control plane affinity.")
+	flags.StringVar(&commonOpts.SchedLeaderElectResource, "sched-leader-elect-resource", schedmanifests.DefaultLeaderElectResource, "leader election resource namespaced name \"namespace/name\"")
 }
 
 func PostSetupOptions(env *deployer.Environment, commonOpts *options.Options, internalOpts *internalOptions) error {

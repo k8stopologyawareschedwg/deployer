@@ -126,7 +126,7 @@ func TestGetRole(t *testing.T) {
 		{
 			component:    ComponentSchedulerPlugin,
 			subComponent: SubComponentSchedulerPluginScheduler,
-			expectError:  true,
+			expectError:  false,
 		},
 		{
 			component:    ComponentSchedulerPlugin,
@@ -159,6 +159,7 @@ func TestGetRoleBinding(t *testing.T) {
 	type testCase struct {
 		component    string
 		subComponent string
+		roleName     string
 		expectError  bool
 	}
 
@@ -173,7 +174,26 @@ func TestGetRoleBinding(t *testing.T) {
 		},
 		{
 			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginController,
+			roleName:     "",
+			expectError:  false,
+		},
+		{
+			component:    ComponentSchedulerPlugin,
 			subComponent: SubComponentSchedulerPluginScheduler,
+			roleName:     "",
+			expectError:  true,
+		},
+		{
+			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginScheduler,
+			roleName:     RoleNameAuthReader,
+			expectError:  false,
+		},
+		{
+			component:    ComponentSchedulerPlugin,
+			subComponent: SubComponentSchedulerPluginScheduler,
+			roleName:     RoleNameLeaderElect,
 			expectError:  false,
 		},
 		{
@@ -189,7 +209,7 @@ func TestGetRoleBinding(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.component, func(t *testing.T) {
-			obj, err := RoleBinding(tc.component, tc.subComponent, "")
+			obj, err := RoleBinding(tc.component, tc.subComponent, tc.roleName, "")
 			if tc.expectError {
 				if err == nil || obj != nil {
 					t.Fatalf("nil err or non-nil obj=%v", obj)

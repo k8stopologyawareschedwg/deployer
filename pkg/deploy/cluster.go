@@ -71,6 +71,8 @@ func OnCluster(env *deployer.Environment, commonOpts *options.Options) error {
 		Verbose:                commonOpts.SchedVerbose,
 		ScoringStratConfigData: commonOpts.SchedScoringStratConfigData,
 		CacheParamsConfigData:  commonOpts.SchedCacheParamsConfigData,
+		LeaderElection:         commonOpts.Replicas > 1,
+		LeaderElectionResource: commonOpts.SchedLeaderElectResource,
 	}); err != nil {
 		return err
 	}
