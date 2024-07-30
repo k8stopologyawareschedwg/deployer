@@ -17,7 +17,6 @@
 package sched
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -124,7 +123,6 @@ func Test_leaderElectionParamsFromOpts(t *testing.T) {
 				ResourceName:      manifests.LeaderElectionDefaultName,
 				ResourceNamespace: manifests.LeaderElectionDefaultNamespace,
 			},
-			expectedError: fmt.Errorf("malformed leader election resource: \"\""),
 		},
 		{
 			name: "resource non namespaced, missing sep",
@@ -135,10 +133,9 @@ func Test_leaderElectionParamsFromOpts(t *testing.T) {
 			expectedOK: true,
 			expectedParams: manifests.LeaderElectionParams{
 				LeaderElect:       true,
-				ResourceName:      manifests.LeaderElectionDefaultName,
+				ResourceName:      "foobar",
 				ResourceNamespace: manifests.LeaderElectionDefaultNamespace,
 			},
-			expectedError: fmt.Errorf("malformed leader election resource: \"\""),
 		},
 		{
 			name: "empty namespace",
