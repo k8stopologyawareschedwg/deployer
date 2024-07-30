@@ -154,7 +154,7 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 	rbacupdate.RoleBinding(ret.RBController, ret.SAController.Name, ret.Namespace.Name)
 	ret.DPController.Namespace = ret.Namespace.Name
 
-	rbacupdate.Role(ret.RSchedulerElect, ret.Namespace.Name)
+	rbacupdate.RoleForLeaderElection(ret.RSchedulerElect, ret.Namespace.Name, leap.ResourceName)
 
 	ret.SAScheduler.Namespace = ret.Namespace.Name
 	rbacupdate.ClusterRoleBinding(ret.CRBScheduler, ret.SAScheduler.Name, ret.Namespace.Name)
@@ -273,11 +273,8 @@ func leaderElectionParamsFromOpts(opts options.Scheduler) (manifests.LeaderElect
 	var err error
 	tokens := strings.Split(opts.LeaderElectionResource, "/")
 	if len(tokens) == 1 {
-		// special case, see docs of strings.Split
-		if tokens[0] == opts.LeaderElectionResource {
-			err = fmt.Errorf("malformed leader election resource: %q", opts.LeaderElectionResource)
-		} else {
-			leap.ResourceNamespace = tokens[0]
+		if len(tokens[0]) > 0 { // special case, see docs of strings.Split
+			leap.ResourceName = tokens[0]
 		}
 	} else if len(tokens) == 2 {
 		if len(tokens[0]) > 0 {
