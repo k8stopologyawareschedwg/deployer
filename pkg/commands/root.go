@@ -17,9 +17,7 @@
 package commands
 
 import (
-	"context"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -30,6 +28,7 @@ import (
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform/detect"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
@@ -38,6 +37,8 @@ import (
 )
 
 type internalOptions struct {
+	verbose                     int
+	replicas                    int
 	rteConfigFile               string
 	schedScoringStratConfigFile string
 	schedCacheParamsConfigFile  string
@@ -52,11 +53,7 @@ func ShowHelp(cmd *cobra.Command, args []string) error {
 type NewCommandFunc func(ev *deployer.Environment, ko *options.Options) *cobra.Command
 
 // NewRootCommand returns entrypoint command to interact with all other commands
-func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
-	env := deployer.Environment{
-		Ctx: context.Background(),
-		Log: stdr.New(log.New(os.Stderr, "", log.LstdFlags)),
-	}
+func NewRootCommand(env *deployer.Environment, extraCmds ...NewCommandFunc) *cobra.Command {
 	internalOpts := internalOptions{}
 	commonOpts := options.Options{}
 
@@ -65,7 +62,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 		Short: "deployer helps setting up all the topology-aware-scheduling components on a kubernetes cluster",
 
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return PostSetupOptions(&env, &commonOpts, &internalOpts)
+			return PostSetupOptions(env, &commonOpts, &internalOpts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return ShowHelp(cmd, args)
@@ -77,28 +74,29 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	InitFlags(root.PersistentFlags(), &commonOpts, &internalOpts)
 
 	root.AddCommand(
-		NewRenderCommand(&env, &commonOpts),
-		NewValidateCommand(&env, &commonOpts),
-		NewDeployCommand(&env, &commonOpts),
-		NewRemoveCommand(&env, &commonOpts),
-		NewSetupCommand(&env, &commonOpts),
-		NewDetectCommand(&env, &commonOpts),
-		NewImagesCommand(&env, &commonOpts),
+		NewRenderCommand(env, &commonOpts),
+		NewValidateCommand(env, &commonOpts),
+		NewDeployCommand(env, &commonOpts),
+		NewRemoveCommand(env, &commonOpts),
+		NewSetupCommand(env, &commonOpts),
+		NewDetectCommand(env, &commonOpts),
+		NewImagesCommand(env, &commonOpts),
 	)
 	for _, extraCmd := range extraCmds {
-		root.AddCommand(extraCmd(&env, &commonOpts))
+		root.AddCommand(extraCmd(env, &commonOpts))
 	}
 
 	return root
 }
 
 func InitFlags(flags *pflag.FlagSet, commonOpts *options.Options, internalOpts *internalOptions) {
+	flags.IntVarP(&internalOpts.verbose, "verbose", "v", 1, "set the tool verbosity.")
 	flags.StringVarP(&internalOpts.plat, "platform", "P", "", "platform kind:version to deploy on (example kubernetes:v1.22)")
 	flags.StringVar(&internalOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
 	flags.StringVar(&internalOpts.schedScoringStratConfigFile, "sched-scoring-strat-config-file", "", "inject scheduler scoring strategy configuration reading from this file.")
 	flags.StringVar(&internalOpts.schedCacheParamsConfigFile, "sched-cache-params-config-file", "", "inject scheduler fine cache params configuration reading from this file.")
+	flags.IntVarP(&internalOpts.replicas, "replicas", "R", 1, "set the replica value - where relevant.")
 
-	flags.IntVarP(&commonOpts.Replicas, "replicas", "R", 1, "set the replica value - where relevant.")
 	flags.DurationVarP(&commonOpts.WaitInterval, "wait-interval", "E", 2*time.Second, "wait interval.")
 	flags.DurationVarP(&commonOpts.WaitTimeout, "wait-timeout", "T", 2*time.Minute, "wait timeout.")
 	flags.BoolVar(&commonOpts.PullIfNotPresent, "pull-if-not-present", false, "force pull policies to IfNotPresent.")
@@ -116,8 +114,27 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *options.Options, internalOpts *
 }
 
 func PostSetupOptions(env *deployer.Environment, commonOpts *options.Options, internalOpts *internalOptions) error {
-	env.Log.V(3).Info("global polling interval=%v timeout=%v", commonOpts.WaitInterval, commonOpts.WaitTimeout)
+	stdr.SetVerbosity(internalOpts.verbose) // MUST be the very first thing
+
+	env.Log.V(3).Info("global polling settings", "interval", commonOpts.WaitInterval, "timeout", commonOpts.WaitTimeout)
 	wait.SetBaseValues(commonOpts.WaitInterval, commonOpts.WaitTimeout)
+
+	if internalOpts.replicas < 0 {
+		err := env.EnsureClient()
+		if err != nil {
+			return err
+		}
+
+		env.Log.V(4).Info("autodetecting replicas from control plane")
+		info, err := detect.ControlPlaneFromLister(env.Ctx, env.Cli)
+		if err != nil {
+			return err
+		}
+		commonOpts.Replicas = info.NodeCount
+		env.Log.V(3).Info("autodetected control plane nodes, set replicas accordingly", "controlPlaneNodes", info.NodeCount)
+	} else {
+		commonOpts.Replicas = internalOpts.replicas
+	}
 
 	// if it is unknown, it's fine
 	if internalOpts.plat == "" {

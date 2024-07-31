@@ -44,7 +44,7 @@ func OnCluster(env *deployer.Environment, commonOpts *options.Options) error {
 		return fmt.Errorf("cannot autodetect the platform version, and no version given")
 	}
 
-	env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
+	env.Log.V(3).Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
 	if err := api.Deploy(env, options.API{
 		Platform: commonOpts.ClusterPlatform,
 	}); err != nil {

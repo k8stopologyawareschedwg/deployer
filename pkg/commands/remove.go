@@ -51,7 +51,7 @@ func NewRemoveCommand(env *deployer.Environment, commonOpts *options.Options) *c
 			if commonOpts.ClusterVersion == platform.MissingVersion {
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
-			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
+			env.Log.V(3).Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
 
 			err = sched.Remove(env, options.Scheduler{
 				Platform:               commonOpts.ClusterPlatform,
@@ -123,7 +123,7 @@ func NewRemoveAPICommand(env *deployer.Environment, commonOpts *options.Options)
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
 
-			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
+			env.Log.V(3).Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
 			if err := api.Remove(env, options.API{Platform: commonOpts.ClusterPlatform}); err != nil {
 				return err
 			}
@@ -156,7 +156,7 @@ func NewRemoveSchedulerPluginCommand(env *deployer.Environment, commonOpts *opti
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
 
-			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
+			env.Log.V(3).Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
 			return sched.Remove(env, options.Scheduler{
 				Platform:               commonOpts.ClusterPlatform,
 				WaitCompletion:         commonOpts.WaitCompletion,
@@ -199,7 +199,7 @@ func NewRemoveTopologyUpdaterCommand(env *deployer.Environment, commonOpts *opti
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
 
-			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
+			env.Log.V(3).Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
 			return updaters.Remove(env, commonOpts.UpdaterType, options.Updater{
 				Platform:        commonOpts.ClusterPlatform,
 				PlatformVersion: commonOpts.ClusterVersion,
