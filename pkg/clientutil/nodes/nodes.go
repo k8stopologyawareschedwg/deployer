@@ -28,14 +28,18 @@ import (
 )
 
 const (
-	// RoleWorker contains the worker role
-	RoleWorker = "worker"
+	RoleControlPlane = "control-plane"
+	RoleWorker       = "worker"
 )
 
 const (
 	// LabelRole contains the key for the role label
 	LabelRole = "node-role.kubernetes.io"
 )
+
+func GetControlPlane(env *deployer.Environment) ([]corev1.Node, error) {
+	return GetByRole(env, RoleControlPlane)
+}
 
 func GetWorkers(env *deployer.Environment) ([]corev1.Node, error) {
 	return GetByRole(env, RoleWorker)
