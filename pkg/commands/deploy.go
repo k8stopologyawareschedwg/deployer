@@ -67,7 +67,7 @@ func NewDeployAPICommand(env *deployer.Environment, commonOpts *options.Options)
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
 
-			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
+			env.Log.V(3).Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
 			if err := api.Deploy(env, options.API{Platform: commonOpts.ClusterPlatform}); err != nil {
 				return err
 			}
@@ -100,7 +100,7 @@ func NewDeploySchedulerPluginCommand(env *deployer.Environment, commonOpts *opti
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
 
-			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
+			env.Log.V(3).Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
 			return sched.Deploy(env, options.Scheduler{
 				Platform:               commonOpts.ClusterPlatform,
 				WaitCompletion:         commonOpts.WaitCompletion,
@@ -143,7 +143,7 @@ func NewDeployTopologyUpdaterCommand(env *deployer.Environment, commonOpts *opti
 				return fmt.Errorf("cannot autodetect the platform version, and no version given")
 			}
 
-			env.Log.Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
+			env.Log.V(3).Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
 			return updaters.Deploy(env, commonOpts.UpdaterType, options.Updater{
 				Platform:        commonOpts.ClusterPlatform,
 				PlatformVersion: commonOpts.ClusterVersion,
