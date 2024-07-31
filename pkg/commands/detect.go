@@ -27,7 +27,8 @@ import (
 )
 
 type detectOptions struct {
-	jsonOutput bool
+	controlPlane bool
+	jsonOutput   bool
 }
 
 func NewDetectCommand(env *deployer.Environment, commonOpts *options.Options) *cobra.Command {
@@ -42,6 +43,13 @@ func NewDetectCommand(env *deployer.Environment, commonOpts *options.Options) *c
 				return err
 			}
 
+			if opts.controlPlane {
+				info, _ := detect.ControlPlaneFromLister(env.Ctx, env.Cli)
+				serialize(opts, info)
+				return nil
+
+			}
+
 			platKind, kindReason, _ := detect.FindPlatform(env.Ctx, commonOpts.UserPlatform)
 			platVer, verReason, _ := detect.FindVersion(env.Ctx, platKind.Discovered, commonOpts.UserPlatformVersion)
 
@@ -51,17 +59,27 @@ func NewDetectCommand(env *deployer.Environment, commonOpts *options.Options) *c
 				Platform: platKind,
 				Version:  platVer,
 			}
-			var out string
-			if opts.jsonOutput {
-				out = cluster.ToJSON()
-			} else {
-				out = cluster.String()
-			}
-			fmt.Printf("%s\n", out)
+			serialize(opts, cluster)
 			return nil
 		},
 		Args: cobra.NoArgs,
 	}
 	detect.Flags().BoolVarP(&opts.jsonOutput, "json", "J", false, "output JSON, not text.")
+	detect.Flags().BoolVar(&opts.controlPlane, "control-plane", false, "detect control plane info, not cluster info")
 	return detect
+}
+
+type serializer interface {
+	ToJSON() string
+	String() string
+}
+
+func serialize(opts *detectOptions, sr serializer) {
+	var out string
+	if opts.jsonOutput {
+		out = sr.ToJSON()
+	} else {
+		out = sr.String()
+	}
+	fmt.Printf("%s\n", out)
 }
