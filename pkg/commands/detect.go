@@ -45,7 +45,7 @@ func NewDetectCommand(env *deployer.Environment, commonOpts *options.Options) *c
 			platKind, kindReason, _ := detect.FindPlatform(env.Ctx, commonOpts.UserPlatform)
 			platVer, verReason, _ := detect.FindVersion(env.Ctx, platKind.Discovered, commonOpts.UserPlatformVersion)
 
-			env.Log.Info("detection", "platform", platKind, "reason", kindReason, "version", platVer, "source", verReason)
+			env.Log.V(3).Info("detection", "platform", platKind, "reason", kindReason, "version", platVer, "source", verReason)
 
 			cluster := detect.ClusterInfo{
 				Platform: platKind,
