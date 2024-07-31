@@ -38,6 +38,7 @@ import (
 )
 
 type internalOptions struct {
+	verbose                     int
 	rteConfigFile               string
 	schedScoringStratConfigFile string
 	schedCacheParamsConfigFile  string
@@ -93,6 +94,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 }
 
 func InitFlags(flags *pflag.FlagSet, commonOpts *options.Options, internalOpts *internalOptions) {
+	flags.IntVarP(&internalOpts.verbose, "verbose", "v", 1, "set the tool verbosity.")
 	flags.StringVarP(&internalOpts.plat, "platform", "P", "", "platform kind:version to deploy on (example kubernetes:v1.22)")
 	flags.StringVar(&internalOpts.rteConfigFile, "rte-config-file", "", "inject rte configuration reading from this file.")
 	flags.StringVar(&internalOpts.schedScoringStratConfigFile, "sched-scoring-strat-config-file", "", "inject scheduler scoring strategy configuration reading from this file.")
@@ -116,6 +118,8 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *options.Options, internalOpts *
 }
 
 func PostSetupOptions(env *deployer.Environment, commonOpts *options.Options, internalOpts *internalOptions) error {
+	stdr.SetVerbosity(internalOpts.verbose) // MUST be the very first thing
+
 	env.Log.V(3).Info("global polling interval=%v timeout=%v", commonOpts.WaitInterval, commonOpts.WaitTimeout)
 	wait.SetBaseValues(commonOpts.WaitInterval, commonOpts.WaitTimeout)
 
