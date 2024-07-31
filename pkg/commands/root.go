@@ -53,11 +53,7 @@ func ShowHelp(cmd *cobra.Command, args []string) error {
 type NewCommandFunc func(ev *deployer.Environment, ko *options.Options) *cobra.Command
 
 // NewRootCommand returns entrypoint command to interact with all other commands
-func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
-	env := deployer.Environment{
-		Ctx: context.Background(),
-		Log: stdr.New(log.New(os.Stderr, "", log.LstdFlags)),
-	}
+func NewRootCommand(env *deployer.Environment, extraCmds ...NewCommandFunc) *cobra.Command {
 	internalOpts := internalOptions{}
 	commonOpts := options.Options{}
 
@@ -66,7 +62,7 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 		Short: "deployer helps setting up all the topology-aware-scheduling components on a kubernetes cluster",
 
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return PostSetupOptions(&env, &commonOpts, &internalOpts)
+			return PostSetupOptions(env, &commonOpts, &internalOpts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return ShowHelp(cmd, args)
@@ -78,16 +74,16 @@ func NewRootCommand(extraCmds ...NewCommandFunc) *cobra.Command {
 	InitFlags(root.PersistentFlags(), &commonOpts, &internalOpts)
 
 	root.AddCommand(
-		NewRenderCommand(&env, &commonOpts),
-		NewValidateCommand(&env, &commonOpts),
-		NewDeployCommand(&env, &commonOpts),
-		NewRemoveCommand(&env, &commonOpts),
-		NewSetupCommand(&env, &commonOpts),
-		NewDetectCommand(&env, &commonOpts),
-		NewImagesCommand(&env, &commonOpts),
+		NewRenderCommand(env, &commonOpts),
+		NewValidateCommand(env, &commonOpts),
+		NewDeployCommand(env, &commonOpts),
+		NewRemoveCommand(env, &commonOpts),
+		NewSetupCommand(env, &commonOpts),
+		NewDetectCommand(env, &commonOpts),
+		NewImagesCommand(env, &commonOpts),
 	)
 	for _, extraCmd := range extraCmds {
-		root.AddCommand(extraCmd(&env, &commonOpts))
+		root.AddCommand(extraCmd(env, &commonOpts))
 	}
 
 	return root
