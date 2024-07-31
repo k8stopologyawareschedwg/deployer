@@ -28,7 +28,6 @@ import (
 	"k8s.io/klog/v2/klogr"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/commands"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
@@ -65,14 +64,7 @@ func NewVersionCommand(env *deployer.Environment, commonOpts *options.Options) *
 func main() {
 	ctrllog.SetLogger(klogr.NewWithOptions(klogr.WithFormat(klogr.FormatKlog)))
 
-	cli, err := clientutil.New()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
-	}
-
 	env := deployer.Environment{
-		Cli: cli,
 		Ctx: context.Background(),
 		Log: stdr.New(log.New(os.Stderr, "", log.LstdFlags)),
 	}

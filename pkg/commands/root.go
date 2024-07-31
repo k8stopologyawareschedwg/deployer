@@ -120,6 +120,11 @@ func PostSetupOptions(env *deployer.Environment, commonOpts *options.Options, in
 	wait.SetBaseValues(commonOpts.WaitInterval, commonOpts.WaitTimeout)
 
 	if internalOpts.replicas < 0 {
+		err := env.EnsureClient()
+		if err != nil {
+			return err
+		}
+
 		env.Log.V(4).Info("autodetecting replicas from control plane")
 		info, err := detect.ControlPlaneFromLister(env.Ctx, env.Cli)
 		if err != nil {
