@@ -34,7 +34,6 @@ type Options struct {
 	UpdaterPFPEnable            bool
 	UpdaterNotifEnable          bool
 	UpdaterCRIHooksEnable       bool
-	UpdaterCustomSELinuxPolicy  bool
 	UpdaterSyncPeriod           time.Duration
 	UpdaterVerbose              int
 	SchedProfileName            string
@@ -89,13 +88,12 @@ type UpdaterDaemon struct {
 }
 
 type Updater struct {
-	Platform            platform.Platform
-	PlatformVersion     platform.Version
-	WaitCompletion      bool
-	RTEConfigData       string
-	DaemonSet           DaemonSet
-	EnableCRIHooks      bool
-	CustomSELinuxPolicy bool
+	Platform        platform.Platform
+	PlatformVersion platform.Version
+	WaitCompletion  bool
+	RTEConfigData   string
+	DaemonSet       DaemonSet
+	EnableCRIHooks  bool
 }
 
 func ForDaemonSet(commonOpts *Options) DaemonSet {

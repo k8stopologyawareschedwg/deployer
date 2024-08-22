@@ -244,7 +244,7 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", ginkgo.Label("posit
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 				enableCRIHooks := true
-				mf, err := rte.GetManifests(platform.Kubernetes, platform.Version("1.23"), ns.Name, enableCRIHooks, true)
+				mf, err := rte.GetManifests(platform.Kubernetes, platform.Version("1.23"), ns.Name, enableCRIHooks)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				mf, err = mf.Render(options.UpdaterDaemon{
 					Namespace: ns.Name,
