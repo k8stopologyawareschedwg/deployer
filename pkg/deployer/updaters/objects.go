@@ -32,7 +32,7 @@ import (
 
 func GetObjects(opts options.Updater, updaterType, namespace string) ([]client.Object, error) {
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks)
+		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks, opts.CustomSELinuxPolicy)
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +58,7 @@ func GetObjects(opts options.Updater, updaterType, namespace string) ([]client.O
 
 func getCreatableObjects(env *deployer.Environment, opts options.Updater, updaterType, namespace string) ([]objectwait.WaitableObject, error) {
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks)
+		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks, opts.CustomSELinuxPolicy)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +84,7 @@ func getCreatableObjects(env *deployer.Environment, opts options.Updater, update
 
 func getDeletableObjects(env *deployer.Environment, opts options.Updater, updaterType, namespace string) ([]objectwait.WaitableObject, error) {
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks)
+		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks, opts.CustomSELinuxPolicy)
 		if err != nil {
 			return nil, err
 		}
