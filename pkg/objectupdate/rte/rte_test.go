@@ -18,6 +18,8 @@ package rte
 
 import (
 	"fmt"
+	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 	"strings"
 	"testing"
 	"time"
@@ -309,6 +311,40 @@ func TestDaemonSet(t *testing.T) {
 				if !strings.Contains(containerCommand, arg) {
 					t.Fatalf("the container command %q does not container argument %q", containerCommand, arg)
 				}
+			}
+		})
+	}
+}
+
+func TestSecurityContext(t *testing.T) {
+	testCases := []struct {
+		description        string
+		selinuxContextType string
+	}{
+		{
+			description:        "custom policy",
+			selinuxContextType: selinuxassets.RTEContextTypeLegacy,
+		},
+		{
+			description:        "built-in policy",
+			selinuxContextType: selinuxassets.RTEContextType,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			ds, err := manifests.DaemonSet(manifests.ComponentResourceTopologyExporter, "", "test")
+			if err != nil {
+				t.Fatalf("unexpected error getting the manifests: %v", err)
+			}
+			DaemonSet(ds, platform.OpenShift, "", options.DaemonSet{})
+			SecurityContext(ds, tc.selinuxContextType)
+			cntSpec := objectupdate.FindContainerByName(ds.Spec.Template.Spec.Containers, manifests.ContainerNameRTE)
+			sc := cntSpec.SecurityContext
+			if sc == nil {
+				t.Fatalf("the security context for container %q does not exist", cntSpec.Name)
+			}
+			if sc.SELinuxOptions.Type != tc.selinuxContextType {
+				t.Fatalf("wrong security context for container %q; want=%s got=%s", cntSpec.Name, tc.selinuxContextType, sc.SELinuxOptions.Type)
 			}
 		})
 	}
