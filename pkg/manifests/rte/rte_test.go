@@ -56,7 +56,7 @@ func TestClone(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc.mf, _ = GetManifests(tc.plat, tc.platVersion, "", true)
+		tc.mf, _ = GetManifests(tc.plat, tc.platVersion, "", true, true)
 		cMf := tc.mf.Clone()
 
 		if &cMf == &tc.mf {
@@ -97,7 +97,7 @@ func TestRender(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc.mf, _ = GetManifests(tc.plat, tc.platVersion, "", true)
+		tc.mf, _ = GetManifests(tc.plat, tc.platVersion, "", true, true)
 		mfBeforeRender := tc.mf.Clone()
 		uMf, err := tc.mf.Render(options.UpdaterDaemon{})
 		if err != nil {
@@ -115,26 +115,33 @@ func TestRender(t *testing.T) {
 
 func TestGetManifestsOpenShift(t *testing.T) {
 	type testCase struct {
-		name string
-		// mf          Manifests
-		plat        platform.Platform
-		platVersion platform.Version
+		name                    string
+		plat                    platform.Platform
+		platVersion             platform.Version
+		withCustomSELinuxPolicy bool
 	}
 
 	testCases := []testCase{
 		{
-			name:        "openshift manifests 4.10",
-			plat:        platform.OpenShift,
-			platVersion: platform.Version("v4.10"),
+			name:                    "openshift manifests 4.10",
+			plat:                    platform.OpenShift,
+			platVersion:             platform.Version("v4.10"),
+			withCustomSELinuxPolicy: true,
 		},
 		{
-			name:        "openshift manifests 4.11",
+			name:                    "openshift manifests 4.11",
+			plat:                    platform.OpenShift,
+			platVersion:             platform.Version("v4.11"),
+			withCustomSELinuxPolicy: true,
+		},
+		{
+			name:        "openshift manifests 4.18",
 			plat:        platform.OpenShift,
-			platVersion: platform.Version("v4.11"),
+			platVersion: platform.Version("v4.18"),
 		},
 	}
 	for _, tc := range testCases {
-		mf, err := GetManifests(tc.plat, tc.platVersion, "test", true)
+		mf, err := GetManifests(tc.plat, tc.platVersion, "test", true, tc.withCustomSELinuxPolicy)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -143,8 +150,12 @@ func TestGetManifestsOpenShift(t *testing.T) {
 			t.Fatalf("no security context constraint is generated for the OpenShift platform")
 		}
 
-		if mf.MachineConfig == nil {
+		if tc.withCustomSELinuxPolicy && mf.MachineConfig == nil {
 			t.Fatalf("no machine config is generated for the OpenShift platform")
+		}
+
+		if !tc.withCustomSELinuxPolicy && mf.MachineConfig != nil {
+			t.Fatalf("machine config should not be generated for the OpenShift platform")
 		}
 
 		if mf.DaemonSet == nil {
