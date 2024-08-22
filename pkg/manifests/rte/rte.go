@@ -17,6 +17,7 @@
 package rte
 
 import (
+	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
 	securityv1 "github.com/openshift/api/security/v1"
 	machineconfigv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -68,7 +69,10 @@ func (mf Manifests) Clone() Manifests {
 	}
 
 	if mf.plat == platform.OpenShift {
-		ret.MachineConfig = mf.MachineConfig.DeepCopy()
+		//  MachineConfig is obsolete starting from OCP v4.18
+		if mf.MachineConfig != nil {
+			ret.MachineConfig = mf.MachineConfig.DeepCopy()
+		}
 		ret.SecurityContextConstraint = mf.SecurityContextConstraint.DeepCopy()
 	}
 
@@ -108,14 +112,18 @@ func (mf Manifests) Render(opts options.UpdaterDaemon) (Manifests, error) {
 	rteupdate.DaemonSet(ret.DaemonSet, mf.plat, rteConfigMapName, opts.DaemonSet)
 
 	if mf.plat == platform.OpenShift {
-		rteupdate.SecurityContext(ret.DaemonSet)
-
-		if opts.Name != "" {
-			ret.MachineConfig.Name = ocpupdate.MakeMachineConfigName(opts.Name)
+		selinuxType := selinuxassets.RTEContextType
+		if mf.MachineConfig != nil {
+			if opts.Name != "" {
+				ret.MachineConfig.Name = ocpupdate.MakeMachineConfigName(opts.Name)
+			}
+			if opts.MachineConfigPoolSelector != nil {
+				ret.MachineConfig.Labels = opts.MachineConfigPoolSelector.MatchLabels
+			}
+			// the MachineConfig installs this custom policy which is obsolete starting from OCP v4.18
+			selinuxType = selinuxassets.RTEContextTypeLegacy
 		}
-		if opts.MachineConfigPoolSelector != nil {
-			ret.MachineConfig.Labels = opts.MachineConfigPoolSelector.MatchLabels
-		}
+		rteupdate.SecurityContext(ret.DaemonSet, selinuxType)
 		ocpupdate.SecurityContextConstraint(ret.SecurityContextConstraint, ret.ServiceAccount)
 	}
 
@@ -173,17 +181,19 @@ func New(plat platform.Platform) Manifests {
 	return mf
 }
 
-func GetManifests(plat platform.Platform, version platform.Version, namespace string, withCRIHooks bool) (Manifests, error) {
+func GetManifests(plat platform.Platform, version platform.Version, namespace string, withCRIHooks, withCustomSELinuxPolicy bool) (Manifests, error) {
 	var err error
 	mf := New(plat)
 
 	if plat == platform.OpenShift {
-		mf.MachineConfig, err = manifests.MachineConfig(manifests.ComponentResourceTopologyExporter, version, withCRIHooks)
-		if err != nil {
-			return mf, err
+		if withCustomSELinuxPolicy {
+			mf.MachineConfig, err = manifests.MachineConfig(manifests.ComponentResourceTopologyExporter, version, withCRIHooks)
+			if err != nil {
+				return mf, err
+			}
 		}
 
-		mf.SecurityContextConstraint, err = manifests.SecurityContextConstraint(manifests.ComponentResourceTopologyExporter)
+		mf.SecurityContextConstraint, err = manifests.SecurityContextConstraint(manifests.ComponentResourceTopologyExporter, withCustomSELinuxPolicy)
 		if err != nil {
 			return mf, err
 		}

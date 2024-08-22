@@ -18,6 +18,7 @@ package manifests
 
 import (
 	"encoding/json"
+	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
 	"testing"
 
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
@@ -522,6 +523,41 @@ func TestMachineConfig(t *testing.T) {
 			if len(ignitionConfig.Systemd.Units) != tc.expectedUnitNum {
 				klog.Errorf("ignition config systemd units: %+v", ignitionConfig.Systemd.Units)
 				t.Fatalf("the ignition config has %d systemd units when it should have %d", len(ignitionConfig.Systemd.Units), tc.expectedUnitNum)
+			}
+		})
+	}
+}
+
+func TestSecurityContextConstraint(t *testing.T) {
+	testCases := []struct {
+		description             string
+		withCustomSELinuxPolicy bool
+		selinuxContextType      string
+	}{
+		{
+			description:             "with custom (legacy) policy",
+			withCustomSELinuxPolicy: true,
+			selinuxContextType:      selinuxassets.RTEContextTypeLegacy,
+		},
+		{
+			description:             "with built-in policy",
+			withCustomSELinuxPolicy: false,
+			selinuxContextType:      selinuxassets.RTEContextType,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			scc, err := SecurityContextConstraint(ComponentResourceTopologyExporter, tc.withCustomSELinuxPolicy)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if scc == nil {
+				t.Fatalf("nil security context constraint")
+			}
+			// shortcut
+			scType := scc.SELinuxContext.SELinuxOptions.Type
+			if scType != tc.selinuxContextType {
+				t.Fatalf("wrong selinux context type; got=%s want=%s", scType, tc.selinuxContextType)
 			}
 		})
 	}
