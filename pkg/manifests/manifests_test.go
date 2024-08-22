@@ -18,12 +18,12 @@ package manifests
 
 import (
 	"encoding/json"
-	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
 	"testing"
 
 	igntypes "github.com/coreos/ignition/v2/config/v3_2/types"
 	"k8s.io/klog/v2"
 
+	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 )
 
