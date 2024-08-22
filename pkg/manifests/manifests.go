@@ -436,7 +436,7 @@ func getTemplateContent(templateContent []byte, templateArgs map[string]string) 
 	return fileContent.Bytes(), nil
 }
 
-func SecurityContextConstraint(component string, withCustomSELinuxPolicy bool) (*securityv1.SecurityContextConstraints, error) {
+func SecurityContextConstraint(component string) (*securityv1.SecurityContextConstraints, error) {
 	if component != ComponentResourceTopologyExporter {
 		return nil, fmt.Errorf("component %q is not an %q component", component, ComponentResourceTopologyExporter)
 	}
@@ -457,9 +457,6 @@ func SecurityContextConstraint(component string, withCustomSELinuxPolicy bool) (
 			Type:  selinuxassets.RTEContextType,
 			Level: selinuxassets.RTEContextLevel,
 		},
-	}
-	if withCustomSELinuxPolicy {
-		scc.SELinuxContext.SELinuxOptions.Type = selinuxassets.RTEContextObsoleteType
 	}
 
 	return scc, nil

@@ -17,7 +17,6 @@
 package rte
 
 import (
-	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
 	securityv1 "github.com/openshift/api/security/v1"
 	machineconfigv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -112,7 +111,8 @@ func (mf Manifests) Render(opts options.UpdaterDaemon) (Manifests, error) {
 	rteupdate.DaemonSet(ret.DaemonSet, mf.plat, rteConfigMapName, opts.DaemonSet)
 
 	if mf.plat == platform.OpenShift {
-		selinuxType := selinuxassets.RTEContextType
+		rteupdate.SecurityContext(ret.DaemonSet)
+
 		if mf.MachineConfig != nil {
 			if opts.Name != "" {
 				ret.MachineConfig.Name = ocpupdate.MakeMachineConfigName(opts.Name)
@@ -120,10 +120,7 @@ func (mf Manifests) Render(opts options.UpdaterDaemon) (Manifests, error) {
 			if opts.MachineConfigPoolSelector != nil {
 				ret.MachineConfig.Labels = opts.MachineConfigPoolSelector.MatchLabels
 			}
-			// the MachineConfig installs this custom policy which is obsolete starting from OCP 4.18v
-			selinuxType = selinuxassets.RTEContextObsoleteType
 		}
-		rteupdate.SecurityContext(ret.DaemonSet, selinuxType)
 		ocpupdate.SecurityContextConstraint(ret.SecurityContextConstraint, ret.ServiceAccount)
 	}
 
@@ -193,7 +190,7 @@ func GetManifests(plat platform.Platform, version platform.Version, namespace st
 			}
 		}
 
-		mf.SecurityContextConstraint, err = manifests.SecurityContextConstraint(manifests.ComponentResourceTopologyExporter, withCustomSELinuxPolicy)
+		mf.SecurityContextConstraint, err = manifests.SecurityContextConstraint(manifests.ComponentResourceTopologyExporter)
 		if err != nil {
 			return mf, err
 		}

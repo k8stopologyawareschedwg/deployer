@@ -18,8 +18,7 @@ package selinux
 
 const (
 	RTEPolicyFileName           = "/etc/selinux/rte.cil"
-	RTEContextType              = "container_device_plugin_t"
-	RTEContextObsoleteType      = "rte.process"
+	RTEContextType              = "rte.process"
 	RTEContextLevel             = "s0"
 	RTEPolicyInstallServiceName = "rte-selinux-policy-install.service"
 )
