@@ -158,6 +158,7 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 
 	ret.SAScheduler.Namespace = ret.Namespace.Name
 	rbacupdate.ClusterRoleBinding(ret.CRBScheduler, ret.SAScheduler.Name, ret.Namespace.Name)
+	ret.RBSchedulerElect.Namespace = ret.Namespace.Name
 	rbacupdate.RoleBinding(ret.RBSchedulerElect, ret.SAScheduler.Name, ret.Namespace.Name)
 	rbacupdate.RoleBinding(ret.RBSchedulerAuth, ret.SAScheduler.Name, ret.Namespace.Name)
 	ret.DPScheduler.Namespace = ret.Namespace.Name
