@@ -357,7 +357,7 @@ func dumpResourceTopologyExporterPods(ctx context.Context, cli client.Client) {
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 	// TODO: autodetect the platform
-	mfs, err := rte.GetManifests(platform.Kubernetes, platform.Version("1.23"), ns.Name, true)
+	mfs, err := rte.GetManifests(platform.Kubernetes, platform.Version("1.23"), ns.Name, true, true)
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 	mfs, err = mfs.Render(options.UpdaterDaemon{
 		Namespace: ns.Name,

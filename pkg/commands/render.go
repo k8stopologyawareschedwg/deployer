@@ -141,11 +141,12 @@ func makeUpdaterObjects(commonOpts *options.Options) ([]client.Object, string, e
 	}
 
 	opts := options.Updater{
-		PlatformVersion: commonOpts.UserPlatformVersion,
-		Platform:        commonOpts.UserPlatform,
-		RTEConfigData:   commonOpts.RTEConfigData,
-		DaemonSet:       options.ForDaemonSet(commonOpts),
-		EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
+		PlatformVersion:     commonOpts.UserPlatformVersion,
+		Platform:            commonOpts.UserPlatform,
+		RTEConfigData:       commonOpts.RTEConfigData,
+		DaemonSet:           options.ForDaemonSet(commonOpts),
+		EnableCRIHooks:      commonOpts.UpdaterCRIHooksEnable,
+		CustomSELinuxPolicy: commonOpts.UpdaterCustomSELinuxPolicy,
 	}
 	objs, err := updaters.GetObjects(opts, commonOpts.UpdaterType, namespace)
 	if err != nil {
