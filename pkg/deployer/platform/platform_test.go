@@ -37,6 +37,11 @@ func TestRoudnTrip(t *testing.T) {
 			expectedOK: true,
 		},
 		{
+			name:       "HyperShift",
+			expected:   HyperShift,
+			expectedOK: true,
+		},
+		{
 			name:       "foobar",
 			expected:   Unknown,
 			expectedOK: false,
