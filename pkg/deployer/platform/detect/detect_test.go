@@ -38,9 +38,7 @@ func TestPlatformFromLister(t *testing.T) {
 		expectedPlatform platform.Platform
 		expectedError    error
 	}
-
 	unexpectedError := fmt.Errorf("unexpected error")
-
 	testCases := []testCase{
 		{
 			name:             "unexpected error",
@@ -83,9 +81,86 @@ func TestPlatformFromLister(t *testing.T) {
 	}
 }
 
+func TestPlatformFromClients(t *testing.T) {
+	type testCase struct {
+		name             string
+		vers             []ocpconfigv1.ClusterVersion
+		infra            ocpconfigv1.Infrastructure
+		err              error
+		expectedPlatform platform.Platform
+		expectedError    error
+	}
+
+	unexpectedError := fmt.Errorf("unexpected error")
+
+	testCases := []testCase{
+		{
+			name:             "unexpected error",
+			err:              unexpectedError,
+			expectedError:    unexpectedError,
+			expectedPlatform: platform.Unknown,
+		},
+		{
+			name:             "kubernetes, clusterversions not found",
+			err:              errors.NewNotFound(schema.GroupResource{}, "ClusterVersions"),
+			expectedPlatform: platform.Kubernetes,
+		},
+		{
+			name:             "kubernetes, clusterversions empty",
+			expectedPlatform: platform.Kubernetes,
+		},
+		{
+			name: "openshift",
+			vers: []ocpconfigv1.ClusterVersion{
+				{}, // zero object is fine! We just need 1+ elements
+			},
+			expectedPlatform: platform.OpenShift,
+		},
+		{
+			name: "hypershift",
+			// hypershift is a flavor of openshift so it has a clusterversion object
+			vers: []ocpconfigv1.ClusterVersion{
+				{}, // zero object is fine! We just need 1+ elements
+			},
+			infra: ocpconfigv1.Infrastructure{
+				Status: ocpconfigv1.InfrastructureStatus{
+					ControlPlaneTopology: ocpconfigv1.ExternalTopologyMode,
+				},
+			},
+			expectedPlatform: platform.HyperShift,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cli := fakeLister{
+				vers: tc.vers,
+				err:  tc.err,
+			}
+			infraCli := fakeGetter{
+				infra: tc.infra,
+				err:   tc.err,
+			}
+
+			got, err := PlatformFromClients(context.TODO(), cli, infraCli)
+			if err != tc.expectedError {
+				t.Errorf("got error %v expected %v", err, tc.expectedError)
+			}
+			if got != tc.expectedPlatform {
+				t.Errorf("detect platform %v expected %v", got, tc.expectedPlatform)
+			}
+		})
+	}
+}
+
 type fakeLister struct {
 	vers []ocpconfigv1.ClusterVersion
 	err  error
+}
+
+type fakeGetter struct {
+	infra ocpconfigv1.Infrastructure
+	err   error
 }
 
 func (fake fakeLister) List(ctx context.Context, opts metav1.ListOptions) (*ocpconfigv1.ClusterVersionList, error) {
@@ -93,4 +168,8 @@ func (fake fakeLister) List(ctx context.Context, opts metav1.ListOptions) (*ocpc
 		Items: fake.vers,
 	}
 	return &verList, fake.err
+}
+
+func (fake fakeGetter) Get(ctx context.Context, name string, opts metav1.GetOptions) (*ocpconfigv1.Infrastructure, error) {
+	return &fake.infra, fake.err
 }
