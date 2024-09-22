@@ -51,12 +51,13 @@ func OnCluster(env *deployer.Environment, commonOpts *options.Options) error {
 		return err
 	}
 	if err := updaters.Deploy(env, commonOpts.UpdaterType, options.Updater{
-		Platform:        commonOpts.ClusterPlatform,
-		PlatformVersion: commonOpts.ClusterVersion,
-		WaitCompletion:  commonOpts.WaitCompletion,
-		RTEConfigData:   commonOpts.RTEConfigData,
-		DaemonSet:       options.ForDaemonSet(commonOpts),
-		EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
+		Platform:            commonOpts.ClusterPlatform,
+		PlatformVersion:     commonOpts.ClusterVersion,
+		WaitCompletion:      commonOpts.WaitCompletion,
+		RTEConfigData:       commonOpts.RTEConfigData,
+		DaemonSet:           options.ForDaemonSet(commonOpts),
+		EnableCRIHooks:      commonOpts.UpdaterCRIHooksEnable,
+		CustomSELinuxPolicy: commonOpts.UpdaterCustomSELinuxPolicy,
 	}); err != nil {
 		return err
 	}
