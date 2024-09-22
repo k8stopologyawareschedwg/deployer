@@ -145,7 +145,7 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 	schedupdate.ControllerDeployment(ret.DPController, opts.PullIfNotPresent, opts.CtrlPlaneAffinity)
 	if opts.Namespace != "" {
 		ret.Namespace.Name = opts.Namespace
-	} else if mf.plat == platform.OpenShift {
+	} else if mf.plat == platform.OpenShift || mf.plat == platform.HyperShift {
 		ret.Namespace.Name = NamespaceOpenShift
 	}
 

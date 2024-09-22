@@ -68,7 +68,7 @@ func (mf Manifests) Clone() Manifests {
 		ConfigMap:          mf.ConfigMap.DeepCopy(),
 	}
 
-	if mf.plat == platform.OpenShift {
+	if mf.plat == platform.OpenShift || mf.plat == platform.HyperShift {
 		//  MachineConfig is obsolete starting from OCP v4.18
 		if mf.MachineConfig != nil {
 			ret.MachineConfig = mf.MachineConfig.DeepCopy()
@@ -111,7 +111,7 @@ func (mf Manifests) Render(opts options.UpdaterDaemon) (Manifests, error) {
 	}
 	rteupdate.DaemonSet(ret.DaemonSet, mf.plat, rteConfigMapName, opts.DaemonSet)
 
-	if mf.plat == platform.OpenShift {
+	if mf.plat == platform.OpenShift || mf.plat == platform.HyperShift {
 		selinuxType := selinuxassets.RTEContextType
 		if mf.MachineConfig != nil {
 			if opts.Name != "" {
@@ -185,7 +185,7 @@ func GetManifests(plat platform.Platform, version platform.Version, namespace st
 	var err error
 	mf := New(plat)
 
-	if plat == platform.OpenShift {
+	if plat == platform.OpenShift || plat == platform.HyperShift {
 		if withCustomSELinuxPolicy {
 			mf.MachineConfig, err = manifests.MachineConfig(manifests.ComponentResourceTopologyExporter, version, withCRIHooks)
 			if err != nil {
