@@ -201,12 +201,13 @@ func NewRemoveTopologyUpdaterCommand(env *deployer.Environment, commonOpts *opti
 
 			env.Log.V(3).Info("detection", "platform", commonOpts.ClusterPlatform, "reason", reason, "version", commonOpts.ClusterVersion, "source", source)
 			return updaters.Remove(env, commonOpts.UpdaterType, options.Updater{
-				Platform:        commonOpts.ClusterPlatform,
-				PlatformVersion: commonOpts.ClusterVersion,
-				WaitCompletion:  commonOpts.WaitCompletion,
-				RTEConfigData:   commonOpts.RTEConfigData,
-				DaemonSet:       options.ForDaemonSet(commonOpts),
-				EnableCRIHooks:  commonOpts.UpdaterCRIHooksEnable,
+				Platform:            commonOpts.ClusterPlatform,
+				PlatformVersion:     commonOpts.ClusterVersion,
+				WaitCompletion:      commonOpts.WaitCompletion,
+				RTEConfigData:       commonOpts.RTEConfigData,
+				DaemonSet:           options.ForDaemonSet(commonOpts),
+				EnableCRIHooks:      commonOpts.UpdaterCRIHooksEnable,
+				CustomSELinuxPolicy: commonOpts.UpdaterCustomSELinuxPolicy,
 			})
 		},
 		Args: cobra.NoArgs,
