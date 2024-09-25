@@ -17,6 +17,7 @@
 package selinux
 
 import (
+	"os"
 	"testing"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
@@ -32,7 +33,7 @@ func TestGetPolicy(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:          "latest", // at time of writing. Keep me updated!
-			ver:           platform.Version("v4.16"),
+			ver:           platform.Version("v4.18"),
 			expectedError: false,
 		},
 		{
@@ -60,5 +61,17 @@ func TestGetPolicy(t *testing.T) {
 				t.Fatalf("GetPolicy(%v) unexpected result: expected error %v got %v", tc.ver, tc.expectedError, gotErr)
 			}
 		})
+	}
+}
+
+func TestPolicyDir(t *testing.T) {
+	numOfVersions := len(knownVersions())
+	dir, err := os.ReadDir(policyDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	numOfCils := len(dir)
+	if numOfVersions != numOfCils {
+		t.Fatalf("number of known version is different than number of cil files. knownVersions=%d,  cil files=%d", numOfVersions, numOfCils)
 	}
 }
