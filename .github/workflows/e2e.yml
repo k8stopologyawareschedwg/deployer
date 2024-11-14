@@ -11,7 +11,7 @@ defaults:
 
 jobs:
   e2e-positive:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - name: checkout sources
       uses: actions/checkout@v4
@@ -22,7 +22,7 @@ jobs:
       uses: actions/setup-go@v5
       id: go
       with:
-        go-version: 1.22.5
+        go-version: 1.23
 
     - name: build test binary
       run: |
@@ -50,7 +50,7 @@ jobs:
         _out/e2e.test --ginkgo.v --ginkgo.label-filter='positive'
 
   e2e-negative:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - name: checkout sources
       uses: actions/checkout@v4
@@ -61,7 +61,7 @@ jobs:
       uses: actions/setup-go@v5
       id: go
       with:
-        go-version: 1.22.5
+        go-version: 1.23
 
     - name: build test binary
       run: |
@@ -87,7 +87,7 @@ jobs:
         _out/e2e.test --ginkgo.v --ginkgo.label-filter='negative'
 
   e2e-manifests:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - name: checkout sources
       uses: actions/checkout@v4
@@ -98,7 +98,7 @@ jobs:
       uses: actions/setup-go@v5
       id: go
       with:
-        go-version: 1.22.5
+        go-version: 1.23
 
     - name: build test binary
       run: |
