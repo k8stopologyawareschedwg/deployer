@@ -185,14 +185,13 @@ func GetManifests(plat platform.Platform, version platform.Version, namespace st
 	var err error
 	mf := New(plat)
 
-	if plat == platform.OpenShift || plat == platform.HyperShift {
-		if withCustomSELinuxPolicy {
-			mf.MachineConfig, err = manifests.MachineConfig(manifests.ComponentResourceTopologyExporter, version, withCRIHooks)
-			if err != nil {
-				return mf, err
-			}
+	if plat == platform.OpenShift && withCustomSELinuxPolicy {
+		mf.MachineConfig, err = manifests.MachineConfig(manifests.ComponentResourceTopologyExporter, version, withCRIHooks)
+		if err != nil {
+			return mf, err
 		}
-
+	}
+	if plat != platform.Kubernetes {
 		mf.SecurityContextConstraint, err = manifests.SecurityContextConstraint(manifests.ComponentResourceTopologyExporter, withCustomSELinuxPolicy)
 		if err != nil {
 			return mf, err
