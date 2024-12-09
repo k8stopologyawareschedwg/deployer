@@ -12,7 +12,7 @@ defaults:
 
 jobs:
   release:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - name: checkout sources
       uses: actions/checkout@v4
@@ -79,7 +79,7 @@ jobs:
 
     - name: archive kind logs
       if: ${{ failure() }}
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: kind-logs
         path: /tmp/kind-logs

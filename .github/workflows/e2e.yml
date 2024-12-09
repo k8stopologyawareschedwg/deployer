@@ -11,7 +11,7 @@ defaults:
 
 jobs:
   e2e-positive:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - name: checkout sources
       uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
         _out/e2e.test -ginkgo.focus='\[PositiveFlow\]' -ginkgo.v
 
   e2e-negative:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - name: checkout sources
       uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
         _out/e2e.test -ginkgo.focus='\[NegativeFlow\]' -ginkgo.v
 
   e2e-manifests:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - name: checkout sources
       uses: actions/checkout@v4
