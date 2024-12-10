@@ -46,6 +46,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/validator"
 
+	e2edump "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/dump"
 	e2enodes "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/nodes"
 	e2epods "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/pods"
 )
@@ -308,13 +309,10 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", ginkgo.Label("posit
 				ginkgo.By("checking the pod goes running")
 				updatedPod, err := e2epods.WaitForPodToBeRunning(context.TODO(), cli, testPod.Namespace, testPod.Name, 3*time.Minute)
 				if err != nil {
-					ctx := context.Background()
-					cli, cerr := clientutil.New()
-					if cerr != nil {
-						dumpResourceTopologyExporterPods(ctx, cli)
-						dumpSchedulerPods(ctx, cli)
-						dumpWorkloadPods(ctx, updatedPod)
-					}
+					cli2, err := clientutil.New()
+					if err == nil {
+						e2edump.ClusterState(context.TODO(), cli2, updatedPod)
+					} // else TODO: log somehow
 				}
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			})
@@ -395,7 +393,14 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", ginkgo.Label("posit
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 				ginkgo.By("checking the pod goes running")
-				e2epods.ExpectPodToBeRunning(cli, testPod.Namespace, testPod.Name, 2*time.Minute)
+				pod, err := e2epods.WaitForPodToBeRunning(context.Background(), cli, testPod.Namespace, testPod.Name, 2*time.Minute)
+				if err != nil {
+					cli2, err := clientutil.New()
+					if err == nil {
+						e2edump.ClusterState(context.Background(), cli2, pod)
+					} // else TODO: log somehow
+				}
+				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 			})
 		})
 	})
