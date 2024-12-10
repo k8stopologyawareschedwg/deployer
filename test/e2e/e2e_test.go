@@ -33,13 +33,11 @@ import (
 	"github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/yaml"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8swait "k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
 
 	"github.com/k8stopologyawareschedwg/noderesourcetopology-api/pkg/apis/topology/v1alpha2"
@@ -54,12 +52,12 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/rte"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/stringify"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/validator"
-	e2epods "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/pods"
+
+	e2edump "github.com/k8stopologyawareschedwg/deployer/test/e2e/utils/dump"
 )
 
 var (
@@ -283,109 +281,17 @@ func WithEnv(cli client.Client) *deployer.Environment {
 
 func dumpSchedulerPods(ctx context.Context, cli client.Client) {
 	ginkgo.GinkgoHelper()
-
-	ns, err := manifests.Namespace(manifests.ComponentSchedulerPlugin)
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-	// TODO: autodetect the platform
-	mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-	mfs, err = mfs.Render(logr.Discard(), options.Scheduler{
-		Replicas: int32(1),
-	})
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-	k8sCli, err := clientutil.NewK8s()
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-	pods, err := e2epods.GetByDeployment(cli, ctx, *mfs.DPScheduler)
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-	klog.Warning(">>> scheduler pod status begin:\n")
-	for idx := range pods {
-		pod := pods[idx].DeepCopy()
-		pod.ManagedFields = nil
-
-		data, err := yaml.Marshal(pod)
-		gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-		klog.Warningf("%s\n---\n", string(data))
-
-		e2epods.LogEventsForPod(k8sCli, ctx, pod.Namespace, pod.Name)
-		klog.Warningf("---\n")
-	}
-
-	var cm corev1.ConfigMap
-	key := client.ObjectKey{
-		Namespace: "tas-scheduler",
-		Name:      "scheduler-config",
-	}
-	err = cli.Get(ctx, key, &cm)
-	if err == nil {
-		// skip errors until we can autodetect the CM key
-		klog.Infof("scheduler config:\n%s", cm.Data["scheduler-config.yaml"])
-	}
-
-	klog.Warning(">>> scheduler pod status end\n")
+	gomega.Expect(e2edump.SchedulerPods(ctx, cli)).To(gomega.Succeed())
 }
 
 func dumpWorkloadPods(ctx context.Context, pod *corev1.Pod) {
 	ginkgo.GinkgoHelper()
-
-	pod = pod.DeepCopy()
-
-	k8sCli, err := clientutil.NewK8s()
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-	klog.Warning(">>> workload pod status begin:\n")
-	pod.ManagedFields = nil
-
-	data, err := yaml.Marshal(pod)
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-	klog.Warningf("%s\n---\n", string(data))
-
-	e2epods.LogEventsForPod(k8sCli, ctx, pod.Namespace, pod.Name)
-	klog.Warningf("---\n")
-	klog.Warning(">>> workload pod status end\n")
+	gomega.Expect(e2edump.WorkloadPods(ctx, pod)).To(gomega.Succeed())
 }
 
 func dumpResourceTopologyExporterPods(ctx context.Context, cli client.Client) {
 	ginkgo.GinkgoHelper()
-
-	ns, err := manifests.Namespace(manifests.ComponentResourceTopologyExporter)
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-	// TODO: autodetect the platform
-	mfs, err := rte.GetManifests(platform.Kubernetes, platform.Version("1.23"), ns.Name, true)
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-	mfs, err = mfs.Render(options.UpdaterDaemon{
-		Namespace: ns.Name,
-	})
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-	k8sCli, err := clientutil.NewK8s()
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-	pods, err := e2epods.GetByDaemonSet(cli, ctx, *mfs.DaemonSet)
-	gomega.Expect(err).ToNot(gomega.HaveOccurred())
-
-	klog.Warning(">>> RTE pod status begin:\n")
-	if len(pods) > 1 {
-		klog.Warningf("UNEXPECTED POD COUNT %d: dumping only the first", len(pods))
-	}
-	if len(pods) > 0 {
-		pod := pods[0].DeepCopy()
-		pod.ManagedFields = nil
-
-		logs, err := e2epods.GetLogsForPod(k8sCli, pod.Namespace, pod.Name, pod.Spec.Containers[0].Name)
-		if err == nil {
-			// skip errors until we can autodetect the CM key
-			klog.Infof(">>> RTE logs begin:\n%s\n>>> RTE logs end", logs)
-		}
-	}
-
-	klog.Warning(">>> RTE pod status end\n")
+	gomega.Expect(e2edump.ResourceTopologyExporterPods(ctx, cli)).To(gomega.Succeed())
 }
 
 func expectSchedulerRunning(ctx context.Context, cli client.Client) {
