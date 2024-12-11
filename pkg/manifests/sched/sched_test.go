@@ -46,7 +46,9 @@ func TestClone(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			mf, _ := GetManifests(tc.plat, "")
+			mf, _ := NewWithOptions(options.Render{
+				Platform: tc.plat,
+			})
 			cMf := mf.Clone()
 
 			if &cMf == &mf {
@@ -75,9 +77,11 @@ func TestRender(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			mf, err := GetManifests(tc.plat, "")
+			mf, err := NewWithOptions(options.Render{
+				Platform: tc.plat,
+			})
 			if err != nil {
-				t.Errorf("testcase %q, GetManifests(%s, \"\") failed: %v", tc.name, tc.plat, err)
+				t.Errorf("testcase %q, NewWithOptions(platform=%s) failed: %v", tc.name, tc.plat, err)
 			}
 
 			mfBeforeRender := mf.Clone()

@@ -28,8 +28,8 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/updaters"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
+	apimanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/api"
+	schedmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
@@ -61,7 +61,9 @@ func NewRenderAPICommand(env *deployer.Environment, commonOpts *options.Options,
 			if commonOpts.UserPlatform == platform.Unknown {
 				return fmt.Errorf("must explicitly select a cluster platform")
 			}
-			apiManifests, err := api.GetManifests(commonOpts.UserPlatform)
+			apiManifests, err := apimanifests.NewWithOptions(options.Render{
+				Platform: commonOpts.UserPlatform,
+			})
 			if err != nil {
 				return err
 			}
@@ -90,7 +92,10 @@ func NewRenderSchedulerPluginCommand(env *deployer.Environment, commonOpts *opti
 				return err
 			}
 
-			schedManifests, err := sched.GetManifests(commonOpts.UserPlatform, namespace)
+			schedManifests, err := schedmanifests.NewWithOptions(options.Render{
+				Platform:  commonOpts.UserPlatform,
+				Namespace: namespace,
+			})
 			if err != nil {
 				return err
 			}
@@ -159,7 +164,9 @@ func makeUpdaterObjects(commonOpts *options.Options) ([]client.Object, string, e
 func RenderManifests(env *deployer.Environment, commonOpts *options.Options) error {
 	var objs []client.Object
 
-	apiManifests, err := api.GetManifests(commonOpts.UserPlatform)
+	apiManifests, err := apimanifests.NewWithOptions(options.Render{
+		Platform: commonOpts.UserPlatform,
+	})
 	if err != nil {
 		return err
 	}
@@ -175,7 +182,10 @@ func RenderManifests(env *deployer.Environment, commonOpts *options.Options) err
 	}
 	objs = append(objs, updaterObjs...)
 
-	schedManifests, err := sched.GetManifests(commonOpts.UserPlatform, updaterNs)
+	schedManifests, err := schedmanifests.NewWithOptions(options.Render{
+		Platform:  commonOpts.UserPlatform,
+		Namespace: updaterNs,
+	})
 	if err != nil {
 		return err
 	}

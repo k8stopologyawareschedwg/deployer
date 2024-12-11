@@ -52,7 +52,7 @@ import (
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/wait"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
+	schedmanifests "github.com/k8stopologyawareschedwg/deployer/pkg/manifests/sched"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/stringify"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/validator"
@@ -327,7 +327,10 @@ func expectSchedulerRunning(ctx context.Context, cli client.Client) {
 
 	ginkgo.By("checking that topo-aware-scheduler pod is running")
 	// TODO: autodetect the platform
-	mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
+	mfs, err := schedmanifests.NewWithOptions(options.Render{
+		Platform:  platform.Kubernetes,
+		Namespace: ns.Name,
+	})
 	gomega.Expect(err).ToNot(gomega.HaveOccurred())
 	mfs, err = mfs.Render(logr.Discard(), options.Scheduler{
 		Replicas: int32(1),

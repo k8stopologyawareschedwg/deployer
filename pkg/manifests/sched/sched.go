@@ -193,9 +193,9 @@ func New(plat platform.Platform) Manifests {
 	}
 }
 
-func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
+func NewWithOptions(opts options.Render) (Manifests, error) {
 	var err error
-	mf := New(plat)
+	mf := New(opts.Platform)
 	mf.Crd, err = manifests.SchedulerCRD()
 	if err != nil {
 		return mf, err
@@ -209,7 +209,7 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
-	mf.SAScheduler, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, namespace)
+	mf.SAScheduler, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, opts.Namespace)
 	if err != nil {
 		return mf, err
 	}
@@ -221,24 +221,24 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
-	mf.RSchedulerElect, err = manifests.Role(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, namespace)
+	mf.RSchedulerElect, err = manifests.Role(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, opts.Namespace)
 	if err != nil {
 		return mf, err
 	}
-	mf.RBSchedulerElect, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, manifests.RoleNameLeaderElect, namespace)
+	mf.RBSchedulerElect, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, manifests.RoleNameLeaderElect, opts.Namespace)
 	if err != nil {
 		return mf, err
 	}
-	mf.RBSchedulerAuth, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, manifests.RoleNameAuthReader, namespace)
+	mf.RBSchedulerAuth, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, manifests.RoleNameAuthReader, opts.Namespace)
 	if err != nil {
 		return mf, err
 	}
-	mf.DPScheduler, err = manifests.Deployment(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, "")
+	mf.DPScheduler, err = manifests.Deployment(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, opts.Namespace)
 	if err != nil {
 		return mf, err
 	}
 
-	mf.SAController, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController, namespace)
+	mf.SAController, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController, opts.Namespace)
 	if err != nil {
 		return mf, err
 	}
@@ -250,7 +250,7 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
-	mf.RBController, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController, "", namespace)
+	mf.RBController, err = manifests.RoleBinding(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController, "", opts.Namespace)
 	if err != nil {
 		return mf, err
 	}
@@ -260,6 +260,14 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 	}
 
 	return mf, nil
+}
+
+// GetManifests is deprecated, use NewWithOptions in new code
+func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
+	return NewWithOptions(options.Render{
+		Platform:  plat,
+		Namespace: namespace,
+	})
 }
 
 func leaderElectionParamsFromOpts(opts options.Scheduler) (manifests.LeaderElectionParams, bool, error) {

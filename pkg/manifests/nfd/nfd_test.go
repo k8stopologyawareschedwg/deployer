@@ -26,7 +26,7 @@ import (
 
 const defaultNFDNamespace = "node-feature-discovery"
 
-func TestGetManifests(t *testing.T) {
+func TestNewWithOptions(t *testing.T) {
 	type testCase struct {
 		name      string
 		namespace string
@@ -47,16 +47,19 @@ func TestGetManifests(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc.mf, _ = GetManifests(tc.plat, tc.namespace)
+		tc.mf, _ = NewWithOptions(options.Render{
+			Platform:  tc.plat,
+			Namespace: tc.namespace,
+		})
 		for _, obj := range tc.mf.ToObjects() {
 			if tc.namespace != "" {
 				if obj.GetNamespace() != "" && obj.GetNamespace() != tc.namespace {
-					t.Errorf("testcase %q, GetManifests failed to create %q object named %q with correct namespace %q. got namespace %q instead ",
+					t.Errorf("testcase %q, NewWithOptions failed to create %q object named %q with correct namespace %q. got namespace %q instead ",
 						tc.name, obj.GetObjectKind(), obj.GetName(), tc.namespace, obj.GetNamespace())
 				}
 			} else { // no namespace provided we should have the default
 				if obj.GetNamespace() != "" && obj.GetNamespace() != defaultNFDNamespace {
-					t.Errorf("testcase %q, GetManifests failed to create %q object named %q with default namespace %q. got namespace %q instead ",
+					t.Errorf("testcase %q, NewWithOptions failed to create %q object named %q with default namespace %q. got namespace %q instead ",
 						tc.name, obj.GetObjectKind(), obj.GetName(), defaultNFDNamespace, obj.GetNamespace())
 				}
 			}
@@ -82,7 +85,9 @@ func TestClone(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc.mf, _ = GetManifests(tc.plat, "")
+		tc.mf, _ = NewWithOptions(options.Render{
+			Platform: tc.plat,
+		})
 		cMf := tc.mf.Clone()
 
 		if &cMf == &tc.mf {
@@ -110,7 +115,9 @@ func TestRender(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc.mf, _ = GetManifests(tc.plat, "")
+		tc.mf, _ = NewWithOptions(options.Render{
+			Platform: tc.plat,
+		})
 		mfBeforeUpdate := tc.mf.Clone()
 		uMf, err := tc.mf.Render(options.UpdaterDaemon{})
 		if err != nil {

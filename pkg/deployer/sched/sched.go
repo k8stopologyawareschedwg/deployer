@@ -37,7 +37,9 @@ func Deploy(env *deployer.Environment, opts options.Scheduler) error {
 	env = env.WithName("SCD")
 	env.Log.Info("deploying topology-aware-scheduling scheduler plugin")
 
-	mf, err := schedmanifests.GetManifests(opts.Platform, "")
+	mf, err := schedmanifests.NewWithOptions(options.Render{
+		Platform: opts.Platform,
+	})
 	if err != nil {
 		return err
 	}
@@ -72,7 +74,9 @@ func Remove(env *deployer.Environment, opts options.Scheduler) error {
 	env = env.WithName("SCD")
 	env.Log.Info("removing topology-aware-scheduling scheduler plugin")
 
-	mf, err := schedmanifests.GetManifests(opts.Platform, "")
+	mf, err := schedmanifests.NewWithOptions(options.Render{
+		Platform: opts.Platform,
+	})
 	if err != nil {
 		return err
 	}

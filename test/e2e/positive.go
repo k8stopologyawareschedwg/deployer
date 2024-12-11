@@ -245,7 +245,13 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", ginkgo.Label("posit
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
 				enableCRIHooks := true
-				mf, err := rte.GetManifests(platform.Kubernetes, platform.Version("1.23"), ns.Name, enableCRIHooks, true)
+				mf, err := rte.NewWithOptions(options.Render{
+					Platform:            platform.Kubernetes,
+					PlatformVersion:     platform.Version("1.23"),
+					Namespace:           ns.Name,
+					EnableCRIHooks:      enableCRIHooks,
+					CustomSELinuxPolicy: true,
+				})
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				mf, err = mf.Render(options.UpdaterDaemon{
 					Namespace: ns.Name,
@@ -254,7 +260,10 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", ginkgo.Label("posit
 				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DaemonSet.Name))
 
 				ginkgo.By("checking that topo-aware-scheduler pod is running")
-				mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
+				mfs, err := sched.NewWithOptions(options.Render{
+					Platform:  platform.Kubernetes,
+					Namespace: ns.Name,
+				})
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				mfs, err = mfs.Render(logr.Discard(), options.Scheduler{
 					Replicas: int32(1),
@@ -331,7 +340,10 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", ginkgo.Label("posit
 				ns, err := manifests.Namespace(manifests.ComponentNodeFeatureDiscovery)
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-				mf, err := nfd.GetManifests(platform.Kubernetes, ns.Name)
+				mf, err := nfd.NewWithOptions(options.Render{
+					Platform:  platform.Kubernetes,
+					Namespace: ns.Name,
+				})
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				mf, err = mf.Render(options.UpdaterDaemon{
 					Namespace: ns.Name,
@@ -340,7 +352,10 @@ var _ = ginkgo.Describe("[PositiveFlow] Deployer execution", ginkgo.Label("posit
 				e2epods.WaitPodsToBeRunningByRegex(fmt.Sprintf("%s-*", mf.DSTopologyUpdater.Name))
 
 				ginkgo.By("checking that topo-aware-scheduler pod is running")
-				mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
+				mfs, err := sched.NewWithOptions(options.Render{
+					Platform:  platform.Kubernetes,
+					Namespace: ns.Name,
+				})
 				gomega.Expect(err).ToNot(gomega.HaveOccurred())
 				mfs, err = mfs.Render(logr.Discard(), options.Scheduler{
 					Replicas: int32(1),

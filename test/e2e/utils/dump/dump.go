@@ -58,7 +58,10 @@ func SchedulerPods(ctx context.Context, cli client.Client) error {
 	}
 
 	// TODO: autodetect the platform
-	mfs, err := sched.GetManifests(platform.Kubernetes, ns.Name)
+	mfs, err := sched.NewWithOptions(options.Render{
+		Platform:  platform.Kubernetes,
+		Namespace: ns.Name,
+	})
 	if err != nil {
 		return err
 	}
@@ -143,7 +146,13 @@ func ResourceTopologyExporterPods(ctx context.Context, cli client.Client) error 
 	}
 
 	// TODO: autodetect the platform
-	mfs, err := rte.GetManifests(platform.Kubernetes, platform.Version("1.23"), ns.Name, true, false)
+	mfs, err := rte.NewWithOptions(options.Render{
+		Platform:            platform.Kubernetes,
+		PlatformVersion:     platform.Version("1.23"),
+		Namespace:           ns.Name,
+		EnableCRIHooks:      true,
+		CustomSELinuxPolicy: true,
+	})
 	if err != nil {
 		return err
 	}
