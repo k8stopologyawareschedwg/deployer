@@ -181,32 +181,32 @@ func New(plat platform.Platform) Manifests {
 	return mf
 }
 
-func GetManifests(plat platform.Platform, version platform.Version, namespace string, withCRIHooks, withCustomSELinuxPolicy bool) (Manifests, error) {
+func NewWithOptions(opts options.Render) (Manifests, error) {
 	var err error
-	mf := New(plat)
+	mf := New(opts.Platform)
 
-	if plat == platform.OpenShift && withCustomSELinuxPolicy {
-		mf.MachineConfig, err = manifests.MachineConfig(manifests.ComponentResourceTopologyExporter, version, withCRIHooks)
+	if opts.Platform == platform.OpenShift && opts.CustomSELinuxPolicy {
+		mf.MachineConfig, err = manifests.MachineConfig(manifests.ComponentResourceTopologyExporter, opts.PlatformVersion, opts.EnableCRIHooks)
 		if err != nil {
 			return mf, err
 		}
 	}
-	if plat != platform.Kubernetes {
-		mf.SecurityContextConstraint, err = manifests.SecurityContextConstraint(manifests.ComponentResourceTopologyExporter, withCustomSELinuxPolicy)
+	if opts.Platform != platform.Kubernetes {
+		mf.SecurityContextConstraint, err = manifests.SecurityContextConstraint(manifests.ComponentResourceTopologyExporter, opts.CustomSELinuxPolicy)
 		if err != nil {
 			return mf, err
 		}
 	}
 
-	mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentResourceTopologyExporter, "", namespace)
+	mf.ServiceAccount, err = manifests.ServiceAccount(manifests.ComponentResourceTopologyExporter, "", opts.Namespace)
 	if err != nil {
 		return mf, err
 	}
-	mf.Role, err = manifests.Role(manifests.ComponentResourceTopologyExporter, "", namespace)
+	mf.Role, err = manifests.Role(manifests.ComponentResourceTopologyExporter, "", opts.Namespace)
 	if err != nil {
 		return mf, err
 	}
-	mf.RoleBinding, err = manifests.RoleBinding(manifests.ComponentResourceTopologyExporter, "", "", namespace)
+	mf.RoleBinding, err = manifests.RoleBinding(manifests.ComponentResourceTopologyExporter, "", "", opts.Namespace)
 	if err != nil {
 		return mf, err
 	}
@@ -218,9 +218,20 @@ func GetManifests(plat platform.Platform, version platform.Version, namespace st
 	if err != nil {
 		return mf, err
 	}
-	mf.DaemonSet, err = manifests.DaemonSet(manifests.ComponentResourceTopologyExporter, "", namespace)
+	mf.DaemonSet, err = manifests.DaemonSet(manifests.ComponentResourceTopologyExporter, "", opts.Namespace)
 	if err != nil {
 		return mf, err
 	}
 	return mf, nil
+}
+
+// GetManifests is deprecated, use NewWithOptions in new code
+func GetManifests(plat platform.Platform, version platform.Version, namespace string, withCRIHooks, withCustomSELinuxPolicy bool) (Manifests, error) {
+	return NewWithOptions(options.Render{
+		Platform:            plat,
+		PlatformVersion:     version,
+		Namespace:           namespace,
+		EnableCRIHooks:      withCRIHooks,
+		CustomSELinuxPolicy: withCustomSELinuxPolicy,
+	})
 }

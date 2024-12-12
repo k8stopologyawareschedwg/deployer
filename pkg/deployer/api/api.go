@@ -37,7 +37,9 @@ func Deploy(env *deployer.Environment, opts options.API) error {
 	env = env.WithName("API")
 	env.Log.Info("deploying topology-aware-scheduling API")
 
-	mf, err := apimanifests.GetManifests(opts.Platform)
+	mf, err := apimanifests.NewWithOptions(options.Render{
+		Platform: opts.Platform,
+	})
 	if err != nil {
 		return err
 	}
@@ -67,7 +69,9 @@ func Remove(env *deployer.Environment, opts options.API) error {
 	env = env.WithName("API")
 	env.Log.Info("removing topology-aware-scheduling API")
 
-	mf, err := apimanifests.GetManifests(opts.Platform)
+	mf, err := apimanifests.NewWithOptions(options.Render{
+		Platform: opts.Platform,
+	})
 	if err != nil {
 		return err
 	}

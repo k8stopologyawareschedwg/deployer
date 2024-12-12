@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 )
 
 func TestClone(t *testing.T) {
@@ -43,9 +44,11 @@ func TestClone(t *testing.T) {
 
 	for _, tc := range testCases {
 		var err error
-		tc.mf, err = GetManifests(tc.plat)
+		tc.mf, err = NewWithOptions(options.Render{
+			Platform: tc.plat,
+		})
 		if err != nil {
-			t.Fatalf("GetManifests() failed: %v", err)
+			t.Fatalf("NewWithOptions() failed: %v", err)
 		}
 
 		cMf := tc.mf.Clone()
@@ -75,9 +78,11 @@ func TestRender(t *testing.T) {
 
 	for _, tc := range testCases {
 		var err error
-		tc.mf, err = GetManifests(tc.plat)
+		tc.mf, err = NewWithOptions(options.Render{
+			Platform: tc.plat,
+		})
 		if err != nil {
-			t.Fatalf("GetManifests() failed: %v", err)
+			t.Fatalf("NewWithOptions() failed: %v", err)
 		}
 		mfBeforeRender := tc.mf.Clone()
 		uMf, err := tc.mf.Render()
@@ -114,9 +119,11 @@ func TestToObjects(t *testing.T) {
 
 	for _, tc := range testCases {
 		var err error
-		tc.mf, err = GetManifests(tc.plat)
+		tc.mf, err = NewWithOptions(options.Render{
+			Platform: tc.plat,
+		})
 		if err != nil {
-			t.Fatalf("GetManifests() failed: %v", err)
+			t.Fatalf("NewWithOptions() failed: %v", err)
 		}
 		objs := tc.mf.ToObjects()
 		if len(objs) == 0 {

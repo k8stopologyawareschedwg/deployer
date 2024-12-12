@@ -87,16 +87,16 @@ func New(plat platform.Platform) Manifests {
 	return mf
 }
 
-func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
+func NewWithOptions(opts options.Render) (Manifests, error) {
 	var err error
-	mf := New(plat)
+	mf := New(opts.Platform)
 
 	mf.Namespace, err = manifests.Namespace(manifests.ComponentNodeFeatureDiscovery)
 	if err != nil {
 		return mf, err
 	}
 
-	mf.SATopologyUpdater, err = manifests.ServiceAccount(manifests.ComponentNodeFeatureDiscovery, manifests.SubComponentNodeFeatureDiscoveryTopologyUpdater, namespace)
+	mf.SATopologyUpdater, err = manifests.ServiceAccount(manifests.ComponentNodeFeatureDiscovery, manifests.SubComponentNodeFeatureDiscoveryTopologyUpdater, opts.Namespace)
 	if err != nil {
 		return mf, err
 	}
@@ -108,10 +108,18 @@ func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
-	mf.DSTopologyUpdater, err = manifests.DaemonSet(manifests.ComponentNodeFeatureDiscovery, manifests.SubComponentNodeFeatureDiscoveryTopologyUpdater, namespace)
+	mf.DSTopologyUpdater, err = manifests.DaemonSet(manifests.ComponentNodeFeatureDiscovery, manifests.SubComponentNodeFeatureDiscoveryTopologyUpdater, opts.Namespace)
 	if err != nil {
 		return mf, err
 	}
 
 	return mf, nil
+}
+
+// GetManifests is deprecated, use NewWithOptions in new code
+func GetManifests(plat platform.Platform, namespace string) (Manifests, error) {
+	return NewWithOptions(options.Render{
+		Platform:  plat,
+		Namespace: namespace,
+	})
 }

@@ -32,7 +32,7 @@ import (
 
 func GetObjects(opts options.Updater, updaterType, namespace string) ([]client.Object, error) {
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks, opts.CustomSELinuxPolicy)
+		mf, err := rtemanifests.NewWithOptions(renderOptionsFrom(opts, namespace))
 		if err != nil {
 			return nil, err
 		}
@@ -43,7 +43,7 @@ func GetObjects(opts options.Updater, updaterType, namespace string) ([]client.O
 		return ret.ToObjects(), nil
 	}
 	if updaterType == NFD {
-		mf, err := nfdmanifests.GetManifests(opts.Platform, namespace)
+		mf, err := nfdmanifests.NewWithOptions(renderOptionsFrom(opts, namespace))
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +58,7 @@ func GetObjects(opts options.Updater, updaterType, namespace string) ([]client.O
 
 func getCreatableObjects(env *deployer.Environment, opts options.Updater, updaterType, namespace string) ([]objectwait.WaitableObject, error) {
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks, opts.CustomSELinuxPolicy)
+		mf, err := rtemanifests.NewWithOptions(renderOptionsFrom(opts, namespace))
 		if err != nil {
 			return nil, err
 		}
@@ -69,7 +69,7 @@ func getCreatableObjects(env *deployer.Environment, opts options.Updater, update
 		return rtewait.Creatable(ret, env.Cli, env.Log), nil
 	}
 	if updaterType == NFD {
-		mf, err := nfdmanifests.GetManifests(opts.Platform, namespace)
+		mf, err := nfdmanifests.NewWithOptions(renderOptionsFrom(opts, namespace))
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +84,7 @@ func getCreatableObjects(env *deployer.Environment, opts options.Updater, update
 
 func getDeletableObjects(env *deployer.Environment, opts options.Updater, updaterType, namespace string) ([]objectwait.WaitableObject, error) {
 	if updaterType == RTE {
-		mf, err := rtemanifests.GetManifests(opts.Platform, opts.PlatformVersion, namespace, opts.EnableCRIHooks, opts.CustomSELinuxPolicy)
+		mf, err := rtemanifests.NewWithOptions(renderOptionsFrom(opts, namespace))
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +95,7 @@ func getDeletableObjects(env *deployer.Environment, opts options.Updater, update
 		return rtewait.Deletable(ret, env.Cli, env.Log), nil
 	}
 	if updaterType == NFD {
-		mf, err := nfdmanifests.GetManifests(opts.Platform, namespace)
+		mf, err := nfdmanifests.NewWithOptions(renderOptionsFrom(opts, namespace))
 		if err != nil {
 			return nil, err
 		}
@@ -113,5 +113,15 @@ func updaterDaemonOptionsFrom(opts options.Updater, namespace string) options.Up
 		ConfigData: opts.RTEConfigData,
 		DaemonSet:  opts.DaemonSet,
 		Namespace:  namespace,
+	}
+}
+
+func renderOptionsFrom(opts options.Updater, namespace string) options.Render {
+	return options.Render{
+		Platform:            opts.Platform,
+		PlatformVersion:     opts.PlatformVersion,
+		Namespace:           namespace,
+		EnableCRIHooks:      opts.EnableCRIHooks,
+		CustomSELinuxPolicy: opts.CustomSELinuxPolicy,
 	}
 }
