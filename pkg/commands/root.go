@@ -104,7 +104,7 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *options.Options, internalOpts *
 	flags.BoolVar(&commonOpts.UpdaterPFPEnable, "updater-pfp-enable", true, "toggle PFP support on the updater side.")
 	flags.BoolVar(&commonOpts.UpdaterNotifEnable, "updater-notif-enable", true, "toggle event-based notification support on the updater side.")
 	flags.BoolVar(&commonOpts.UpdaterCRIHooksEnable, "updater-cri-hooks-enable", true, "toggle installation of CRI hooks on the updater side.")
-	flags.BoolVar(&commonOpts.UpdaterCustomSELinuxPolicy, "updater-custom-selinux-policy", false, "toggle installation of selinux policy on the updater side. off by default")
+	flags.BoolVar(&commonOpts.UpdaterCustomSELinuxPolicy, "updater-custom-selinux-policy", true, "toggle installation of selinux policy on the updater side. on by default")
 	flags.DurationVar(&commonOpts.UpdaterSyncPeriod, "updater-sync-period", manifests.DefaultUpdaterSyncPeriod, "tune the updater synchronization (nrt update) interval. Use 0 to disable.")
 	flags.IntVar(&commonOpts.UpdaterVerbose, "updater-verbose", manifests.DefaultUpdaterVerbose, "set the updater verbosiness.")
 	flags.StringVar(&commonOpts.SchedProfileName, "sched-profile-name", schedmanifests.DefaultProfileName, "inject scheduler profile name.")
