@@ -48,8 +48,9 @@ type Manifests struct {
 	DaemonSet          *appsv1.DaemonSet
 
 	// OpenShift related components
-	MachineConfig             *machineconfigv1.MachineConfig
-	SecurityContextConstraint *securityv1.SecurityContextConstraints
+	MachineConfig               *machineconfigv1.MachineConfig
+	SecurityContextConstraint   *securityv1.SecurityContextConstraints
+	SecurityContextConstraintV2 *securityv1.SecurityContextConstraints
 
 	// internal fields
 	plat platform.Platform
@@ -74,6 +75,7 @@ func (mf Manifests) Clone() Manifests {
 			ret.MachineConfig = mf.MachineConfig.DeepCopy()
 		}
 		ret.SecurityContextConstraint = mf.SecurityContextConstraint.DeepCopy()
+		ret.SecurityContextConstraintV2 = mf.SecurityContextConstraintV2.DeepCopy()
 	}
 
 	return ret
@@ -125,6 +127,7 @@ func (mf Manifests) Render(opts options.UpdaterDaemon) (Manifests, error) {
 		}
 		rteupdate.SecurityContext(ret.DaemonSet, selinuxType)
 		ocpupdate.SecurityContextConstraint(ret.SecurityContextConstraint, ret.ServiceAccount)
+		ocpupdate.SecurityContextConstraint(ret.SecurityContextConstraintV2, ret.ServiceAccount)
 	}
 
 	return ret, nil
@@ -194,6 +197,10 @@ func GetManifests(plat platform.Platform, version platform.Version, namespace st
 		}
 
 		mf.SecurityContextConstraint, err = manifests.SecurityContextConstraint(manifests.ComponentResourceTopologyExporter, withCustomSELinuxPolicy)
+		if err != nil {
+			return mf, err
+		}
+		mf.SecurityContextConstraintV2, err = manifests.SecurityContextConstraintV2(manifests.ComponentResourceTopologyExporter)
 		if err != nil {
 			return mf, err
 		}
