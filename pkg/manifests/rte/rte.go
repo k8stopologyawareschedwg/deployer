@@ -114,7 +114,6 @@ func (mf Manifests) Render(opts options.UpdaterDaemon) (Manifests, error) {
 	rteupdate.DaemonSet(ret.DaemonSet, mf.plat, rteConfigMapName, opts.DaemonSet)
 
 	if mf.plat == platform.OpenShift || mf.plat == platform.HyperShift {
-		selinuxType := selinuxassets.RTEContextType
 		if mf.MachineConfig != nil {
 			if opts.Name != "" {
 				ret.MachineConfig.Name = ocpupdate.MakeMachineConfigName(opts.Name)
@@ -123,14 +122,20 @@ func (mf Manifests) Render(opts options.UpdaterDaemon) (Manifests, error) {
 				ret.MachineConfig.Labels = opts.MachineConfigPoolSelector.MatchLabels
 			}
 			// the MachineConfig installs this custom policy which is obsolete starting from OCP v4.18
-			selinuxType = selinuxassets.RTEContextTypeLegacy
 		}
-		rteupdate.SecurityContext(ret.DaemonSet, selinuxType)
 		ocpupdate.SecurityContextConstraint(ret.SecurityContextConstraint, ret.ServiceAccount)
 		ocpupdate.SecurityContextConstraint(ret.SecurityContextConstraintV2, ret.ServiceAccount)
+		rteupdate.SecurityContext(ret.DaemonSet, selinuxTypeFromSCCVersion(opts.DaemonSet.SCCVersion, (mf.MachineConfig != nil)))
 	}
 
 	return ret, nil
+}
+
+func selinuxTypeFromSCCVersion(ver options.SCCVersion, hasCustomPolicy bool) string {
+	if ver == options.SCCV1 && hasCustomPolicy { // custom policy is the only vehicle which enables Legacy type
+		return selinuxassets.RTEContextTypeLegacy
+	}
+	return selinuxassets.RTEContextType
 }
 
 func CreateConfigMap(namespace, name, configData string) *corev1.ConfigMap {
@@ -164,6 +169,9 @@ func (mf Manifests) ToObjects() []client.Object {
 
 	if mf.SecurityContextConstraint != nil {
 		objs = append(objs, mf.SecurityContextConstraint)
+	}
+	if mf.SecurityContextConstraintV2 != nil {
+		objs = append(objs, mf.SecurityContextConstraintV2)
 	}
 
 	return append(objs,
