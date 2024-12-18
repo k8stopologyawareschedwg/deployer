@@ -42,6 +42,7 @@ type internalOptions struct {
 	rteConfigFile               string
 	schedScoringStratConfigFile string
 	schedCacheParamsConfigFile  string
+	updaterSCCVersion           string
 	plat                        string
 }
 
@@ -96,6 +97,7 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *options.Options, internalOpts *
 	flags.StringVar(&internalOpts.schedScoringStratConfigFile, "sched-scoring-strat-config-file", "", "inject scheduler scoring strategy configuration reading from this file.")
 	flags.StringVar(&internalOpts.schedCacheParamsConfigFile, "sched-cache-params-config-file", "", "inject scheduler fine cache params configuration reading from this file.")
 	flags.IntVarP(&internalOpts.replicas, "replicas", "R", 1, "set the replica value - where relevant.")
+	flags.StringVar(&internalOpts.updaterSCCVersion, "updater-scc", "v2", "select the SecurityContextConstraint version to use. v2 by default")
 
 	flags.DurationVarP(&commonOpts.WaitInterval, "wait-interval", "E", 2*time.Second, "wait interval.")
 	flags.DurationVarP(&commonOpts.WaitTimeout, "wait-timeout", "T", 2*time.Minute, "wait timeout.")
@@ -104,7 +106,7 @@ func InitFlags(flags *pflag.FlagSet, commonOpts *options.Options, internalOpts *
 	flags.BoolVar(&commonOpts.UpdaterPFPEnable, "updater-pfp-enable", true, "toggle PFP support on the updater side.")
 	flags.BoolVar(&commonOpts.UpdaterNotifEnable, "updater-notif-enable", false, "toggle event-based notification support on the updater side.")
 	flags.BoolVar(&commonOpts.UpdaterCRIHooksEnable, "updater-cri-hooks-enable", false, "toggle installation of CRI hooks on the updater side.")
-	flags.BoolVar(&commonOpts.UpdaterCustomSELinuxPolicy, "updater-custom-selinux-policy", false, "toggle installation of selinux policy on the updater side. off by default")
+	flags.BoolVar(&commonOpts.UpdaterCustomSELinuxPolicy, "updater-custom-selinux-policy", true, "toggle installation of selinux policy in the legacy policy on the updater side. on by default")
 	flags.DurationVar(&commonOpts.UpdaterSyncPeriod, "updater-sync-period", manifests.DefaultUpdaterSyncPeriod, "tune the updater synchronization (nrt update) interval. Use 0 to disable.")
 	flags.IntVar(&commonOpts.UpdaterVerbose, "updater-verbose", manifests.DefaultUpdaterVerbose, "set the updater verbosiness.")
 	flags.StringVar(&commonOpts.SchedProfileName, "sched-profile-name", schedmanifests.DefaultProfileName, "inject scheduler profile name.")
@@ -119,6 +121,11 @@ func PostSetupOptions(env *deployer.Environment, commonOpts *options.Options, in
 
 	env.Log.V(3).Info("global polling settings", "interval", commonOpts.WaitInterval, "timeout", commonOpts.WaitTimeout)
 	wait.SetBaseValues(commonOpts.WaitInterval, commonOpts.WaitTimeout)
+
+	if !options.IsValidSCCVersion(internalOpts.updaterSCCVersion) {
+		return fmt.Errorf("SCC version %q is invalid", internalOpts.updaterSCCVersion)
+	}
+	commonOpts.UpdaterSCCVersion = options.SCCVersion(internalOpts.updaterSCCVersion)
 
 	if internalOpts.replicas < 0 {
 		err := env.EnsureClient()
