@@ -355,21 +355,30 @@ func TestSecurityContextWithOpts(t *testing.T) {
 		description        string
 		selinuxContextType string
 		sccName            string
+		expectSCC          bool
 	}{
 		{
 			description:        "custom policy",
 			selinuxContextType: selinuxassets.RTEContextTypeLegacy,
 			sccName:            "resource-topology-exporter",
+			expectSCC:          true,
 		},
 		{
 			description:        "built-in policy",
 			selinuxContextType: selinuxassets.RTEContextType,
 			sccName:            "resource-topology-exporter",
+			expectSCC:          true,
 		},
 		{
 			description:        "No SCC annotation value provided",
 			selinuxContextType: selinuxassets.RTEContextType,
 			sccName:            "",
+			expectSCC:          true,
+		},
+		{
+			description:        "Missing Context Type",
+			selinuxContextType: "",
+			expectSCC:          false,
 		},
 	}
 	for _, tc := range testCases {
@@ -386,12 +395,18 @@ func TestSecurityContextWithOpts(t *testing.T) {
 				})
 
 			cntSpec := objectupdate.FindContainerByName(ds.Spec.Template.Spec.Containers, manifests.ContainerNameRTE)
-			sc := cntSpec.SecurityContext
-			if sc == nil {
-				t.Fatalf("the security context for container %q does not exist", cntSpec.Name)
-			}
-			if sc.SELinuxOptions.Type != tc.selinuxContextType {
-				t.Fatalf("wrong security context for container %q; want=%s got=%s", cntSpec.Name, tc.selinuxContextType, sc.SELinuxOptions.Type)
+			sc := cntSpec.SecurityContext // shortcut
+			if !tc.expectSCC {
+				if sc != nil {
+					t.Fatalf("the security context for container %q does exists, but should not", cntSpec.Name)
+				}
+			} else {
+				if sc == nil {
+					t.Fatalf("the security context for container %q does not exist", cntSpec.Name)
+				}
+				if sc.SELinuxOptions.Type != tc.selinuxContextType {
+					t.Fatalf("wrong security context for container %q; want=%s got=%s", cntSpec.Name, tc.selinuxContextType, sc.SELinuxOptions.Type)
+				}
 			}
 			val, exists := ds.Spec.Template.ObjectMeta.Annotations[sccAnnotation]
 			if tc.sccName == "" {
