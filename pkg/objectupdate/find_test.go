@@ -147,3 +147,136 @@ func TestFindContainerByNameMutableDeployment(t *testing.T) {
 		t.Fatalf("failed to mutate through the FindContainerByName reference")
 	}
 }
+
+func TestFindContainerEnvVarByNameMutablePod(t *testing.T) {
+	testEnvVarName := "TEST_FOO_BAR"
+
+	pod := corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name: "foo",
+					Env: []corev1.EnvVar{
+						{
+							Name:  testEnvVarName,
+							Value: "33",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	got := FindContainerEnvVarByName(pod.Spec.Containers[0].Env, testEnvVarName)
+	if got == nil {
+		t.Fatalf("missing container env var")
+	}
+
+	newValue := "42"
+	got.Value = newValue
+	if pod.Spec.Containers[0].Env[0].Value != newValue {
+		t.Fatalf("failed to mutate through the FindContainerEnvVarByName reference")
+	}
+}
+
+func TestFindContainerEnvVarByNameMutableDeployment(t *testing.T) {
+	testEnvVarName := "FIZZBUZZ"
+
+	dp := appsv1.Deployment{
+		Spec: appsv1.DeploymentSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "foo",
+							Env: []corev1.EnvVar{
+								{
+									Name:  testEnvVarName,
+									Value: "27",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	got := FindContainerEnvVarByName(dp.Spec.Template.Spec.Containers[0].Env, testEnvVarName)
+	if got == nil {
+		t.Fatalf("missing container env var")
+	}
+
+	newValue := "42"
+	got.Value = newValue
+	if dp.Spec.Template.Spec.Containers[0].Env[0].Value != newValue {
+		t.Fatalf("failed to mutate through the FindContainerEnvVarByName reference")
+	}
+}
+
+func TestFindContainerPortByNameMutablePod(t *testing.T) {
+	testPortName := "foo-port"
+
+	pod := corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name: "foo",
+					Ports: []corev1.ContainerPort{
+						{
+							Name:          testPortName,
+							ContainerPort: int32(12345),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	got := FindContainerPortByName(pod.Spec.Containers[0].Ports, testPortName)
+	if got == nil {
+		t.Fatalf("missing container env var")
+	}
+
+	newValue := int32(42224)
+	got.ContainerPort = newValue
+	if pod.Spec.Containers[0].Ports[0].ContainerPort != newValue {
+		t.Fatalf("failed to mutate through the FindContainerPortByName reference")
+	}
+}
+
+func TestFindContainerPortByNameMutableDeployment(t *testing.T) {
+	testPortName := "bar-port"
+
+	dp := appsv1.Deployment{
+		Spec: appsv1.DeploymentSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name: "foo",
+
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          testPortName,
+									ContainerPort: int32(12345),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	got := FindContainerPortByName(dp.Spec.Template.Spec.Containers[0].Ports, testPortName)
+	if got == nil {
+		t.Fatalf("missing container env var")
+	}
+
+	newValue := int32(24242)
+	got.ContainerPort = newValue
+	if dp.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort != newValue {
+		t.Fatalf("failed to mutate through the FindContainerPortByName reference")
+	}
+}
