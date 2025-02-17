@@ -18,14 +18,14 @@ package rte
 
 import (
 	"fmt"
-	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
-	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 	"strings"
 	"testing"
 	"time"
 
+	selinuxassets "github.com/k8stopologyawareschedwg/deployer/pkg/assets/selinux"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/deployer/platform"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/manifests"
+	"github.com/k8stopologyawareschedwg/deployer/pkg/objectupdate"
 	"github.com/k8stopologyawareschedwg/deployer/pkg/options"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -345,6 +345,66 @@ func TestSecurityContext(t *testing.T) {
 			}
 			if sc.SELinuxOptions.Type != tc.selinuxContextType {
 				t.Fatalf("wrong security context for container %q; want=%s got=%s", cntSpec.Name, tc.selinuxContextType, sc.SELinuxOptions.Type)
+			}
+		})
+	}
+}
+
+func TestSecurityContextWithOpts(t *testing.T) {
+	testCases := []struct {
+		description        string
+		selinuxContextType string
+		sccName            string
+	}{
+		{
+			description:        "custom policy",
+			selinuxContextType: selinuxassets.RTEContextTypeLegacy,
+			sccName:            "resource-topology-exporter",
+		},
+		{
+			description:        "built-in policy",
+			selinuxContextType: selinuxassets.RTEContextType,
+			sccName:            "resource-topology-exporter",
+		},
+		{
+			description:        "No SCC annotation value provided",
+			selinuxContextType: selinuxassets.RTEContextType,
+			sccName:            "",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			ds, err := manifests.DaemonSet(manifests.ComponentResourceTopologyExporter, "", "test")
+			if err != nil {
+				t.Fatalf("unexpected error getting the manifests: %v", err)
+			}
+			DaemonSet(ds, platform.OpenShift, "", options.DaemonSet{})
+			SecurityContextWithOpts(ds,
+				SecurityContextOptions{
+					SELinuxContextType:  tc.selinuxContextType,
+					SecurityContextName: tc.sccName,
+				})
+
+			cntSpec := objectupdate.FindContainerByName(ds.Spec.Template.Spec.Containers, manifests.ContainerNameRTE)
+			sc := cntSpec.SecurityContext
+			if sc == nil {
+				t.Fatalf("the security context for container %q does not exist", cntSpec.Name)
+			}
+			if sc.SELinuxOptions.Type != tc.selinuxContextType {
+				t.Fatalf("wrong security context for container %q; want=%s got=%s", cntSpec.Name, tc.selinuxContextType, sc.SELinuxOptions.Type)
+			}
+			val, exists := ds.Spec.Template.ObjectMeta.Annotations[sccAnnotation]
+			if tc.sccName == "" {
+				if exists {
+					t.Fatalf("SCC annotation %q should not be present when not specified", sccAnnotation)
+				}
+			} else {
+				if !exists {
+					t.Fatalf("expected SCC annotation %q but it is missing", sccAnnotation)
+				}
+				if val != tc.sccName {
+					t.Fatalf("expected SCC annotation %q to have value %q, but got %q", sccAnnotation, tc.sccName, val)
+				}
 			}
 		})
 	}
