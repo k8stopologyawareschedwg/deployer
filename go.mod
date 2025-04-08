@@ -15,7 +15,7 @@ require (
 	github.com/k8stopologyawareschedwg/podfingerprint v0.2.2
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.36.1
-	github.com/openshift/api v0.0.0-20240830023148-b7d0481c9094
+	github.com/openshift/api v0.0.0-20250305013520-e7f23be12279
 	github.com/openshift/client-go v0.0.0-20240510131258-f646d5f29250
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
@@ -115,4 +115,4 @@ replace (
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.32.3
 )
 
-replace github.com/openshift/api => github.com/openshift/api v0.0.0-20240830023148-b7d0481c9094 // release-4.16
+replace github.com/openshift/api => github.com/openshift/api v0.0.0-20250305013520-e7f23be12279 // release-4.18
