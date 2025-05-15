@@ -42,6 +42,12 @@ func Creatable(mf rtemf.Manifests, cli client.Client, log logr.Logger) []objectw
 		})
 	}
 
+	if mf.SecurityContextConstraintV2 != nil {
+		objs = append(objs, objectwait.WaitableObject{
+			Obj: mf.SecurityContextConstraintV2,
+		})
+	}
+
 	if mf.MachineConfig != nil {
 		// TODO: we should add functionality to wait for the MCP update
 		objs = append(objs, objectwait.WaitableObject{
@@ -90,6 +96,11 @@ func Deletable(mf rtemf.Manifests, cli client.Client, log logr.Logger) []objectw
 	if mf.SecurityContextConstraint != nil {
 		objs = append(objs, objectwait.WaitableObject{
 			Obj: mf.SecurityContextConstraint,
+		})
+	}
+	if mf.SecurityContextConstraintV2 != nil {
+		objs = append(objs, objectwait.WaitableObject{
+			Obj: mf.SecurityContextConstraintV2,
 		})
 	}
 	if mf.MachineConfig != nil {
