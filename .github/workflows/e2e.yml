@@ -162,4 +162,4 @@ jobs:
 
     - name: run network policies E2E tests
       run: |
-        _out/e2e.test --ginkgo.v --ginkgo.label-filter='feature:network_policies'
+        _out/e2e.test --ginkgo.vv --ginkgo.label-filter='feature:network_policies'
