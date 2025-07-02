@@ -66,6 +66,9 @@ func Creatable(mf rtemf.Manifests, cli client.Client, log logr.Logger) []objectw
 		objectwait.WaitableObject{Obj: mf.ClusterRole},
 		objectwait.WaitableObject{Obj: mf.ClusterRoleBinding},
 		objectwait.WaitableObject{Obj: mf.ServiceAccount},
+		objectwait.WaitableObject{Obj: mf.DefaultNetworkPolicy},
+		objectwait.WaitableObject{Obj: mf.APIServerNetworkPolicy},
+		objectwait.WaitableObject{Obj: mf.MetricsServerNetworkPolicy},
 		objectwait.WaitableObject{
 			Obj: mf.DaemonSet,
 			Wait: func(ctx context.Context) error {
@@ -89,6 +92,9 @@ func Deletable(mf rtemf.Manifests, cli client.Client, log logr.Logger) []objectw
 		{Obj: mf.ClusterRole},
 		{Obj: mf.ClusterRoleBinding},
 		{Obj: mf.ServiceAccount},
+		{Obj: mf.DefaultNetworkPolicy},
+		{Obj: mf.APIServerNetworkPolicy},
+		{Obj: mf.MetricsServerNetworkPolicy},
 	}
 	if mf.ConfigMap != nil {
 		objs = append(objs, objectwait.WaitableObject{Obj: mf.ConfigMap})

@@ -35,6 +35,8 @@ func Creatable(mf schedmf.Manifests, cli client.Client, log logr.Logger) []objec
 		{Obj: mf.SAScheduler},
 		{Obj: mf.CRScheduler},
 		{Obj: mf.CRBScheduler},
+		{Obj: mf.NPDefaultScheduler},
+		{Obj: mf.NPApiServerScheduler},
 		{Obj: mf.RSchedulerElect},
 		{Obj: mf.RBSchedulerElect},
 		{Obj: mf.RBSchedulerAuth},
@@ -50,6 +52,8 @@ func Creatable(mf schedmf.Manifests, cli client.Client, log logr.Logger) []objec
 		{Obj: mf.CRController},
 		{Obj: mf.CRBController},
 		{Obj: mf.RBController},
+		{Obj: mf.NPDefaultController},
+		{Obj: mf.NPApiServerController},
 		{
 			Obj: mf.DPController,
 			Wait: func(ctx context.Context) error {
@@ -71,12 +75,16 @@ func Deletable(mf schedmf.Manifests, cli client.Client, log logr.Logger) []objec
 		// no need to remove objects created inside the namespace we just removed
 		{Obj: mf.CRBScheduler},
 		{Obj: mf.CRScheduler},
+		{Obj: mf.NPDefaultScheduler},
+		{Obj: mf.NPApiServerScheduler},
 		{Obj: mf.RBSchedulerAuth},
 		{Obj: mf.RBSchedulerElect},
 		{Obj: mf.RSchedulerElect},
 		{Obj: mf.CRBController},
 		{Obj: mf.CRController},
 		{Obj: mf.RBController},
+		{Obj: mf.NPDefaultController},
+		{Obj: mf.NPApiServerController},
 		{Obj: mf.Crd},
 	}
 }
