@@ -188,7 +188,8 @@ func trafficTest(cli *kubernetes.Clientset, ctx context.Context, sourcePod *core
 
 	cmd := []string{
 		"sh", "-c",
-		fmt.Sprintf(`nc -w 5 -z %s && echo "OK" || echo "FAIL"`, endpoint),
+		// nc compatible format is <host> <port> (without colon)
+		fmt.Sprintf(`nc -w 5 -z %s %s && echo "OK" || echo "FAIL"`, destinationIP, destinationPort),
 	}
 
 	out, _ := e2epods.ExecCommand(cli, ctx, sourcePod, "", cmd)
