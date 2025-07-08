@@ -17,6 +17,7 @@
 package pods
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -32,8 +33,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8swait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/remotecommand"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	"github.com/k8stopologyawareschedwg/deployer/pkg/clientutil"
 )
@@ -176,4 +180,54 @@ func GetByDaemonSet(cli client.Client, ctx context.Context, daemonset appsv1.Dae
 	}
 
 	return podList.Items, nil
+}
+
+// ExecCommand runs command in the pod and returns buffer output
+func ExecCommand(c *kubernetes.Clientset, ctx context.Context, pod *corev1.Pod, containerName string, command []string) ([]byte, error) {
+	var outputBuf bytes.Buffer
+	var errorBuf bytes.Buffer
+	// if no name provided, take the first container from the pod
+	if containerName == "" {
+		containerName = pod.Spec.Containers[0].Name
+	}
+
+	req := c.CoreV1().RESTClient().
+		Post().
+		Namespace(pod.Namespace).
+		Resource("pods").
+		Name(pod.Name).
+		SubResource("exec").
+		VersionedParams(&corev1.PodExecOptions{
+			Container: containerName,
+			Command:   command,
+			Stdin:     false,
+			Stdout:    true,
+			Stderr:    true,
+			TTY:       false,
+		}, scheme.ParameterCodec)
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	exec, err := remotecommand.NewSPDYExecutor(cfg, "POST", req.URL())
+	if err != nil {
+		return nil, err
+	}
+
+	err = exec.StreamWithContext(context.TODO(), remotecommand.StreamOptions{
+		Stdout: &outputBuf,
+		Stderr: &errorBuf,
+		Tty:    false,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to run command %v: output %q; error %q; %w", command, outputBuf.String(), errorBuf.String(), err)
+	}
+
+	if errorBuf.Len() != 0 {
+		return nil, fmt.Errorf("failed to run command %v: output %q; error %q", command, outputBuf.String(), errorBuf.String())
+	}
+
+	return outputBuf.Bytes(), nil
 }

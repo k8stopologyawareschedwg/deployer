@@ -26,6 +26,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
@@ -56,20 +57,24 @@ type Manifests struct {
 	Crd       *apiextensionv1.CustomResourceDefinition
 	Namespace *corev1.Namespace
 	// controller
-	SAController  *corev1.ServiceAccount
-	CRController  *rbacv1.ClusterRole
-	CRBController *rbacv1.ClusterRoleBinding
-	RBController  *rbacv1.RoleBinding
-	DPController  *appsv1.Deployment
+	SAController          *corev1.ServiceAccount
+	CRController          *rbacv1.ClusterRole
+	CRBController         *rbacv1.ClusterRoleBinding
+	RBController          *rbacv1.RoleBinding
+	DPController          *appsv1.Deployment
+	NPDefaultController   *networkingv1.NetworkPolicy
+	NPApiServerController *networkingv1.NetworkPolicy
 	// scheduler proper
-	SAScheduler      *corev1.ServiceAccount
-	CRScheduler      *rbacv1.ClusterRole
-	RSchedulerElect  *rbacv1.Role
-	CRBScheduler     *rbacv1.ClusterRoleBinding
-	RBSchedulerAuth  *rbacv1.RoleBinding
-	RBSchedulerElect *rbacv1.RoleBinding
-	DPScheduler      *appsv1.Deployment
-	ConfigMap        *corev1.ConfigMap
+	SAScheduler          *corev1.ServiceAccount
+	CRScheduler          *rbacv1.ClusterRole
+	RSchedulerElect      *rbacv1.Role
+	CRBScheduler         *rbacv1.ClusterRoleBinding
+	RBSchedulerAuth      *rbacv1.RoleBinding
+	RBSchedulerElect     *rbacv1.RoleBinding
+	DPScheduler          *appsv1.Deployment
+	ConfigMap            *corev1.ConfigMap
+	NPDefaultScheduler   *networkingv1.NetworkPolicy
+	NPApiServerScheduler *networkingv1.NetworkPolicy
 	// internal fields
 	plat platform.Platform
 }
@@ -78,21 +83,25 @@ func (mf Manifests) Clone() Manifests {
 	return Manifests{
 		plat: mf.plat,
 		// objects
-		Crd:              mf.Crd.DeepCopy(),
-		Namespace:        mf.Namespace.DeepCopy(),
-		SAController:     mf.SAController.DeepCopy(),
-		CRController:     mf.CRController.DeepCopy(),
-		CRBController:    mf.CRBController.DeepCopy(),
-		DPController:     mf.DPController.DeepCopy(),
-		RBController:     mf.RBController.DeepCopy(),
-		SAScheduler:      mf.SAScheduler.DeepCopy(),
-		CRScheduler:      mf.CRScheduler.DeepCopy(),
-		RSchedulerElect:  mf.RSchedulerElect.DeepCopy(),
-		CRBScheduler:     mf.CRBScheduler.DeepCopy(),
-		RBSchedulerAuth:  mf.RBSchedulerAuth.DeepCopy(),
-		RBSchedulerElect: mf.RBSchedulerElect.DeepCopy(),
-		DPScheduler:      mf.DPScheduler.DeepCopy(),
-		ConfigMap:        mf.ConfigMap.DeepCopy(),
+		Crd:                   mf.Crd.DeepCopy(),
+		Namespace:             mf.Namespace.DeepCopy(),
+		SAController:          mf.SAController.DeepCopy(),
+		CRController:          mf.CRController.DeepCopy(),
+		CRBController:         mf.CRBController.DeepCopy(),
+		DPController:          mf.DPController.DeepCopy(),
+		RBController:          mf.RBController.DeepCopy(),
+		NPDefaultController:   mf.NPDefaultController.DeepCopy(),
+		NPApiServerController: mf.NPApiServerController.DeepCopy(),
+		SAScheduler:           mf.SAScheduler.DeepCopy(),
+		CRScheduler:           mf.CRScheduler.DeepCopy(),
+		RSchedulerElect:       mf.RSchedulerElect.DeepCopy(),
+		CRBScheduler:          mf.CRBScheduler.DeepCopy(),
+		RBSchedulerAuth:       mf.RBSchedulerAuth.DeepCopy(),
+		RBSchedulerElect:      mf.RBSchedulerElect.DeepCopy(),
+		DPScheduler:           mf.DPScheduler.DeepCopy(),
+		ConfigMap:             mf.ConfigMap.DeepCopy(),
+		NPDefaultScheduler:    mf.NPDefaultScheduler.DeepCopy(),
+		NPApiServerScheduler:  mf.NPApiServerScheduler.DeepCopy(),
 	}
 }
 
@@ -163,6 +172,10 @@ func (mf Manifests) Render(logger logr.Logger, opts options.Scheduler) (Manifest
 	rbacupdate.RoleBinding(ret.RBSchedulerAuth, ret.SAScheduler.Name, ret.Namespace.Name)
 	ret.DPScheduler.Namespace = ret.Namespace.Name
 	ret.ConfigMap.Namespace = ret.Namespace.Name
+	ret.NPDefaultScheduler.Namespace = ret.Namespace.Name
+	ret.NPApiServerScheduler.Namespace = ret.Namespace.Name
+	ret.NPDefaultController.Namespace = ret.Namespace.Name
+	ret.NPApiServerController.Namespace = ret.Namespace.Name
 
 	return ret, nil
 }
@@ -174,6 +187,8 @@ func (mf Manifests) ToObjects() []client.Object {
 		mf.SAScheduler,
 		mf.CRScheduler,
 		mf.CRBScheduler,
+		mf.NPDefaultScheduler,
+		mf.NPApiServerScheduler,
 		mf.ConfigMap,
 		mf.RSchedulerElect,
 		mf.RBSchedulerAuth,
@@ -184,6 +199,8 @@ func (mf Manifests) ToObjects() []client.Object {
 		mf.CRBController,
 		mf.DPController,
 		mf.RBController,
+		mf.NPDefaultController,
+		mf.NPApiServerController,
 	}
 }
 
@@ -237,7 +254,14 @@ func NewWithOptions(opts options.Render) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
-
+	mf.NPDefaultScheduler, err = manifests.NetworkPolicy(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, manifests.DefaultNetworkPolicy, opts.Namespace)
+	if err != nil {
+		return mf, err
+	}
+	mf.NPApiServerScheduler, err = manifests.NetworkPolicy(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginScheduler, manifests.APIServerNetworkPolicy, opts.Namespace)
+	if err != nil {
+		return mf, err
+	}
 	mf.SAController, err = manifests.ServiceAccount(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController, opts.Namespace)
 	if err != nil {
 		return mf, err
@@ -258,7 +282,14 @@ func NewWithOptions(opts options.Render) (Manifests, error) {
 	if err != nil {
 		return mf, err
 	}
-
+	mf.NPDefaultController, err = manifests.NetworkPolicy(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController, manifests.DefaultNetworkPolicy, opts.Namespace)
+	if err != nil {
+		return mf, err
+	}
+	mf.NPApiServerController, err = manifests.NetworkPolicy(manifests.ComponentSchedulerPlugin, manifests.SubComponentSchedulerPluginController, manifests.APIServerNetworkPolicy, opts.Namespace)
+	if err != nil {
+		return mf, err
+	}
 	return mf, nil
 }
 

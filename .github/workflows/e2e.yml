@@ -124,3 +124,51 @@ jobs:
     - name: run E2E tests
       run: |
         _out/e2e.test --ginkgo.v --ginkgo.label-filter='manifests'
+
+  e2e-network-policies:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout sources
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: setup golang
+      uses: actions/setup-go@v5
+      id: go
+      with:
+        go-version: 1.23
+
+    - name: build test binary
+      run: |
+        go version
+        make build-e2e
+
+    - name: build tool
+      run: |
+        go version
+        make release-manifests-k8s
+
+    - name: create K8S kind cluster
+      run: |
+        # kind is part of latest ubuntu image, see: https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
+        kind version
+        # see image listing in https://github.com/kubernetes-sigs/kind/releases/tag/v0.20.0
+        kind create cluster --config=hack/kind-config-e2e-network-policies.yaml --image kindest/node:v1.27.3@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72
+
+    - name: install Calico CNI
+      run: |
+        # Install Calico CNI for network policy support
+        kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.30.2/manifests/calico.yaml        
+        # Wait for Calico pods to be ready
+        kubectl wait --for=condition=ready pod -l k8s-app=calico-kube-controllers -n kube-system --timeout=300s
+        kubectl wait --for=condition=ready pod -l k8s-app=calico-node -n kube-system --timeout=300s
+        # Wait for all nodes to be ready after CNI installation
+        hack/wait-nodes-ready.sh
+        kubectl label node kind-worker node-role.kubernetes.io/worker=''
+        kubectl describe nodes
+        uname -a
+
+    - name: run network policies E2E tests
+      run: |
+        _out/e2e.test --ginkgo.vv --ginkgo.label-filter='feature:network_policies'
