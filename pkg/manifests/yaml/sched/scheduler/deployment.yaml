@@ -18,9 +18,10 @@ spec:
       serviceAccountName: topology-aware-scheduler
       containers:
       - args:
-        - /bin/kube-scheduler
         - --config=/etc/kubernetes/scheduler-config.yaml
         - -v=4
+        command:
+        - /bin/kube-scheduler
         image: k8s.gcr.io/scheduler-plugins/kube-scheduler:v0.24.9
         livenessProbe:
           httpGet:
