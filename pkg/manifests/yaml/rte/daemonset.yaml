@@ -47,7 +47,9 @@ spec:
           - name: host-podresources
             mountPath: "/host-podresources"
       - name: shared-pool-container
-        image: gcr.io/google_containers/pause-amd64:3.0
+        image: quay.io/k8stopologyawareschedwg/resource-topology-exporter:latest
+        command:
+        - /bin/pause
       volumes:
       - name: host-sys
         hostPath:

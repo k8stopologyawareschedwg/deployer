@@ -64,6 +64,7 @@ const (
 const (
 	ContainerNameRTE                = "resource-topology-exporter"
 	ContainerNameNFDTopologyUpdater = "nfd-topology-updater"
+	ContainerNameSharedPool         = "shared-pool-container"
 )
 const (
 	DefaultUpdaterSyncPeriod = 10 * time.Second
