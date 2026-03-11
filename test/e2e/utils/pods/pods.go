@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	CentosImage = "quay.io/centos/centos:8"
+	FedoraImage = "registry.fedoraproject.org/fedora-minimal:43"
 )
 
 func GuaranteedSleeperPod(namespace, schedulerName string) *corev1.Pod {
@@ -58,7 +58,7 @@ func GuaranteedSleeperPod(namespace, schedulerName string) *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:  "sleeper-gu-cnt",
-					Image: CentosImage,
+					Image: FedoraImage,
 					// 1 hour (or >= 1h in general) is "forever" for our purposes
 					Command: []string{"/bin/sleep", "1h"},
 					Resources: corev1.ResourceRequirements{
