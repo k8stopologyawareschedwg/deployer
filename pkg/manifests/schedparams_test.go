@@ -42,7 +42,7 @@ func TestDecodeSchedulerConfigFromData(t *testing.T) {
 		},
 		{
 			name: "bad scheduler name",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -69,7 +69,7 @@ profiles:
 		},
 		{
 			name: "bad scheduler params name",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -96,7 +96,7 @@ profiles:
 		},
 		{
 			name: "empty params",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -126,7 +126,7 @@ profiles:
 		},
 		{
 			name: "nonzero resync period",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -159,7 +159,7 @@ profiles:
 		},
 		{
 			name: "nonzero resync period and all cache params",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -199,7 +199,7 @@ profiles:
 		},
 		{
 			name: "nonzero resync period and some cache params",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -235,7 +235,7 @@ profiles:
 		},
 		{
 			name: "zero resync period and some cache params - 2",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -269,7 +269,7 @@ profiles:
 		},
 		{
 			name: "zero resync period and some cache params - 3",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -303,7 +303,7 @@ profiles:
 		},
 		{
 			name: "all scoringStrategy params",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -353,7 +353,7 @@ profiles:
 		},
 		{
 			name: "some scoringStrategy params - 1",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -388,7 +388,7 @@ profiles:
 		},
 		{
 			name: "some scoringStrategy params - 2",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: false
@@ -430,7 +430,7 @@ profiles:
 		},
 		{
 			name: "minimal leader election params",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: true
@@ -465,7 +465,7 @@ profiles:
 		},
 		{
 			name: "partial leader election params - 1",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: true
@@ -502,7 +502,7 @@ profiles:
 		},
 		{
 			name: "partial leader election params - 2",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: true
@@ -539,7 +539,7 @@ profiles:
 		},
 		{
 			name: "full leader election params",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: true
@@ -579,7 +579,7 @@ profiles:
 		// keep this the last one
 		{
 			name: "nonzero resync period all params",
-			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1beta3
+			data: []byte(`apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 leaderElection:
   leaderElect: true

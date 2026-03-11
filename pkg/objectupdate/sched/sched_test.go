@@ -113,9 +113,10 @@ spec:
                 operator: Exists
       containers:
       - args:
-        - /bin/kube-scheduler
         - --config=/etc/kubernetes/scheduler-config.yaml
         - -v=4
+        command:
+        - /bin/kube-scheduler
         image: test.com/image:latest
         imagePullPolicy: Always
         livenessProbe:
@@ -174,9 +175,10 @@ spec:
     spec:
       containers:
       - args:
-        - /bin/kube-scheduler
         - --config=/etc/kubernetes/scheduler-config.yaml
         - -v=4
+        command:
+        - /bin/kube-scheduler
         image: test.com/image:latest
         imagePullPolicy: Always
         livenessProbe:
@@ -237,9 +239,10 @@ spec:
                 operator: Exists
       containers:
       - args:
-        - /bin/kube-scheduler
         - --config=/etc/kubernetes/scheduler-config.yaml
         - -v=6
+        command:
+        - /bin/kube-scheduler
         image: test.com/image:latest
         imagePullPolicy: Always
         livenessProbe:

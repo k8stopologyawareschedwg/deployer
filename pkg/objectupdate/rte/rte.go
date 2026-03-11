@@ -86,12 +86,18 @@ func DaemonSet(ds *appsv1.DaemonSet, plat platform.Platform, configMapName strin
 		podSpec.NodeSelector = opts.NodeSelector.MatchLabels
 	}
 
-	cntSpec := objectupdate.FindContainerByName(ds.Spec.Template.Spec.Containers, manifests.ContainerNameRTE)
-	if cntSpec == nil {
+	cntSpecRTE := objectupdate.FindContainerByName(ds.Spec.Template.Spec.Containers, manifests.ContainerNameRTE)
+	if cntSpecRTE == nil {
+		return // should never happen
+	}
+	cntSpecSP := objectupdate.FindContainerByName(ds.Spec.Template.Spec.Containers, manifests.ContainerNameSharedPool)
+	if cntSpecSP == nil {
 		return // should never happen
 	}
 
-	daemonSetContainerConfig(podSpec, cntSpec, plat, configMapName, opts)
+	daemonSetContainerImage(cntSpecRTE, opts)
+	daemonSetContainerImage(cntSpecSP, opts)
+	daemonSetContainerConfig(podSpec, cntSpecRTE, plat, configMapName, opts)
 }
 
 func MetricsPort(ds *appsv1.DaemonSet, portNum int) {
@@ -157,16 +163,17 @@ func securityContextForContainer(podTmpl *corev1.PodTemplateSpec, cntSpec *corev
 	return nil
 }
 
-func daemonSetContainerConfig(podSpec *corev1.PodSpec, cntSpec *corev1.Container, plat platform.Platform, configMapName string, opts options.DaemonSet) {
-	metricsPortForContainer(cntSpec, metricsPort)
-
+func daemonSetContainerImage(cntSpec *corev1.Container, opts options.DaemonSet) {
 	imgs := images.Get()
-	cntSpec.Image = imgs.ResourceTopologyExporter
-
 	cntSpec.ImagePullPolicy = corev1.PullAlways
 	if opts.PullIfNotPresent {
 		cntSpec.ImagePullPolicy = corev1.PullIfNotPresent
 	}
+	cntSpec.Image = imgs.ResourceTopologyExporter
+}
+
+func daemonSetContainerConfig(podSpec *corev1.PodSpec, cntSpec *corev1.Container, plat platform.Platform, configMapName string, opts options.DaemonSet) {
+	metricsPortForContainer(cntSpec, metricsPort)
 
 	if configMapName != "" {
 		ContainerConfig(podSpec, cntSpec, configMapName)
