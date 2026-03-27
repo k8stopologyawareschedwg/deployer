@@ -39,7 +39,7 @@ jobs:
         # kind is part of 20.04 image, see: https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
         kind version
         # see image listing in https://github.com/kubernetes-sigs/kind/releases/tag/v0.20.0
-        kind create cluster --config=hack/kind-config-e2e-positive.yaml --image kindest/node:v1.27.3@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72
+        kind create cluster --config=hack/kind-config-e2e-positive.yaml --image kindest/node:v1.32.11@sha256:5fc52d52a7b9574015299724bd68f183702956aa4a2116ae75a63cb574b35af8
         kubectl label node kind-worker node-role.kubernetes.io/worker=''
         hack/wait-nodes-ready.sh
         kubectl describe nodes
@@ -76,7 +76,7 @@ jobs:
         # kind is part of 20.04 image, see: https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
         kind version
         # see image listing in https://github.com/kubernetes-sigs/kind/releases/tag/v0.20.0
-        kind create cluster --config=hack/kind-config-e2e-negative.yaml --image kindest/node:v1.27.3@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72
+        kind create cluster --config=hack/kind-config-e2e-negative.yaml --image kindest/node:v1.32.11@sha256:5fc52d52a7b9574015299724bd68f183702956aa4a2116ae75a63cb574b35af8
         kubectl label node kind-worker node-role.kubernetes.io/worker=''
         hack/wait-nodes-ready.sh
         kubectl describe nodes
@@ -115,7 +115,7 @@ jobs:
         # kind is part of 20.04 image, see: https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu2004-README.md
         kind version
         # see image listing in https://github.com/kubernetes-sigs/kind/releases/tag/v0.20.0
-        kind create cluster --config=hack/kind-config-e2e-positive.yaml --image kindest/node:v1.27.3@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72
+        kind create cluster --config=hack/kind-config-e2e-positive.yaml --image kindest/node:v1.32.11@sha256:5fc52d52a7b9574015299724bd68f183702956aa4a2116ae75a63cb574b35af8
         kubectl label node kind-worker node-role.kubernetes.io/worker=''
         hack/wait-nodes-ready.sh
         kubectl describe nodes
@@ -154,7 +154,7 @@ jobs:
         # kind is part of latest ubuntu image, see: https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
         kind version
         # see image listing in https://github.com/kubernetes-sigs/kind/releases/tag/v0.20.0
-        kind create cluster --config=hack/kind-config-e2e-network-policies.yaml --image kindest/node:v1.27.3@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72
+        kind create cluster --config=hack/kind-config-e2e-network-policies.yaml --image kindest/node:v1.32.11@sha256:5fc52d52a7b9574015299724bd68f183702956aa4a2116ae75a63cb574b35af8
 
     - name: install Calico CNI
       run: |
