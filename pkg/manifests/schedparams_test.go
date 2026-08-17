@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"k8s.io/utils/ptr"
 )
 
 func TestDecodeSchedulerConfigFromData(t *testing.T) {
@@ -593,6 +595,7 @@ profiles:
         resyncMethod: Autodetect
         informerMode: Dedicated
       cacheResyncPeriodSeconds: 5
+      preemptionMode: Enabled
       scoringStrategy:
         type: BalancedAllocation
         resources:
@@ -641,6 +644,7 @@ profiles:
 						},
 					},
 				},
+				PreemptionMode: ptr.To(PreemptionEnabled),
 				LeaderElection: &LeaderElectionParams{
 					LeaderElect:       true,
 					ResourceNamespace: "numa-aware-sched",
