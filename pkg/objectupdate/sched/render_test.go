@@ -694,6 +694,119 @@ profiles:
 `,
 			expectedUpdate: true,
 		},
+		{
+			name:     "preemption mode disabled by default when unset",
+			params:   &manifests.ConfigParams{},
+			initial:  configTemplateEmpty,
+			expected: configTemplateEmpty,
+		},
+		{
+			name: "preemption mode explicitly disabled from empty",
+			params: &manifests.ConfigParams{
+				PreemptionMode: newString(manifests.PreemptionDisabled),
+			},
+			initial: configTemplateEmpty,
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      preemptionMode: Disabled
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expectedUpdate: true,
+		},
+		{
+			name: "preemption mode enabled from empty",
+			params: &manifests.ConfigParams{
+				PreemptionMode: newString(manifests.PreemptionEnabled),
+			},
+			initial: configTemplateEmpty,
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      preemptionMode: Enabled
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expectedUpdate: true,
+		},
+		{
+			name: "preemption mode disabled from enabled",
+			params: &manifests.ConfigParams{
+				PreemptionMode: newString(manifests.PreemptionDisabled),
+			},
+			initial: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      preemptionMode: Enabled
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expected: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      preemptionMode: Disabled
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expectedUpdate: true,
+		},
 	}
 
 	for _, tc := range testCases {
