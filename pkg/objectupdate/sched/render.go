@@ -263,12 +263,9 @@ func updateArgs(args map[string]interface{}, params *manifests.ConfigParams) (bo
 		}
 	}
 
-	var preemptionArgsUpdated int
-	if params.PreemptionMode != nil {
-		preemptionArgsUpdated, err = updatePreemptionArgs(args, params)
-		if err != nil {
-			return updated > 0, err
-		}
+	preemptionArgsUpdated, err := updatePreemptionArgs(args, params)
+	if err != nil {
+		return updated > 0, err
 	}
 	updated += preemptionArgsUpdated
 
@@ -355,6 +352,13 @@ func updateScoringStrategyArgs(args map[string]interface{}, params *manifests.Co
 
 func updatePreemptionArgs(args map[string]interface{}, params *manifests.ConfigParams) (int, error) {
 	if params.PreemptionMode == nil {
+		if _, ok, err := unstructured.NestedString(args, "preemptionMode"); err != nil {
+			return 0, err
+		} else if ok {
+			// remove for backward compatibility
+			delete(args, "preemptionMode")
+			return 1, nil
+		}
 		return 0, nil
 	}
 

@@ -807,6 +807,33 @@ profiles:
 `,
 			expectedUpdate: true,
 		},
+		{
+			name:   "preemption mode cleared when unset from enabled",
+			params: &manifests.ConfigParams{},
+			initial: `apiVersion: kubescheduler.config.k8s.io/v1beta3
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: false
+profiles:
+- pluginConfig:
+  - args:
+      preemptionMode: Enabled
+    name: NodeResourceTopologyMatch
+  plugins:
+    filter:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    reserve:
+      enabled:
+      - name: NodeResourceTopologyMatch
+    score:
+      enabled:
+      - name: NodeResourceTopologyMatch
+  schedulerName: test-sched-name
+`,
+			expected:       configTemplateEmpty,
+			expectedUpdate: true,
+		},
 	}
 
 	for _, tc := range testCases {
